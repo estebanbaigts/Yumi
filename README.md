@@ -1,5 +1,4 @@
 <p align="center">
-  <img src="docs/yumi.png" alt="Yumi, a small black character with big eyes in a ring of blue and pink light" width="220">
 </p>
 
 <h1 align="center">Yumi</h1>
