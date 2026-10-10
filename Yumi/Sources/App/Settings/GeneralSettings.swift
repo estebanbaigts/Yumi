@@ -13,7 +13,7 @@ struct GeneralSettings: View {
 
     /// The same choices as the island's own settings; 0 is never.
     static let foldDelays: [(seconds: TimeInterval, label: String)] =
-        [(5, "5 secondes"), (15, "15 secondes"), (30, "30 secondes"), (60, "1 minute"), (0, "Jamais")]
+        [(5, loc("5 secondes")), (15, loc("15 secondes")), (30, loc("30 secondes")), (60, loc("1 minute")), (0, loc("Jamais"))]
 
     var body: some View {
         Form {

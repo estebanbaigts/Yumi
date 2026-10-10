@@ -123,7 +123,7 @@ enum NotesSummary {
     }
 
     private static func when(_ reminder: ReminderItem, now: Date, calendar: Calendar) -> String {
-        guard let due = reminder.due else { return "Sans date." }
+        guard let due = reminder.due else { return loc("Sans date.") }
         if due < calendar.startOfDay(for: now) { return loc("C'était prévu avant aujourd'hui.") }
         guard reminder.hasTime else { return loc("C'est pour aujourd'hui.") }
         return due <= now ? loc("C'était pour \(FrenchText.clock(due, calendar: calendar)).")

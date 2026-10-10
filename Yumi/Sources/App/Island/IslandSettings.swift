@@ -14,11 +14,11 @@ struct SettingsActivity: View {
     /// How much he speaks first (Contracts/RemarkTypes.swift).
     @AppStorage(YumiTalk.defaultsKey) private var talk = YumiTalk.discreet.rawValue
     private static let talks: [(value: YumiTalk, label: String)] =
-        [(.silent, "Silencieux"), (.discreet, "Discret"), (.chatty, "Bavard")]
+        [(.silent, loc("Silencieux")), (.discreet, loc("Discret")), (.chatty, loc("Bavard"))]
 
     /// `foldDelay`: seconds, 0 for never.
     private static let delays: [(seconds: TimeInterval, label: String)] =
-        [(5, "5 s"), (15, "15 s"), (30, "30 s"), (60, "1 min"), (0, "Jamais")]
+        [(5, "5 s"), (15, "15 s"), (30, "30 s"), (60, "1 min"), (0, loc("Jamais"))]
 
     var body: some View {
         VStack(spacing: 9) {
@@ -61,7 +61,7 @@ struct SettingsActivity: View {
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.1)))
             }
             .riseIn(2)
-            row("Yumi parle") {
+            row(loc("Yumi parle")) {
                 HStack(spacing: 0) {
                     ForEach(Self.talks, id: \.value) { choice in
                         SegmentButton(label: choice.label, on: talk == choice.value.rawValue) {
