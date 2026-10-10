@@ -4397,6 +4397,96 @@
         }
       }
     },
+    "Silencieux": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silent"
+          }
+        }
+      }
+    },
+    "Discret": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discreet"
+          }
+        }
+      }
+    },
+    "Bavard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chatty"
+          }
+        }
+      }
+    },
+    "Yumi parle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi speaks up"
+          }
+        }
+      }
+    },
+    "Sans date.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date."
+          }
+        }
+      }
+    },
+    "5 secondes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 seconds"
+          }
+        }
+      }
+    },
+    "15 secondes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "15 seconds"
+          }
+        }
+      }
+    },
+    "30 secondes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 seconds"
+          }
+        }
+      }
+    },
+    "1 minute": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 minute"
+          }
+        }
+      }
+    },
     "Je modifie": {
       "localizations": {
         "en": {
