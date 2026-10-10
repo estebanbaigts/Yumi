@@ -30,14 +30,14 @@ enum IslandAgent {
     private static func sentence(forStep step: String) -> String? {
         // The labels are localized the same way (ClaudeToolPhrase), so the step is read back in
         // the language it was written in.
-        let verbs: [String: String] = [
+        let verbs: KeyValuePairs<String, String> = [
             loc("Exécute"): loc("lance"), loc("Lit"): loc("lit"), loc("Écrit"): loc("écrit"), loc("Modifie"): loc("modifie"),
             loc("Cherche"): loc("cherche"), loc("Recherche"): loc("cherche"), loc("Recherche web"): loc("cherche sur le web"),
             loc("Récupère"): loc("récupère"), loc("Liste"): loc("regarde"), loc("Tâches"): loc("met à jour ses tâches"),
             loc("Agent"): loc("lance un agent"), loc("Notebook"): loc("modifie un notebook"),
         ]
         let parts = step.components(separatedBy: " · ")
-        guard let verb = verbs[parts[0]] else { return nil }
+        guard let verb = verbs.first(where: { $0.key == parts[0] })?.value else { return nil }
         let detail = parts.dropFirst().joined(separator: " · ")
         return detail.isEmpty ? loc("Claude \(verb)") : loc("Claude \(verb) \(detail)")
     }
