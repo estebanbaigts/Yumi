@@ -14,6 +14,7 @@ import { MASTERCLASS_LENGTH, Masterclass } from "./linkedin/masterclass/Mastercl
 import { JOURNEE_LENGTH, Journee } from "./linkedin/journee/Journee";
 import { JourneeEdito } from "./linkedin/journee/JourneeEdito";
 import { ALPHA10_LENGTH, Alpha10 } from "./alpha10/Alpha10";
+import { CAROUSEL_SLIDES, CarouselSlide } from "./carousel/Carousel";
 import { Og } from "./demo/Og";
 
 export const RemotionRoot: React.FC = () => {
@@ -26,7 +27,33 @@ export const RemotionRoot: React.FC = () => {
         fps={60}
         width={1080}
         height={1920}
+        defaultProps={{ lang: "fr" as const }}
       />
+      <Composition
+        id="Reel-Alpha10-EN"
+        component={Alpha10}
+        durationInFrames={Math.round(ALPHA10_LENGTH * 60)}
+        fps={60}
+        width={1080}
+        height={1920}
+        defaultProps={{ lang: "en" as const }}
+      />
+      <Folder name="Carrousel">
+        {(["fr", "en"] as const).flatMap((lang) =>
+          Array.from({ length: CAROUSEL_SLIDES }, (_, index) => (
+            <Composition
+              key={`${lang}-${index}`}
+              id={`Carrousel-${lang}-${index + 1}`}
+              component={CarouselSlide}
+              durationInFrames={240}
+              fps={60}
+              width={1080}
+              height={1350}
+              defaultProps={{ lang, index }}
+            />
+          )),
+        )}
+      </Folder>
       <Composition
         id="Reel-Instagram"
         component={Reel}

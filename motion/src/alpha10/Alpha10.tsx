@@ -1,6 +1,13 @@
 import React from "react";
 import { Audio } from "@remotion/media";
-import { AbsoluteFill, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  AbsoluteFill,
+  Sequence,
+  interpolate,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import { Bord, Ecran, arrivee } from "../scenes/Fonctions";
 import { EYES, NOTCH, SIZE, YUMI_AT } from "../scenes/stage";
 import { Son } from "../son/Son";
@@ -39,10 +46,18 @@ const START = ORDER.reduce<Record<string, number>>((acc, part, i) => {
 
 export const ALPHA10_LENGTH = ORDER.reduce((sum, part) => sum + PARTS[part], 0);
 
-const Part: React.FC<{ readonly part: Part; readonly children: React.ReactNode }> = ({ part, children }) => {
+const Part: React.FC<{
+  readonly part: Part;
+  readonly children: React.ReactNode;
+}> = ({ part, children }) => {
   const { fps } = useVideoConfig();
   return (
-    <Sequence name={part} from={Math.round(START[part] * fps)} durationInFrames={Math.round(PARTS[part] * fps)} premountFor={fps}>
+    <Sequence
+      name={part}
+      from={Math.round(START[part] * fps)}
+      durationInFrames={Math.round(PARTS[part] * fps)}
+      premountFor={fps}
+    >
       {children}
     </Sequence>
   );
@@ -82,7 +97,8 @@ const Caption: React.FC<{
   readonly exit?: number;
 }> = ({ step, lines, enter = 0.25, exit }) => {
   const t = useT();
-  const out = exit === undefined ? 1 : interpolate(t, [exit, exit + 0.3], [1, 0], CLAMP);
+  const out =
+    exit === undefined ? 1 : interpolate(t, [exit, exit + 0.3], [1, 0], CLAMP);
   return (
     <AbsoluteFill style={{ top: 820 }}>
       <div
@@ -93,13 +109,20 @@ const Caption: React.FC<{
           fontWeight: 700,
           letterSpacing: "0.28em",
           color: "#B9A6FF",
-          opacity: interpolate(t, [enter - 0.1, enter + 0.3], [0, 1], CLAMP) * out,
+          opacity:
+            interpolate(t, [enter - 0.1, enter + 0.3], [0, 1], CLAMP) * out,
           marginBottom: 26,
         }}
       >
         {step}
       </div>
-      <Words lines={lines} enter={enter} exit={exit} size={86} style={{ fontWeight: 700 }} />
+      <Words
+        lines={lines}
+        enter={enter}
+        exit={exit}
+        size={86}
+        style={{ fontWeight: 700 }}
+      />
     </AbsoluteFill>
   );
 };
@@ -116,21 +139,44 @@ const Plan: React.FC<{
   readonly click?: number;
   /** Where the click lands, in the window, before the camera moves. */
   readonly target?: readonly [number, number];
-}> = ({ take, source, rate, focus, from, to, first, click, target = focus }) => {
+}> = ({
+  take,
+  source,
+  rate,
+  focus,
+  from,
+  to,
+  first,
+  click,
+  target = focus,
+}) => {
   const t = useT();
   const { durationInFrames, fps } = useVideoConfig();
   const length = durationInFrames / fps;
-  const scale = interpolate(t, [0, length], [from, to], { ...CLAMP, easing: EASE.camera });
+  const scale = interpolate(t, [0, length], [from, to], {
+    ...CLAMP,
+    easing: EASE.camera,
+  });
   const style = first
     ? arrivee(t)
     : {
         opacity: interpolate(t, [0, 0.2], [0, 1], CLAMP),
-        scale: interpolate(t, [0, 0.55], [1.06, 1], { ...CLAMP, easing: EASE.out }),
+        scale: interpolate(t, [0, 0.55], [1.06, 1], {
+          ...CLAMP,
+          easing: EASE.out,
+        }),
         filter: `blur(${interpolate(t, [0, 0.3], [10, 0], CLAMP)}px)`,
       };
   return (
     <>
-      <Ecran take={take} source={source} rate={rate} focus={focus} scale={scale} style={style}>
+      <Ecran
+        take={take}
+        source={source}
+        rate={rate}
+        focus={focus}
+        scale={scale}
+        style={style}
+      >
         {click !== undefined ? (
           <div
             style={{
@@ -138,12 +184,20 @@ const Plan: React.FC<{
               // The camera scales the take around `focus`: the target moves away from it
               left: focus[0] + (target[0] - focus[0]) * scale,
               top: focus[1] + (target[1] - focus[1]) * scale,
-              width: interpolate(t, [click, click + 0.6], [50, 230], { ...CLAMP, easing: EASE.out }),
+              width: interpolate(t, [click, click + 0.6], [50, 230], {
+                ...CLAMP,
+                easing: EASE.out,
+              }),
               aspectRatio: "1",
               translate: "-50% -50%",
               borderRadius: "50%",
               border: "4px solid #3DDC97",
-              opacity: interpolate(t, [click, click + 0.06, click + 0.6], [0, 0.95, 0], CLAMP),
+              opacity: interpolate(
+                t,
+                [click, click + 0.06, click + 0.6],
+                [0, 0.95, 0],
+                CLAMP,
+              ),
             }}
           />
         ) : null}
@@ -165,7 +219,10 @@ const Plan: React.FC<{
 };
 
 /** Him alone, big, in the dark. */
-const Alone: React.FC<{ readonly script: YumiScript; readonly style?: React.CSSProperties }> = ({ script, style }) => (
+const Alone: React.FC<{
+  readonly script: YumiScript;
+  readonly style?: React.CSSProperties;
+}> = ({ script, style }) => (
   <AbsoluteFill style={style}>
     <Yumi script={script} size={SIZE} style={YUMI_AT} />
   </AbsoluteFill>
@@ -179,6 +236,41 @@ const toNotch = (k: number): React.CSSProperties => ({
   filter: `blur(${interpolate(k, [0.4, 1], [0, 6], CLAMP)}px)`,
   opacity: interpolate(k, [0.85, 1], [1, 0], CLAMP),
 });
+
+const EN: Record<string, string> = {
+  "Ton Mac a une encoche.": "Your Mac has a notch.",
+  "Quelqu'un vit dedans.": "Someone lives in it.",
+  "VOICI YUMI": "MEET YUMI",
+  "Il vit en haut": "He lives at the top",
+  "de ton Mac.": "of your Mac.",
+  "1 · TU LUI DEMANDES": "1 · YOU ASK",
+  "Avec tes mots.": "In your own words.",
+  "Il le fait.": "He does it.",
+  "2 · TU DÉCIDES": "2 · YOU DECIDE",
+  "Rien ne change": "Nothing changes",
+  "sans ton clic.": "without your click.",
+  "3 · IL VEILLE SUR TOI": "3 · HE LOOKS OUT FOR YOU",
+  "Ta réunion arrive…": "Your meeting is coming…",
+  "…et te dit": "…and tells you",
+  "de souffler.": "to take a break.",
+  "4 · TES MAILS": "4 · YOUR MAIL",
+  "Il prépare": "He drafts",
+  "ta réponse.": "your answer.",
+  "Tu l'envoies": "You send it",
+  "si tu veux.": "if you want.",
+  "Gratuit.": "Free.",
+  "Sans compte.": "No account.",
+  "Et tout reste sur ton Mac.": "And everything stays on your Mac.",
+  "Alpha 10 · pour Mac": "Alpha 10 · for Mac",
+  "Lien en bio": "Link in bio",
+};
+
+/** The language of the film: its French text, or the English of `EN`. */
+const LangContext = React.createContext<"fr" | "en">("fr");
+const useTr = () => {
+  const lang = React.useContext(LangContext);
+  return (text: string) => (lang === "en" ? (EN[text] ?? text) : text);
+};
 
 // ---------------------------------------------------------------------------------------------
 
@@ -194,8 +286,12 @@ const HOOK: YumiScript = {
 };
 
 const Hook: React.FC = () => {
+  const tr = useTr();
   const t = useT();
-  const leave = interpolate(t, [2.55, 3.3], [0, 1], { ...CLAMP, easing: EASE.in });
+  const leave = interpolate(t, [2.55, 3.3], [0, 1], {
+    ...CLAMP,
+    easing: EASE.in,
+  });
   return (
     <AbsoluteFill style={{ backgroundColor: THEME.black }}>
       <Alone script={HOOK} style={toNotch(leave)} />
@@ -213,10 +309,22 @@ const Hook: React.FC = () => {
         }}
       />
       <AbsoluteFill style={{ top: 1250 }}>
-        <Words lines={["Ton Mac a une encoche."]} enter={0.35} exit={1.55} size={78} style={{ fontWeight: 700 }} />
+        <Words
+          lines={[tr("Ton Mac a une encoche.")]}
+          enter={0.35}
+          exit={1.55}
+          size={78}
+          style={{ fontWeight: 700 }}
+        />
       </AbsoluteFill>
       <AbsoluteFill style={{ top: 1250 }}>
-        <Words lines={["Quelqu'un vit dedans."]} enter={1.75} exit={2.75} size={78} style={{ fontWeight: 700, color: "#CFC2FF" }} />
+        <Words
+          lines={[tr("Quelqu'un vit dedans.")]}
+          enter={1.75}
+          exit={2.75}
+          size={78}
+          style={{ fontWeight: 700, color: "#CFC2FF" }}
+        />
       </AbsoluteFill>
       <Son name="peek" at={0.5} />
       <Son name="greet" at={1.7} volume={0.6} />
@@ -228,64 +336,157 @@ const Hook: React.FC = () => {
 /** All the takes come from one run of the alpha 10 filming mode (prises/alpha10.mp4). */
 const TAKE = "alpha10";
 
-const Launch: React.FC = () => (
-  <AbsoluteFill style={{ backgroundColor: THEME.black }}>
-    <Tag />
-    <Plan take={TAKE} source={1.6} focus={[500, 110]} from={1.9} to={1.3} first />
-    <Caption step="VOICI YUMI" lines={["Il vit en haut", "de ton Mac."]} enter={0.5} exit={3.75} />
-    <Son name="open" at={0.2} />
-  </AbsoluteFill>
-);
+const Launch: React.FC = () => {
+  const tr = useTr();
+  return (
+    <AbsoluteFill style={{ backgroundColor: THEME.black }}>
+      <Tag />
+      <Plan
+        take={TAKE}
+        source={1.6}
+        focus={[500, 110]}
+        from={1.9}
+        to={1.3}
+        first
+      />
+      <Caption
+        step={tr("VOICI YUMI")}
+        lines={[tr("Il vit en haut"), tr("de ton Mac.")]}
+        enter={0.5}
+        exit={3.75}
+      />
+      <Son name="open" at={0.2} />
+    </AbsoluteFill>
+  );
+};
 
-const Chat: React.FC = () => (
-  <AbsoluteFill style={{ backgroundColor: THEME.black }}>
-    <Tag enter={0} />
-    <Plan take={TAKE} source={13.5} rate={1.35} focus={[500, 130]} from={1.18} to={1.3} />
-    <Caption step="1 · TU LUI DEMANDES" lines={["Avec tes mots."]} enter={0.3} exit={2.6} />
-    <Caption step="1 · TU LUI DEMANDES" lines={["Il le fait."]} enter={3.0} exit={5.35} />
-    <Son name="send" at={0.4} />
-    <Son name="finish" at={4.4} volume={0.6} />
-  </AbsoluteFill>
-);
+const Chat: React.FC = () => {
+  const tr = useTr();
+  return (
+    <AbsoluteFill style={{ backgroundColor: THEME.black }}>
+      <Tag enter={0} />
+      <Plan
+        take={TAKE}
+        source={13.5}
+        rate={1.35}
+        focus={[500, 130]}
+        from={1.18}
+        to={1.3}
+      />
+      <Caption
+        step={tr("1 · TU LUI DEMANDES")}
+        lines={[tr("Avec tes mots.")]}
+        enter={0.3}
+        exit={2.6}
+      />
+      <Caption
+        step={tr("1 · TU LUI DEMANDES")}
+        lines={[tr("Il le fait.")]}
+        enter={3.0}
+        exit={5.35}
+      />
+      <Son name="send" at={0.4} />
+      <Son name="finish" at={4.4} volume={0.6} />
+    </AbsoluteFill>
+  );
+};
 
-const Permission: React.FC = () => (
-  <AbsoluteFill style={{ backgroundColor: THEME.black }}>
-    <Tag enter={0} />
-    <Plan take={TAKE} source={24.0} focus={[500, 114]} from={1.0} to={1.1} click={2.45} target={[890, 114]} />
-    <Caption step="2 · TU DÉCIDES" lines={["Rien ne change", "sans ton clic."]} enter={0.3} exit={4.55} />
-    <Son name="approval" at={0.3} volume={0.6} />
-    <Son name="approve" at={2.45} />
-  </AbsoluteFill>
-);
+const Permission: React.FC = () => {
+  const tr = useTr();
+  return (
+    <AbsoluteFill style={{ backgroundColor: THEME.black }}>
+      <Tag enter={0} />
+      <Plan
+        take={TAKE}
+        source={24.0}
+        focus={[500, 114]}
+        from={1.0}
+        to={1.1}
+        click={2.45}
+        target={[890, 114]}
+      />
+      <Caption
+        step={tr("2 · TU DÉCIDES")}
+        lines={[tr("Rien ne change"), tr("sans ton clic.")]}
+        enter={0.3}
+        exit={4.55}
+      />
+      <Son name="approval" at={0.3} volume={0.6} />
+      <Son name="approve" at={2.45} />
+    </AbsoluteFill>
+  );
+};
 
-const Warn: React.FC = () => (
-  <AbsoluteFill style={{ backgroundColor: THEME.black }}>
-    <Tag enter={0} />
-    <Plan take={TAKE} source={35.6} focus={[500, 130]} from={1.32} to={1.22} />
-    <Caption step="3 · IL VEILLE SUR TOI" lines={["Ta réunion arrive…"]} enter={0.25} exit={2.95} />
-    <Son name="question" at={0.3} volume={0.5} />
-  </AbsoluteFill>
-);
+const Warn: React.FC = () => {
+  const tr = useTr();
+  return (
+    <AbsoluteFill style={{ backgroundColor: THEME.black }}>
+      <Tag enter={0} />
+      <Plan
+        take={TAKE}
+        source={35.6}
+        focus={[500, 130]}
+        from={1.32}
+        to={1.22}
+      />
+      <Caption
+        step={tr("3 · IL VEILLE SUR TOI")}
+        lines={[tr("Ta réunion arrive…")]}
+        enter={0.25}
+        exit={2.95}
+      />
+      <Son name="question" at={0.3} volume={0.5} />
+    </AbsoluteFill>
+  );
+};
 
-const Pause: React.FC = () => (
-  <AbsoluteFill style={{ backgroundColor: THEME.black }}>
-    <Tag enter={0} />
-    <Plan take={TAKE} source={40.2} focus={[500, 55]} from={1.9} to={2.1} />
-    <Caption step="3 · IL VEILLE SUR TOI" lines={["…et te dit", "de souffler."]} enter={0.2} exit={2.95} />
-    <Son name="peek" at={0.2} volume={0.6} />
-  </AbsoluteFill>
-);
+const Pause: React.FC = () => {
+  const tr = useTr();
+  return (
+    <AbsoluteFill style={{ backgroundColor: THEME.black }}>
+      <Tag enter={0} />
+      <Plan take={TAKE} source={40.2} focus={[500, 55]} from={1.9} to={2.1} />
+      <Caption
+        step={tr("3 · IL VEILLE SUR TOI")}
+        lines={[tr("…et te dit"), tr("de souffler.")]}
+        enter={0.2}
+        exit={2.95}
+      />
+      <Son name="peek" at={0.2} volume={0.6} />
+    </AbsoluteFill>
+  );
+};
 
-const Mail: React.FC = () => (
-  <AbsoluteFill style={{ backgroundColor: THEME.black }}>
-    <Tag enter={0} />
-    <Plan take={TAKE} source={53.6} rate={1.4} focus={[500, 160]} from={1.18} to={1.3} />
-    <Caption step="4 · TES MAILS" lines={["Il prépare", "ta réponse."]} enter={0.3} exit={2.9} />
-    <Caption step="4 · TES MAILS" lines={["Tu l'envoies", "si tu veux."]} enter={3.2} exit={5.55} />
-    <Son name="search" at={0.4} volume={0.5} />
-    <Son name="finish" at={2.6} volume={0.5} />
-  </AbsoluteFill>
-);
+const Mail: React.FC = () => {
+  const tr = useTr();
+  return (
+    <AbsoluteFill style={{ backgroundColor: THEME.black }}>
+      <Tag enter={0} />
+      <Plan
+        take={TAKE}
+        source={53.6}
+        rate={1.4}
+        focus={[500, 160]}
+        from={1.18}
+        to={1.3}
+      />
+      <Caption
+        step={tr("4 · TES MAILS")}
+        lines={[tr("Il prépare"), tr("ta réponse.")]}
+        enter={0.3}
+        exit={2.9}
+      />
+      <Caption
+        step={tr("4 · TES MAILS")}
+        lines={[tr("Tu l'envoies"), tr("si tu veux.")]}
+        enter={3.2}
+        exit={5.55}
+      />
+      <Son name="search" at={0.4} volume={0.5} />
+      <Son name="finish" at={2.6} volume={0.5} />
+    </AbsoluteFill>
+  );
+};
 
 const BACK: YumiScript = {
   seed: 11,
@@ -298,15 +499,25 @@ const BACK: YumiScript = {
 };
 
 const Back: React.FC = () => {
+  const tr = useTr();
   const t = useT();
-  const come = interpolate(t, [0, 0.9], [1, 0], { ...CLAMP, easing: EASE.spring });
+  const come = interpolate(t, [0, 0.9], [1, 0], {
+    ...CLAMP,
+    easing: EASE.spring,
+  });
   return (
     <AbsoluteFill style={{ backgroundColor: THEME.black }}>
       <Alone script={BACK} style={toNotch(come)} />
       <AbsoluteFill style={{ top: 1230 }}>
-        <Words lines={["Gratuit.", "Sans compte."]} enter={0.85} exit={3.95} size={104} style={{ fontWeight: 700 }} />
         <Words
-          lines={["Et tout reste sur ton Mac."]}
+          lines={[tr("Gratuit."), tr("Sans compte.")]}
+          enter={0.85}
+          exit={3.95}
+          size={104}
+          style={{ fontWeight: 700 }}
+        />
+        <Words
+          lines={[tr("Et tout reste sur ton Mac.")]}
           enter={1.6}
           exit={3.95}
           size={50}
@@ -329,8 +540,12 @@ const END: YumiScript = {
 };
 
 const End: React.FC = () => {
+  const tr = useTr();
   const t = useT();
-  const up = interpolate(t, [0, 0.8], [0, 1], { ...CLAMP, easing: EASE.camera });
+  const up = interpolate(t, [0, 0.8], [0, 1], {
+    ...CLAMP,
+    easing: EASE.camera,
+  });
   return (
     <AbsoluteFill style={{ backgroundColor: THEME.black }}>
       <AbsoluteFill
@@ -343,8 +558,19 @@ const End: React.FC = () => {
         <Yumi script={END} size={SIZE} style={YUMI_AT} />
       </AbsoluteFill>
       <AbsoluteFill style={{ top: 1000 }}>
-        <Words lines={["Yumi."]} by="letter" enter={0.35} size={190} style={{ fontWeight: 700 }} />
-        <Words lines={["Alpha 10 · pour Mac"]} enter={0.75} size={50} style={{ fontWeight: 500, color: THEME.muted, marginTop: 10 }} />
+        <Words
+          lines={["Yumi."]}
+          by="letter"
+          enter={0.35}
+          size={190}
+          style={{ fontWeight: 700 }}
+        />
+        <Words
+          lines={[tr("Alpha 10 · pour Mac")]}
+          enter={0.75}
+          size={50}
+          style={{ fontWeight: 500, color: THEME.muted, marginTop: 10 }}
+        />
       </AbsoluteFill>
       <div
         style={{
@@ -369,7 +595,7 @@ const End: React.FC = () => {
             fontWeight: 700,
           }}
         >
-          Lien en bio
+          {tr("Lien en bio")}
         </div>
       </div>
       <Son name="blip" at={1.15} volume={0.6} />
@@ -389,17 +615,20 @@ const SCENES: Record<Part, React.FC> = {
   end: End,
 };
 
-export const Alpha10: React.FC = () => (
-  <AbsoluteFill style={{ backgroundColor: THEME.black }}>
-    <Audio src={staticFile("musique/ambiance.wav")} volume={0.5} />
-    {ORDER.map((part) => {
-      const Scene = SCENES[part];
-      return (
-        <Part key={part} part={part}>
-          <Scene />
-        </Part>
-      );
-    })}
-  </AbsoluteFill>
+export const Alpha10: React.FC<{ readonly lang?: "fr" | "en" }> = ({
+  lang = "fr",
+}) => (
+  <LangContext.Provider value={lang}>
+    <AbsoluteFill style={{ backgroundColor: THEME.black }}>
+      <Audio src={staticFile("musique/ambiance.wav")} volume={0.5} />
+      {ORDER.map((part) => {
+        const Scene = SCENES[part];
+        return (
+          <Part key={part} part={part}>
+            <Scene />
+          </Part>
+        );
+      })}
+    </AbsoluteFill>
+  </LangContext.Provider>
 );
-
