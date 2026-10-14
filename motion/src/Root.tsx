@@ -15,6 +15,7 @@ import { JOURNEE_LENGTH, Journee } from "./linkedin/journee/Journee";
 import { JourneeEdito } from "./linkedin/journee/JourneeEdito";
 import { ALPHA10_LENGTH, Alpha10 } from "./alpha10/Alpha10";
 import { CAROUSEL_SLIDES, CarouselSlide } from "./carousel/Carousel";
+import { CAROUSEL_MOTION_LENGTH, CarouselMotion } from "./carousel/CarouselMotion";
 import { Og } from "./demo/Og";
 
 export const RemotionRoot: React.FC = () => {
@@ -39,6 +40,18 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{ lang: "en" as const }}
       />
       <Folder name="Carrousel">
+        {(["fr", "en"] as const).map((lang) => (
+          <Composition
+            key={`motion-${lang}`}
+            id={`Carrousel-Motion-${lang}`}
+            component={CarouselMotion}
+            durationInFrames={Math.round(CAROUSEL_MOTION_LENGTH * 60)}
+            fps={60}
+            width={1080}
+            height={1920}
+            defaultProps={{ lang }}
+          />
+        ))}
         {(["fr", "en"] as const).flatMap((lang) =>
           Array.from({ length: CAROUSEL_SLIDES }, (_, index) => (
             <Composition
