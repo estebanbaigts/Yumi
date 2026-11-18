@@ -12884,6 +12884,56 @@
           }
         }
       }
+    },
+    "‹ Tous les dépôts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‹ All repositories"
+          }
+        }
+      }
+    },
+    "Je regarde…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking…"
+          }
+        }
+      }
+    },
+    "Aucun push récent.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No recent push."
+          }
+        }
+      }
+    },
+    "et %lld de plus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "and %lld more"
+          }
+        }
+      }
+    },
+    "Ouvrir sur GitHub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open on GitHub"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

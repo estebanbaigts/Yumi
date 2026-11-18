@@ -27,8 +27,21 @@ struct GitHubPush: Equatable, Sendable, Codable {
     var total: Int
     /// The newest first, a few at most.
     var commits: [GitHubCommit]
+    /// The files the push touched, with lines added and removed (from compare).
+    var files: [GitHubFile] = []
+    /// The commit the branch points to after the push, to know a push seen twice.
+    var head: String = ""
+    /// The commit the branch pointed to before it; empty for a new branch.
+    var before: String = ""
 
     var repoName: String { repo.split(separator: "/").last.map(String.init) ?? repo }
+}
+
+/// A file a push touched.
+struct GitHubFile: Equatable, Sendable, Codable {
+    var name: String
+    var additions: Int
+    var deletions: Int
 }
 
 /// The repositories the person chose not to see. Everything else is followed.
@@ -77,6 +90,28 @@ extension GitHubFeed {
                                 url: (item["html_url"] as? String).flatMap(URL.init(string:)))
         }
         return (object["total_commits"] as? Int ?? items.count, Array(commits))
+    }
+
+    /// The files of a comparison (or of one commit), most changed first.
+    static func files(fromCompare data: Data, limit: Int = 8) -> [GitHubFile] {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let items = object["files"] as? [[String: Any]] else { return [] }
+        let files = items.compactMap { item -> GitHubFile? in
+            guard let name = item["filename"] as? String else { return nil }
+            return GitHubFile(name: name, additions: item["additions"] as? Int ?? 0, deletions: item["deletions"] as? Int ?? 0)
+        }
+        return Array(files.sorted { $0.additions + $0.deletions > $1.additions + $1.deletions }.prefix(limit))
+    }
+
+    /// Branch name → commit, from `/repos/{repo}/git/matching-refs/heads`.
+    static func heads(from data: Data) -> [String: String] {
+        guard let items = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [:] }
+        var heads: [String: String] = [:]
+        for item in items {
+            guard let ref = item["ref"] as? String, let sha = (item["object"] as? [String: Any])?["sha"] as? String else { continue }
+            heads[ref.replacingOccurrences(of: "refs/heads/", with: "")] = sha
+        }
+        return heads
     }
 
     /// What to ask for the commits of a push: the comparison, or the head alone for a new branch.
