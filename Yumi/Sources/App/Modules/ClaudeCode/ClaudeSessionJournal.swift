@@ -27,7 +27,10 @@ struct SessionNote: Equatable, Sendable {
         guard let session = payload["session_id"] as? String else { return nil }
         let input = payload["tool_input"] as? [String: Any] ?? [:]
         let tool = payload["tool_name"] as? String ?? ""
-        switch payload["hook_event_name"] as? String ?? "" {
+        // Gemini CLI names the same moments its own way.
+        let aliases = ["BeforeTool": "PreToolUse", "AfterTool": "PostToolUse", "BeforeAgent": "UserPromptSubmit", "AfterAgent": "Stop"]
+        let event = payload["hook_event_name"] as? String ?? ""
+        switch aliases[event] ?? event {
         case "UserPromptSubmit":
             guard let prompt = (payload["prompt"] as? String).flatMap { SessionText.oneLine(SecretMask.mask($0)) }, !prompt.isEmpty else { return nil }
             return SessionNote(session: session, kind: .prompt(prompt))
@@ -83,15 +86,21 @@ struct ToolStep: Equatable, Sendable {
     init(tool: String, input: [String: Any]) {
         self.tool = tool
         let file = input["file_path"] as? String ?? input["notebook_path"] as? String ?? input["path"] as? String
+            ?? input["absolute_path"] as? String
+        // Claude Code's names first, then those of Codex, Gemini CLI and the others.
         switch tool {
-        case "Edit", "MultiEdit", "Write", "NotebookEdit": kind = .edit
-        case "Read": kind = .read
-        case "Bash": kind = .command
-        case "Grep", "Glob", "LS": kind = .search
-        case "WebSearch", "WebFetch": kind = .web
+        case "Edit", "MultiEdit", "Write", "NotebookEdit", "apply_patch", "replace", "edit_file", "write_file": kind = .edit
+        case "Read", "read_file", "read_many_files": kind = .read
+        case "Bash", "shell", "exec_command", "local_shell", "run_shell_command": kind = .command
+        case "Grep", "Glob", "LS", "glob", "grep", "search_file_content", "list_directory": kind = .search
+        case "WebSearch", "WebFetch", "google_web_search", "web_search", "web_fetch": kind = .web
         default: kind = .other
         }
         if let command = input["command"] as? String {
+            target = SessionText.oneLine(SecretMask.mask(command), limit: 60) ?? ""
+        } else if let words = input["command"] as? [String] {
+            // Codex gives the command as its words: ["bash", "-lc", "git status"].
+            let command = ["bash", "zsh", "sh"].contains(words.first ?? "") ? (words.last ?? "") : words.joined(separator: " ")
             target = SessionText.oneLine(SecretMask.mask(command), limit: 60) ?? ""
         } else if let file {
             target = URL(fileURLWithPath: file).lastPathComponent
@@ -107,11 +116,11 @@ struct ToolStep: Equatable, Sendable {
     var sentence: String {
         let verb: String
         switch kind {
-        case .edit:    verb = tool == "Write" ? loc("Écrit") : loc("Modifie")
+        case .edit:    verb = tool == "Write" || tool == "write_file" ? loc("Écrit") : loc("Modifie")
         case .read:    verb = loc("Lit")
         case .command: verb = loc("Lance")
         case .search:  verb = loc("Cherche")
-        case .web:     verb = tool == "WebFetch" ? loc("Lit la page") : loc("Cherche sur le web")
+        case .web:     verb = tool == "WebFetch" || tool == "web_fetch" ? loc("Lit la page") : loc("Cherche sur le web")
         case .other:   verb = tool
         }
         return target.isEmpty ? verb : "\(verb) \(target)"

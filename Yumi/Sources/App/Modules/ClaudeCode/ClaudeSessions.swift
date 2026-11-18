@@ -6,7 +6,7 @@ enum ClaudeSessions {
     /// before the others; then the most recently active.
     static func ordered(_ sessions: [SessionID: Session]) -> [Session] {
         sessions.values
-            .filter { $0.agent.id == ClaudeHookTranslator.agent.id }
+            .filter { $0.agent.kind == .coding }
             .sorted { a, b in
                 let waitingA = a.status == .waitingForUser, waitingB = b.status == .waitingForUser
                 if waitingA != waitingB { return waitingA }
@@ -24,19 +24,20 @@ enum ClaudeSessions {
     /// What the session is doing, said by Yumi, who watches over the shoulder.
     static func phrase(_ session: Session) -> String {
         let project = projectName(session)
+        let agent = AgentCatalog.speaker(of: session.agent)
         switch session.activity {
-        case .requestingPermission: return loc("Claude veut ton accord sur \(project). Je laisse passer ?")
-        case .asking:               return loc("Claude a une question pour toi sur \(project).")
-        case .working(let tool):    return loc("Claude \(ClaudeToolPhrase.sentence(tool)) sur \(project).")
-        case .thinking:             return loc("Claude réfléchit sur \(project).")
+        case .requestingPermission: return loc("\(agent) veut ton accord sur \(project). Je laisse passer ?")
+        case .asking:               return loc("\(agent) a une question pour toi sur \(project).")
+        case .working(let tool):    return loc("\(agent) \(ClaudeToolPhrase.sentence(tool)) sur \(project).")
+        case .thinking:             return loc("\(agent) réfléchit sur \(project).")
         case .idle:
             switch session.status {
-            case .rateLimited:    return loc("Claude a atteint sa limite sur \(project). On attend.")
+            case .rateLimited:    return loc("\(agent) a atteint sa limite sur \(project). On attend.")
             case .errored:        return loc("Ça a planté sur \(project). Tu veux voir où ?")
             case .completed:      return loc("C'est passé sur \(project).")
-            case .waitingForUser: return loc("Claude t'attend sur \(project).")
-            case .running:        return session.isTurnActive ? loc("Claude avance sur \(project). Je surveille.")
-                                                              : loc("Claude attend ton message sur \(project).")
+            case .waitingForUser: return loc("\(agent) t'attend sur \(project).")
+            case .running:        return session.isTurnActive ? loc("\(agent) avance sur \(project). Je surveille.")
+                                                              : loc("\(agent) attend ton message sur \(project).")
             }
         }
     }
@@ -65,11 +66,14 @@ enum ClaudeSessions {
     }
 
     private static func plainSnapshot(_ sessions: [Session]) -> ModuleSnapshot {
-        var snapshot = ModuleSnapshot(id: "claude-code", name: "Claude Code", colorHex: "#FFB547",
+        var snapshot = ModuleSnapshot(id: "claude-code", name: loc("Agents"), colorHex: "#FFB547",
                                       status: loc("au repos"), title: loc("Personne ne code en ce moment."),
-                                      subtitle: loc("Lance Claude Code, je regarderai."),
+                                      subtitle: loc("Lance Claude Code, Codex ou Gemini, je regarderai."),
                                       primaryAction: loc("Voir"), secondaryAction: nil)
         guard let featured = sessions.first else { return snapshot }
+        // The agent at work gives the module its name; several different ones, "Agents".
+        let agents = Set(sessions.map(\.agent.id))
+        if agents.count == 1 { snapshot.name = featured.agent.name }
 
         let waiting = sessions.filter { $0.status == .waitingForUser }.count
         snapshot.status = FrenchText.count(sessions.count, "session", "sessions")
@@ -110,7 +114,8 @@ enum ClaudeSessions {
         if let count {
             text = approval ? loc("\(count) · accord sur \(name)") : loc("\(count) · \(name) t'attend")
         } else {
-            text = approval ? loc("Claude veut ton accord sur \(name)") : loc("Claude t'attend sur \(name)")
+            let agent = AgentCatalog.speaker(of: session.agent)
+            text = approval ? loc("\(agent) veut ton accord sur \(name)") : loc("\(agent) t'attend sur \(name)")
         }
         return ModuleLive(text: text, priority: ModuleLivePriority.attention,
                           controls: [ModuleControl(id: ModuleAction.primary.rawValue, symbol: "eye.fill", label: loc("Voir"))])

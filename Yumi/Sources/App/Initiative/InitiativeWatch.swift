@@ -31,6 +31,8 @@ struct InitiativeWatch: Codable, Equatable, Sendable {
     private var meetingsSaid: [String] = []
     /// Sessions waiting for the person right now.
     private(set) var waiting: Set<String> = []
+    /// How Yumi names the agent of the latest session event ("Codex"). nil before any.
+    private(set) var agentSpeaker: String?
 
     init() {}
 
@@ -82,6 +84,7 @@ struct InitiativeWatch: Codable, Equatable, Sendable {
     /// A session event went through the engine. `sessions` is the state after it.
     mutating func session(_ event: YumiEvent, sessions: [SessionID: Session], now: Date) -> Occasion? {
         waiting = Set(sessions.values.filter { $0.status == .waitingForUser }.map(\.id.value))
+        if let id = event.sessionID, let session = sessions[id] { agentSpeaker = AgentCatalog.speaker(of: session.agent) }
         switch event {
         case .promptSubmitted(let id, _):
             promptAt[id.value] = now

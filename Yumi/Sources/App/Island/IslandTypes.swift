@@ -105,6 +105,8 @@ struct AgentTask: Identifiable, Equatable {
     var emote: BotEmote? = nil
     var pillBadge: PillBadge? = nil  // alert badge shown on pill when not focused
     var sessionCwd: String?  = nil  // last known working directory (Claude Code sessions)
+    var agentName: String = "Claude Code"  // the coding agent of the session shown: "Codex", "Gemini CLI"
+    var speaker: String = "Claude"         // how Yumi names it in a sentence: "Codex modifie main.swift"
 }
 
 enum AgentSource: Equatable {

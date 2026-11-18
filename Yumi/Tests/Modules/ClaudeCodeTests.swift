@@ -181,10 +181,12 @@ import Foundation
         #expect(ClaudeSessions.projectName(sessions[SessionID("a")]!) == "Yumi")
     }
 
-    @Test func sessionsOfOtherAgentsAreLeftOut() {
-        let other = Agent(id: AgentID("cursor"), name: "Cursor", kind: .coding)
-        let sessions = SessionReducer.apply(.sessionStarted(SessionID("x"), other, title: "x"), to: [:])
-        #expect(ClaudeSessions.ordered(sessions).isEmpty)
+    @Test func everyCodingAgentIsInAndTheOthersAreLeftOut() {
+        let cursor = Agent(id: AgentID("cursor-agent"), name: "Cursor", kind: .coding)
+        let music = Agent(id: AgentID("spotify"), name: "Spotify", kind: .music)
+        var sessions = SessionReducer.apply(.sessionStarted(SessionID("x"), cursor, title: "x"), to: [:])
+        sessions = SessionReducer.apply(.sessionStarted(SessionID("m"), music, title: "m"), to: sessions)
+        #expect(ClaudeSessions.ordered(sessions).map(\.id.value) == ["x"])
     }
 
     @Test func hosts() {

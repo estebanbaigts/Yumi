@@ -714,9 +714,8 @@ final class ClaudeTaskMirror {
     private var focused: Bool { state.focusId == Self.taskID }
 
     func receive(_ event: YumiEvent, sessions: [SessionID: Session]) {
-        // Other agents will get their own display; this one only speaks for Claude Code.
-        if let id = event.sessionID, let session = sessions[id],
-           session.agent.id != ClaudeHookTranslator.agent.id { return }
+        // Every coding agent that speaks through hooks: Claude Code, Codex, Gemini CLI…
+        if let id = event.sessionID, let session = sessions[id], session.agent.kind != .coding { return }
 
         var approval: (PermissionRequest, SessionID)?
 
@@ -793,6 +792,8 @@ final class ClaudeTaskMirror {
         Self.origins = sessions.compactMapValues(\.origin)
         if let session = featured {
             task.name = ClaudeSessions.projectName(session)
+            task.agentName = session.agent.name
+            task.speaker = AgentCatalog.speaker(of: session.agent)
             if let cwd = session.origin?.workingDirectory, !cwd.isEmpty { task.sessionCwd = cwd }
             task.steps = steps[session.id] ?? []
             task.stepIndex = max(0, task.steps.count - 1)
@@ -918,6 +919,29 @@ private func hookScriptTemplate(header: String, summary: String, socketPath: Str
 # \(summary)
 import sys, json, os, socket, subprocess
 
+def ancestors():
+    # The command lines of the processes above the hook, nearest first: the app tells from
+    # them which agent is at work (Claude Code, Codex, Gemini CLI...). One ps for all of them.
+    try:
+        out = subprocess.run(['/bin/ps', '-A', '-o', 'pid=,ppid=,args='],
+                             capture_output=True, text=True, timeout=0.5).stdout
+        table = {}
+        for line in out.splitlines():
+            parts = line.split(None, 2)
+            if len(parts) >= 2:
+                table[parts[0]] = (parts[1], parts[2][:200] if len(parts) > 2 else '')
+        found = []
+        pid = str(os.getppid())
+        for _ in range(8):
+            if pid not in table or pid in ('0', '1'):
+                break
+            parent, args = table[pid]
+            found.append(args)
+            pid = parent
+        return found
+    except Exception:
+        return []
+
 def find_tty():
     # The hook runs without a terminal; the claude process above it holds the one of its tab.
     try:
@@ -951,6 +975,7 @@ def main():
     payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
     payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
     payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
+    payload.setdefault('yumi_processes', ancestors())
     if 'tty' not in payload:
         payload['tty'] = find_tty()
     if 'cwd' not in payload or not payload['cwd']:
