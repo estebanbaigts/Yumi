@@ -89,6 +89,12 @@ struct ClaudeCodeSettings: View {
                     }
                 }
             }
+
+            #if !APPSTORE
+            // The other coding agents, through the same hooks.
+            AgentHooksSection(target: .codex)
+            AgentHooksSection(target: .gemini)
+            #endif
         }
     }
 

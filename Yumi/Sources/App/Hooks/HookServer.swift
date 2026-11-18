@@ -420,16 +420,8 @@ final class HookServer: @unchecked Sendable {
 
     // MARK: - settings.json helpers
 
-    /// Events registered in settings.json, with their timeout in seconds.
-    private static let hookEvents: [(String, Int)] = [
-        ("SessionStart", 10), ("SessionEnd", 10),
-        ("UserPromptSubmit", 10),
-        ("PreToolUse", 10), ("PostToolUse", 10), ("PostToolUseFailure", 10),
-        ("PermissionRequest", 120),
-        ("Notification", 10),
-        ("Stop", 10), ("StopFailure", 10),
-        ("SubagentStart", 10), ("SubagentStop", 10),
-    ]
+    /// Events registered in Claude Code's settings.json, with their timeout in seconds.
+    private static let hookEvents: [(String, Int)] = HookTarget.claudeCode.pairs
 
     private static var defaultSettingsURL: URL {
         FileManager.default.homeDirectoryForCurrentUser
@@ -560,6 +552,60 @@ final class HookServer: @unchecked Sendable {
         let newData = try JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys])
         try newData.write(to: settingsURL, options: .atomic)
     }
+
+    // MARK: - Other agents' hooks (Codex, Gemini CLI)
+
+    #if !APPSTORE
+    /// Changes shown and waiting for confirmation, by agent.
+    private var pendingAgentHooks: [String: Data] = [:]
+
+    private static func settingsURL(_ target: HookTarget) -> URL {
+        target.url(home: FileManager.default.homeDirectoryForCurrentUser)
+    }
+
+    /// The agent's folder (~/.codex, ~/.gemini) is on this Mac: the agent was used here.
+    static func agentFound(_ target: HookTarget) -> Bool {
+        FileManager.default.fileExists(atPath: settingsURL(target).deletingLastPathComponent().path)
+    }
+
+    static func hooksInstalled(for target: HookTarget) -> Bool {
+        HookSettings.installed(try? Data(contentsOf: settingsURL(target)), event: target.marker, isOwn: AppIdentity.isOwnHookCommand)
+    }
+
+    /// The file as it will be with Yumi's hooks, without writing it: `writeHooks(for:)` writes it.
+    /// A file that cannot be read as a JSON object is refused, never replaced.
+    func previewHooks(for target: HookTarget) throws -> String {
+        let url = Self.settingsURL(target)
+        let existing: Data?
+        if FileManager.default.fileExists(atPath: url.path) {
+            do { existing = try Data(contentsOf: url) } catch { throw HookSettingsReadError(path: url.path) }
+        } else {
+            existing = nil
+        }
+        let merged = try HookSettings.merge(existing, command: AppIdentity.hookCommand, events: target.pairs,
+                                            isOwn: AppIdentity.isOwnHookCommand, isLegacy: { _ in false })
+        pendingAgentHooks[target.id] = merged.data
+        return String(data: merged.data, encoding: .utf8) ?? ""
+    }
+
+    /// Writes what `previewHooks(for:)` showed, after a dated copy of the old file.
+    func writeHooks(for target: HookTarget) throws {
+        guard let data = pendingAgentHooks.removeValue(forKey: target.id) else { return }
+        try Self.backUpAndWrite(data, to: Self.settingsURL(target))
+    }
+
+    func cancelHooks(for target: HookTarget) {
+        pendingAgentHooks[target.id] = nil
+    }
+
+    /// Removes Yumi's hooks from the agent's file, after a dated copy of it. The rest is kept.
+    func uninstallHooks(for target: HookTarget) throws {
+        let url = Self.settingsURL(target)
+        guard let data = try? Data(contentsOf: url) else { return }
+        guard let cleaned = try HookSettings.removing(data, isOwn: AppIdentity.isOwnHookCommand) else { return }
+        try Self.backUpAndWrite(cleaned, to: url)
+    }
+    #endif
 
     // MARK: - App Store: hooks via security-scoped bookmark
 

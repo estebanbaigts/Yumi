@@ -13184,6 +13184,106 @@
           }
         }
       }
+    },
+    "Ce fichier n'est pas un JSON valide. Corrige-le (ou supprime-le s'il est vide), puis réessaie : je n'y ai pas touché.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file isn't valid JSON. Fix it (or delete it if it's empty), then try again: I didn't touch it."
+          }
+        }
+      }
+    },
+    "Ce fichier ne contient pas un objet JSON. Je n'y ai pas touché.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file doesn't hold a JSON object. I didn't touch it."
+          }
+        }
+      }
+    },
+    "Dans ce fichier, « %@ » n'a pas la forme attendue. Je n'y ai pas touché.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In this file, “%@” doesn't have the expected shape. I didn't touch it."
+          }
+        }
+      }
+    },
+    "Pas trouvé sur ce Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not found on this Mac"
+          }
+        }
+      }
+    },
+    "J'écris dans %@, après t'avoir montré le changement. Une copie de l'ancien fichier est gardée à côté.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I write to %@ after showing you the change. A copy of the old file is kept next to it."
+          }
+        }
+      }
+    },
+    "Gemini CLI ne passe pas ses demandes d'accord par les hooks : je suis ses sessions, tu réponds dans le terminal.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemini CLI does not send its approval requests through hooks: I follow its sessions, you answer in the terminal."
+          }
+        }
+      }
+    },
+    "Au prochain lancement, Codex peut te demander d'approuver ces hooks.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next time it starts, Codex may ask you to approve these hooks."
+          }
+        }
+      }
+    },
+    "Je n'ai pas pu lire %@ : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I could not read %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "C'est écrit. Relance %@ pour que je voie ses sessions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done. Restart %@ so I can see its sessions."
+          }
+        }
+      }
+    },
+    "Hooks retirés. L'ancien fichier est gardé à côté.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hooks removed. The old file is kept next to it."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
