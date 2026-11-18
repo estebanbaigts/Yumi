@@ -13,6 +13,7 @@ final class ModuleRegistry {
     private var running: Set<String> = []
     private var published: [ModuleSnapshot]?
     private var actionObserver: NSObjectProtocol?
+    private var profilesObserver: NSObjectProtocol?
     /// The views' copy of the lineup, kept up to date.
     private weak var shared: ModuleLineup?
 
@@ -80,13 +81,34 @@ final class ModuleRegistry {
                 self.perform(action, on: id)
             }
         }
+        profilesObserver = NotificationCenter.default.addObserver(
+            forName: .profilesChosen, object: nil, queue: .main
+        ) { [weak self] note in
+            let ids = note.userInfo?["modules"] as? [String] ?? []
+            MainActor.assumeIsolated { self?.adoptProfiles(ids) }
+        }
         applySelection()
+    }
+
+    /// True once the modules were chosen (by the person, or by a profile at the first launch).
+    static func modulesWereChosen(in defaults: UserDefaults = .standard) -> Bool {
+        defaults.stringArray(forKey: selectionKey) != nil
+    }
+
+    /// The modules of the profiles chosen at the first launch. Ignored once the modules were
+    /// chosen: an update, or a first name asked again, never reshuffles them.
+    func adoptProfiles(_ ids: [String]) {
+        guard !Self.modulesWereChosen(in: defaults), !ids.isEmpty else { return }
+        selection = ModuleSelection(stored: ids, available: availableIDs)
+        persistAndApply()
     }
 
     /// Stops every module and stops listening to the island.
     func stop() {
         if let actionObserver { NotificationCenter.default.removeObserver(actionObserver) }
         actionObserver = nil
+        if let profilesObserver { NotificationCenter.default.removeObserver(profilesObserver) }
+        profilesObserver = nil
         for module in modules where running.contains(module.id) { module.stop() }
         running.removeAll()
     }

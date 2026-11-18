@@ -398,6 +398,10 @@ enum IslandDemo {
             }
         case "welcome":
             controller.expand(to: .welcome)
+        case "welcome-activity":
+            // The second step of the first launch, without typing a first name
+            WelcomeActivity.startsOnActivity = true
+            controller.expand(to: .welcome)
         case "remark-short":
             state.remark = YumiRemark(id: "d1", text: "Deux heures d'affilée. Une pause ?", mood: .worried, duration: 30)
             controller.collapse()

@@ -27,6 +27,9 @@ extension Notification.Name {
     /// Posted by the island when the person gives or changes their first name.
     /// userInfo: ["name": String]
     static let memorySetName = AppIdentity.notification("memorySetName")
+    /// Posted by the island for something the person said about themselves (their activity, at
+    /// the first launch). userInfo: ["text": String]
+    static let memoryRemember = AppIdentity.notification("memoryRemember")
     /// Posted by the island to correct one entry. userInfo: ["id": String, "text": String]
     static let memoryEdit = AppIdentity.notification("memoryEdit")
     /// Posted by the island to erase one entry. userInfo: ["id": String]

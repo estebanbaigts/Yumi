@@ -628,3 +628,12 @@ Décision de l'auteur, le 18 novembre 2026 : une demande d'agent de code peut pa
 - La carte d'accord affiche cette phrase, la commande brute dessous, et « Toujours autoriser » disparaît pour ce qui est risqué (suppression définitive, push, installation, internet, administrateur).
 - Une demande laissée passer est notée dans la session (« Laissé passer : lancer les tests »).
 
+## Premier lancement selon la personne (chantier 4, branche `yumi/premier-lancement`)
+
+Après le prénom, une deuxième étape demande « Et tu fais quoi, surtout, sur ton Mac ? ». Validé avec l'auteur le 18 novembre 2026 : une liste large plutôt que cinq profils, plusieurs réponses possibles, et les animations du « je prends… » gardées pour tout le monde (la phrase devient « Quand je bosse pour toi, je prends »).
+
+- `Modules/WorkProfiles.swift` : 12 profils (code, commerce, artisan ou terrain, freelance, équipe, création, vidéo, musique, études, enseignement, vie perso, un peu de tout), leurs modules (les cinq premiers dans l'île), et les mots qui y mènent depuis le champ « Autre ». Plusieurs profils : le premier module de chacun, puis le deuxième, l'activité pro avant la vie perso.
+- `ModuleRegistry.adoptProfiles` n'applique ces modules que s'ils n'ont jamais été choisis : une mise à jour ou un prénom redemandé ne les déplace pas.
+- Le profil et le mot libre vont dans la mémoire locale, du côté de la personne.
+- « Je code » est coché d'avance quand un agent de code est sur le Mac, jamais en mode tournage.
+

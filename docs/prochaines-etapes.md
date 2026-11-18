@@ -47,6 +47,7 @@ Yumi demande ce que la personne fait dans la vie et ne montre que les modules ut
 
 - Où : le premier lancement (`Island/IslandWelcome.swift`, `Island/IslandHabitPicker.swift`), `Modules/ModuleSelection.swift` (`defaultIDs`).
 - Vérifier : en mode tournage (`YUMI_STUDIO=1`) pour ne rien lire de personnel, et sur un compte macOS neuf.
+- Fait le 18 novembre 2026 (branche `yumi/premier-lancement`) : 12 profils et un champ libre, plusieurs réponses, modules appliqués une seule fois (`Modules/WorkProfiles.swift`). Reste : un bouton « Refaire le premier lancement » dans les réglages, et l'essai sur un compte macOS neuf.
 
 ### 5. La refonte de l'île
 

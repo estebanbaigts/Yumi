@@ -40,6 +40,10 @@ final class MemoryStore {
             guard let name = info["name"] as? String else { return }
             store.change { $0.setName(name) }
         }
+        listen(.memoryRemember) { store, info in
+            guard let text = info["text"] as? String else { return }
+            store.change { $0.remember(text, kind: .person) }
+        }
         listen(.memoryEdit) { store, info in
             guard let id = info["id"] as? String, let text = info["text"] as? String else { return }
             store.change { $0.edit(id: id, text: text) }

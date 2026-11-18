@@ -31,6 +31,19 @@ private final class FakeModule: YumiModule {
         return defaults
     }
 
+    @Test func theProfilesOfTheFirstLaunchApplyOnceAndNeverOverAChoice() {
+        let defaults = makeDefaults()
+        let modules = ["claude-code", "github", "gmail", "agenda", "notes", "weather"].map(FakeModule.init)
+        let registry = ModuleRegistry(modules: modules, defaults: defaults) { _ in }
+        #expect(!ModuleRegistry.modulesWereChosen(in: defaults))
+        registry.adoptProfiles(["gmail", "agenda", "notes", "unknown"])
+        #expect(registry.selection.ids == ["gmail", "agenda", "notes"])
+        #expect(ModuleRegistry.modulesWereChosen(in: defaults))
+        // A second time (a first name asked again later): the choice stays.
+        registry.adoptProfiles(["claude-code", "github"])
+        #expect(registry.selection.ids == ["gmail", "agenda", "notes"])
+    }
+
     @Test func startsOnlyTheSelectedModulesAndPublishesInSelectionOrder() {
         let defaults = makeDefaults()
         defaults.set(["focus", "claude-code"], forKey: "selectedModules")
