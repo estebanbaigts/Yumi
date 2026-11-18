@@ -615,3 +615,7 @@ Quand Claude Code demande quelque chose, l'île propose d'aller voir dans la ses
 | Île | La carte d'accord de Claude Code a un bouton à côté de « Toujours autoriser », qui ouvre la session de cette demande. « Voir » sur une question et les lignes de sessions vont aussi au bon onglet. |
 | Nom du bouton | Il nomme l'application où tourne la session, jamais « le terminal » en général : « Ouvrir iTerm2 », « Ouvrir Ghostty », « Ouvrir Cursor » (`SessionHost.appName` : une table des hôtes connus, sinon le nom de l'application installée). Un hôte qu'on ne sait pas nommer garde « Ouvrir le terminal », « l'éditeur » ou « la session ». Le bouton d'un terminal garde son symbole de terminal. |
 | App Store | Aucun Apple Event (bac à sable) : l'application passe devant, comme avant. |
+
+## Après la 0.1.0-beta.1 (18 novembre 2026)
+
+La bêta est publiée, signée et notarisée. La suite, les points à régler et les décisions en attente sont dans `docs/prochaines-etapes.md`.

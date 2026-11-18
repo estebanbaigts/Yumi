@@ -125,3 +125,23 @@ import Foundation
         #expect(ClaudeHookTranslator.short("npm test") == "npm test")
     }
 }
+
+@Suite struct AgentSessionRowsTests {
+    private func session(_ id: String, _ agent: KnownAgent, cwd: String) -> Session {
+        var sessions = SessionReducer.apply(.sessionStarted(SessionID(id), agent.agent, title: id), to: [:])
+        sessions = SessionReducer.apply(.sessionLocated(SessionID(id), SessionOrigin(workingDirectory: cwd, hostBundleID: "", hostName: "")), to: sessions)
+        return sessions[SessionID(id)]!
+    }
+
+    @Test func severalAgentsEachLineSaysWhose() {
+        var board = SessionBoard()
+        board.update([session("a", AgentCatalog.codex, cwd: "/dev/site"), session("b", AgentCatalog.gemini, cwd: "/dev/boulangerie")])
+        #expect(Set(board.rows().map(\.title)) == ["site · Codex", "boulangerie · Gemini"])
+    }
+
+    @Test func oneAgentKeepsTheProjectAlone() {
+        var board = SessionBoard()
+        board.update([session("a", AgentCatalog.claudeCode, cwd: "/dev/site"), session("b", AgentCatalog.claudeCode, cwd: "/dev/api")])
+        #expect(Set(board.rows().map(\.title)) == ["site", "api"])
+    }
+}
