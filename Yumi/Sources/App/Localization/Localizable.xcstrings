@@ -13284,6 +13284,446 @@
           }
         }
       }
+    },
+    "lire des fichiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "read files"
+          }
+        }
+      }
+    },
+    "modifier des fichiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "edit files"
+          }
+        }
+      }
+    },
+    "Ça se défait avec git si le projet est suivi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git can undo it if the project is tracked."
+          }
+        }
+      }
+    },
+    "aller sur le web": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "go on the web"
+          }
+        }
+      }
+    },
+    "lancer un sous-agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "start a sub-agent"
+          }
+        }
+      }
+    },
+    "utiliser %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "use %@"
+          }
+        }
+      }
+    },
+    "lancer une commande": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "run a command"
+          }
+        }
+      }
+    },
+    "lancer un script venu d'internet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "run a script from the internet"
+          }
+        }
+      }
+    },
+    "Ça ne se défait pas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It can't be undone."
+          }
+        }
+      }
+    },
+    "lancer %@ commandes, dont : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "run %1$@ commands, including: %2$@"
+          }
+        }
+      }
+    },
+    "agir en administrateur du Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "act as the Mac administrator"
+          }
+        }
+      }
+    },
+    "Ça peut toucher tout le Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It can affect the whole Mac."
+          }
+        }
+      }
+    },
+    "contacter internet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reach the internet"
+          }
+        }
+      }
+    },
+    "déplacer %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "move %@"
+          }
+        }
+      }
+    },
+    "copier %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "copy %@"
+          }
+        }
+      }
+    },
+    "créer %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "create %@"
+          }
+        }
+      }
+    },
+    "changer les droits de %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "change the permissions of %@"
+          }
+        }
+      }
+    },
+    "ouvrir %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "open %@"
+          }
+        }
+      }
+    },
+    "arrêter un programme": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stop a program"
+          }
+        }
+      }
+    },
+    "lancer les tests": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "run the tests"
+          }
+        }
+      }
+    },
+    "compiler le projet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "build the project"
+          }
+        }
+      }
+    },
+    "Ça se refait.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It can be redone."
+          }
+        }
+      }
+    },
+    "lancer %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "run %@"
+          }
+        }
+      }
+    },
+    "supprimer beaucoup de fichiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "delete many files"
+          }
+        }
+      }
+    },
+    "supprimer %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "delete %@"
+          }
+        }
+      }
+    },
+    "Ça se reconstruit.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It gets rebuilt."
+          }
+        }
+      }
+    },
+    "supprimer des fichiers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "delete files"
+          }
+        }
+      }
+    },
+    "regarder l'historique git": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "look at the git history"
+          }
+        }
+      }
+    },
+    "écraser l'historique sur le serveur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "overwrite the history on the server"
+          }
+        }
+      }
+    },
+    "Ça ne se défait pas, et les autres le verront.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It can't be undone, and others will see it."
+          }
+        }
+      }
+    },
+    "pousser sur le serveur git": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "push to the git server"
+          }
+        }
+      }
+    },
+    "Les autres le verront.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Others will see it."
+          }
+        }
+      }
+    },
+    "effacer des changements pas encore enregistrés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "erase changes not saved yet"
+          }
+        }
+      }
+    },
+    "enregistrer un commit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "make a commit"
+          }
+        }
+      }
+    },
+    "Ça se défait tant que ce n'est pas poussé.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It can be undone until it's pushed."
+          }
+        }
+      }
+    },
+    "récupérer du code depuis le serveur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "fetch code from the server"
+          }
+        }
+      }
+    },
+    "changer le dépôt git (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "change the git repository (%@)"
+          }
+        }
+      }
+    },
+    "installer des paquets depuis internet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "install packages from the internet"
+          }
+        }
+      }
+    },
+    "Ça se désinstalle.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It can be uninstalled."
+          }
+        }
+      }
+    },
+    "Laissé passer : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let through: %@"
+          }
+        }
+      }
+    },
+    "%@ veut %@. Je laisse passer ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ wants to %2$@. Shall I let it through?"
+          }
+        }
+      }
+    },
+    "Laisser passer tout seul ce qui ne change rien": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let through what changes nothing"
+          }
+        }
+      }
+    },
+    "Lire des fichiers, regarder git et lancer les tests passent sans ton clic, et la session le note. Supprimer, pousser, installer, contacter internet ou agir en administrateur attend toujours ta réponse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading files, looking at git and running the tests pass without your click, and the session notes it. Deleting, pushing, installing, reaching the internet or acting as administrator always waits for your answer."
+          }
+        }
+      }
+    },
+    "Tu as refusé : %@. Voilà ce qu'il a fait ensuite.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You refused: %@. Here's what it did next."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

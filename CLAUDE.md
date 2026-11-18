@@ -35,6 +35,6 @@ Build in Debug before every commit. The Debug and App Store builds have no warni
 - No telemetry. Network calls only to services the user configured.
 - Never block Claude Code: if the app doesn't answer, the hook exits immediately.
 - Never overwrite `~/.claude/settings.json`: dated backup, merge, show the diff, write only after the user confirms.
-- Never send an email or approve a Claude Code permission without an explicit click.
+- Never send an email without an explicit click. Never approve a coding agent's permission without an explicit click, with one exception the person turns on in Settings › Claude Code (off by default): requests `Permissions/AgentRequestReader.swift` reads as harmless (reading files, looking at git, running the tests) pass on their own and the session notes it. Deleting, pushing, installing, reaching the internet, `sudo` and anything it does not know always wait for a click. Decided by the author on 18 November 2026 (`docs/journal.md`).
 - Keep `LICENSE` with the original copyright notice.
 - Contributor rules and the review checklist are in `CONTRIBUTING.md`.

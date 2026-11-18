@@ -619,3 +619,12 @@ Quand Claude Code demande quelque chose, l'île propose d'aller voir dans la ses
 ## Après la 0.1.0-beta.1 (18 novembre 2026)
 
 La bêta est publiée, signée et notarisée. La suite, les points à régler et les décisions en attente sont dans `docs/prochaines-etapes.md`.
+
+## Garde-fou : chaque demande d'accord expliquée (chantier 3, branche `yumi/garde-fou`)
+
+Décision de l'auteur, le 18 novembre 2026 : une demande d'agent de code peut passer sans clic quand elle ne change rien, si la personne l'a activé (Réglages › Claude Code › « Laisser passer tout seul ce qui ne change rien », désactivé par défaut). Ça couvre la lecture de fichiers, l'historique git et les tests. Supprimer, pousser, installer, contacter internet, `sudo` et toute commande inconnue attendent toujours un clic. La règle de `CLAUDE.md` est changée en ce sens.
+
+- `Permissions/AgentRequestReader.swift` lit l'outil et la commande et dit en clair ce que fait la demande (« supprimer build », « pousser sur le serveur git ») et si elle se défait. Une chaîne de commandes parle par sa partie la plus risquée ; une redirection, une substitution, un `| sh`, `sed -i`, `find -delete` ne sont jamais anodins.
+- La carte d'accord affiche cette phrase, la commande brute dessous, et « Toujours autoriser » disparaît pour ce qui est risqué (suppression définitive, push, installation, internet, administrateur).
+- Une demande laissée passer est notée dans la session (« Laissé passer : lancer les tests »).
+

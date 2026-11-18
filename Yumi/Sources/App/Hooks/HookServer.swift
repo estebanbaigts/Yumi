@@ -142,6 +142,11 @@ final class HookServer: @unchecked Sendable {
             heldLock.withLock { held[requestID] = socket }
             ingress.post(events)
         } else {
+            // The session moved on: a request still on screen was answered in the terminal.
+            if ClaudeHookTranslator.movesOn.contains(eventName), let session = payload["session_id"] as? String {
+                let subject = ClaudeHookTranslator.finishesATool.contains(eventName) ? ClaudeHookTranslator.approvalSubject(payload) : nil
+                Task { @MainActor in self.withdrawAnsweredElsewhere(session: SessionID(session), subject: subject) }
+            }
             ingress?.post(ClaudeHookTranslator.events(for: payload))
             sendLine(fd: fd, text: #"{"ok":true}"#)
             close(fd)
@@ -156,6 +161,17 @@ final class HookServer: @unchecked Sendable {
     fileprivate func presentApproval(_ request: PermissionRequest, session sessionID: SessionID) {
         guard let socket = heldLock.withLock({ held[request.id] }) else { return }
         nbLog("PermissionRequest \(request.tool): \(request.command)")
+
+        // The person's rule (Settings › Claude Code): what changes nothing passes on its own,
+        // and the session says so. Everything else waits for a click.
+        let reading = AgentRequestReader.read(tool: request.tool, command: request.command)
+        if AgentRules.letsThrough(reading, enabled: UserDefaults.standard.bool(forKey: AgentRules.harmlessKey)) {
+            nbLog("PermissionRequest let through (harmless): \(reading.action)")
+            heldLock.withLock { held.removeValue(forKey: request.id) }?.finish(#"{"permissionDecision":"allow"}"#)
+            ingress?.post(.permissionResolved(sessionID, requestID: request.id))
+            ingress?.post(.activityNoted(sessionID, loc("Laissé passer : \(reading.action)")))
+            return
+        }
 
         // One request at a time per session: an older one goes back to the terminal.
         for stale in approvals where stale.sessionID == sessionID {
@@ -180,6 +196,18 @@ final class HookServer: @unchecked Sendable {
         }
 
         if approvals.count == 1 { showApproval(approvals[0]) }
+    }
+
+    /// Takes off screen the hook requests of a session that moved on without waiting for Yumi:
+    /// they were answered in the terminal. With a `subject` (a tool that just ran), only the
+    /// request for that very tool and command; without (the turn ended, a new request), all.
+    @MainActor
+    private func withdrawAnsweredElsewhere(session: SessionID, subject: (tool: String, command: String)?) {
+        for approval in approvals where approval.sessionID == session && approval.respond == nil && !approval.isAgent {
+            if let subject, approval.info.tool != subject.tool || approval.info.command != subject.command { continue }
+            nbLog("Approval answered elsewhere: \(approval.info.tool): \(approval.info.command)")
+            resolveApproval(approval.requestID, decision: "ask")
+        }
     }
 
     /// Queues a permission request of the chat's own Claude Code session. It is shown and answered
@@ -281,6 +309,11 @@ final class HookServer: @unchecked Sendable {
         if let requestID, requestID != current.requestID {
             nbLog("Approval answer dropped: \(requestID) is no longer in front")
             return
+        }
+        nbLog("Approval answered by a click: \(decision) (\(current.info.tool): \(current.info.command))")
+        if decision == "deny", current.respond == nil, !current.isAgent {
+            // At the end of the turn, the island says what was refused and what the agent answered.
+            ClaudeTaskMirror.refusals[current.sessionID] = AgentRequestReader.read(tool: current.info.tool, command: current.info.command).action
         }
         resolveApproval(current.requestID, decision: decision)
     }
@@ -774,6 +807,7 @@ final class ClaudeTaskMirror {
 
         case .promptSubmitted(let id, let text):
             celebrating[id] = nil
+            Self.refusals[id] = nil
             if !text.isEmpty { append(String(text.prefix(60)), to: id) }
             if state.isPresent { HookServer.expandIfNeeded(to: .overview) }
 
@@ -795,7 +829,9 @@ final class ClaudeTaskMirror {
         case .taskCompleted(let id):
             SoundEngine.shared.play("finish")
             celebrate(id)
-            if focused {
+            Self.lastFinished = id
+            // After a refusal the answer is shown even when another session is in front.
+            if focused || Self.refusals[id] != nil {
                 HookServer.expandIfNeeded(to: .finished)
             } else {
                 setBadge(.finished)
@@ -813,6 +849,7 @@ final class ClaudeTaskMirror {
             known.remove(id)
             steps[id] = nil
             celebrating[id] = nil
+            Self.refusals[id] = nil
 
         case .permissionRequested(let id, let request):
             approval = (request, id)
@@ -903,6 +940,10 @@ final class ClaudeTaskMirror {
 
     /// Where the session shown by the pill runs.
     private static var featuredOrigin: SessionOrigin?
+    /// What the person refused in each session's current turn ("supprimer build"), until its next request.
+    static var refusals: [SessionID: String] = [:]
+    /// The session whose turn ended last: the end card speaks of it.
+    static var lastFinished: SessionID?
     /// Where each session runs, for the cards that answer one of them (an approval).
     private static var origins: [SessionID: SessionOrigin] = [:]
 
