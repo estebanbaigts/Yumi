@@ -118,19 +118,24 @@ enum ClaudeHookTranslator {
     /// The part of a tool input worth showing: the command, the file name or the query.
     private static func detail(of input: [String: Any]) -> String {
         if let command = input["command"] as? String {
-            return String(command.prefix(40))
+            return short(command)
         } else if let command = input["command"] as? [String] {
             // Codex gives the command as its words: ["bash", "-lc", "git status"].
             let words = command.first == "bash" || command.first == "zsh" || command.first == "sh" ? Array(command.suffix(1)) : command
-            return String(words.joined(separator: " ").prefix(40))
+            return short(words.joined(separator: " "))
         } else if let path = input["path"] as? String {
             return URL(fileURLWithPath: path).lastPathComponent
         } else if let file = (input["file_path"] ?? input["absolute_path"]) as? String {
             return URL(fileURLWithPath: file).lastPathComponent
         } else if let query = input["query"] as? String {
-            return String(query.prefix(40))
+            return short(query)
         }
         return ""
+    }
+
+    /// One line of 40 characters at most, cut at a word with "…", secrets masked.
+    static func short(_ text: String) -> String {
+        SessionText.oneLine(SecretMask.mask(text), limit: 40) ?? ""
     }
 }
 

@@ -8,14 +8,14 @@ hence step 3 below, which you only do once.
 YOU NEED
 
 - A Mac running macOS 15 or later (ideally one with a notch).
-- For the chat and actions, one engine of your choice (Settings > Engines):
-  Claude Code installed and signed in (https://claude.com/claude-code,
-  counted in your Claude Code plan), an OpenAI or Google Gemini key (billed
-  by the provider; Gemini has a free tier), or Ollama running locally (free).
-  Without an engine, Yumi still works (music, calendar, weather, focus...),
-  without the chat.
-- To follow your Claude Code sessions: python3 (from Homebrew, python.org,
-  or Apple's command line tools).
+- Nothing else to start: no account, no subscription. The chat works from
+  the first launch, with Apple's model (macOS 26 and Apple Intelligence) or,
+  on any Mac, in simple mode.
+- Later, if you want a bigger engine (Settings > Engines): Claude Code, an
+  Anthropic, OpenAI or Google Gemini key (billed by the provider; Gemini has
+  a free tier), or Ollama running locally (free).
+- To follow your coding agents (Claude Code, Codex, Gemini CLI): python3
+  (from Homebrew, python.org, or Apple's command line tools).
 
 
 INSTALL

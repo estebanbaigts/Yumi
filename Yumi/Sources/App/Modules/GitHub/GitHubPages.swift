@@ -65,14 +65,14 @@ enum GitHubPages {
         let name = repo.split(separator: "/").last.map(String.init) ?? repo
         var rows = [ModuleRow(id: "repo-back", title: loc("‹ Tous les dépôts"), detail: name, state: .neutral, label: "",
                               action: backAction)]
-        let shown = pushes.filter { $0.repo == repo }.sorted { $0.eventID > $1.eventID }.prefix(repoPushes)
+        let shown = pushes.filter { $0.repo == repo }.sorted(by: GitHubPush.newestFirst).prefix(repoPushes)
         if shown.isEmpty {
             rows.append(ModuleRow(id: "repo-empty", title: loading ? loc("Je regarde…") : loc("Aucun push récent."),
                                   detail: "", state: .neutral, label: ""))
             return rows
         }
         for push in shown {
-            let title = push.total == 1 ? loc("Un commit sur \(push.branch)") : loc("\(push.total) commits sur \(push.branch)")
+            let title = push.title
             var details = push.commits.map { commit in
                 (ApprovalRequest.oneLine(commit.message, limit: 80) ?? commit.shortSHA) + " (\(commit.shortSHA))"
             }
@@ -80,7 +80,8 @@ enum GitHubPages {
                 details.append("· " + loc("et \(push.total - push.commits.count) de plus"))
             }
             details += push.files.map { "· \($0.name)  +\($0.additions) −\($0.deletions)" }
-            var row = ModuleRow(id: "repo-push-\(push.eventID)", title: title, detail: push.actor, state: .busy, label: "push",
+            var row = ModuleRow(id: "repo-push-\(push.eventID)", title: title, detail: push.actor, state: push.merge ? .success : .busy,
+                                label: push.merge ? "merge" : "push",
                                 date: push.date, action: compareURL(push))
             row.details = details
             row.actionLabel = loc("Ouvrir sur GitHub")
@@ -101,11 +102,17 @@ enum GitHubPages {
     /// The latest commits, every repository mixed, newest first: repository, branch, message, when.
     static func recent(pushes: [GitHubPush], hidden: Set<String>, limit: Int = recentLimit) -> [ModuleRow] {
         var rows: [ModuleRow] = []
-        for push in pushes.filter({ !hidden.contains($0.repo) }).sorted(by: { $0.eventID > $1.eventID }) {
+        for push in pushes.filter({ !hidden.contains($0.repo) }).sorted(by: GitHubPush.newestFirst) {
             let place = "\(push.repoName) · \(push.branch)"
+            // A merge in one line: its commits were already listed when they were pushed.
+            if push.merge {
+                rows.append(ModuleRow(id: "recent-\(push.eventID)", title: push.title, detail: push.repoName, state: .success,
+                                      label: "merge", date: push.date, action: compareURL(push)))
+                if rows.count >= limit { break }
+                continue
+            }
             if push.commits.isEmpty {
-                let title = push.total == 1 ? loc("Un commit sur \(push.branch)") : loc("\(push.total) commits sur \(push.branch)")
-                rows.append(ModuleRow(id: "recent-\(push.eventID)", title: title, detail: push.repoName, state: .busy,
+                rows.append(ModuleRow(id: "recent-\(push.eventID)", title: push.title, detail: push.repoName, state: .busy,
                                       label: "push", date: push.date,
                                       action: "https://github.com/\(push.repo)/commits/\(push.branch)"))
             }
@@ -128,7 +135,7 @@ enum GitHubPages {
         let shownPulls = pulls.filter { !hidden.contains($0.repo) }
         let counts = GitHubActivity.counts(shownPushes, now: now, calendar: calendar)
         var names: [String] = []
-        for name in followed + shownPushes.sorted(by: { $0.eventID > $1.eventID }).map(\.repo) + shownPulls.map(\.repo)
+        for name in followed + shownPushes.sorted(by: GitHubPush.newestFirst).map(\.repo) + shownPulls.map(\.repo)
             where !hidden.contains(name) && !names.contains(name) {
             names.append(name)
         }

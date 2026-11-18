@@ -13,7 +13,7 @@ final class YumiUpdates: ObservableObject {
     private static let announcedKey = "updateAnnounced"
     /// The newer release found, kept between launches: ["tag": …, "page": …].
     private static let foundKey = "updateFound"
-    private static let remarkPrefix = "update-"
+    nonisolated private static let remarkPrefix = "update-"
 
     /// "0.1.0-alpha", from the Info.plist.
     static var installed: String {
@@ -132,6 +132,6 @@ final class YumiUpdates: ObservableObject {
         guard size > 0 else { return "inconnu" }
         var bytes = [CChar](repeating: 0, count: size)
         sysctlbyname("hw.model", &bytes, &size, nil, 0)
-        return String(cString: bytes)
+        return String(decoding: bytes.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
     }
 }

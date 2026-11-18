@@ -32,7 +32,7 @@ struct SessionNote: Equatable, Sendable {
         let event = payload["hook_event_name"] as? String ?? ""
         switch aliases[event] ?? event {
         case "UserPromptSubmit":
-            guard let prompt = (payload["prompt"] as? String).flatMap { SessionText.oneLine(SecretMask.mask($0)) }, !prompt.isEmpty else { return nil }
+            guard let prompt = (payload["prompt"] as? String).flatMap({ SessionText.oneLine(SecretMask.mask($0)) }), !prompt.isEmpty else { return nil }
             return SessionNote(session: session, kind: .prompt(prompt))
         case "PreToolUse":
             if tool == "TodoWrite", let todos = SessionTodo.list(from: input) { return SessionNote(session: session, kind: .todos(todos)) }
@@ -46,7 +46,7 @@ struct SessionNote: Equatable, Sendable {
             let message = (payload["transcript_path"] as? String).flatMap(lastMessage)
             return SessionNote(session: session, kind: .stop(lastMessage: message.flatMap(SessionText.firstSentence)))
         case "Notification":
-            guard let message = (payload["message"] as? String).flatMap { SessionText.oneLine($0) }, !message.isEmpty else { return nil }
+            guard let message = (payload["message"] as? String).flatMap({ SessionText.oneLine($0) }), !message.isEmpty else { return nil }
             return SessionNote(session: session, kind: .notification(message))
         case "SessionEnd":
             return SessionNote(session: session, kind: .ended)

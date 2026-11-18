@@ -8,14 +8,15 @@ notarisée par Apple, d'où l'étape 3 ci-dessous, à faire une seule fois.
 IL TE FAUT
 
 - Un Mac sous macOS 15 ou plus récent (idéalement avec une notch).
-- Pour le chat et les actions, un moteur au choix (Réglages > Moteurs) :
-  Claude Code installé et connecté (https://claude.com/claude-code, compté
-  dans ton forfait Claude Code), une clé OpenAI ou Google Gemini (facturée
-  par le fournisseur ; Gemini a un palier gratuit), ou Ollama en local
-  (gratuit). Sans moteur, Yumi marche quand même (musique, agenda, météo,
-  focus...), sans le chat.
-- Pour suivre tes sessions Claude Code : python3 (celui de Homebrew, de
-  python.org, ou des outils de ligne de commande d'Apple).
+- Rien d'autre pour commencer : ni compte, ni abonnement. Le chat marche dès
+  le premier lancement, avec le modèle d'Apple (macOS 26 et Apple
+  Intelligence) ou, sur n'importe quel Mac, en mode simple.
+- Plus tard, si tu veux un moteur plus costaud (Réglages > Moteurs) : Claude
+  Code, une clé Anthropic, OpenAI ou Google Gemini (facturée par le
+  fournisseur ; Gemini a un palier gratuit), ou Ollama en local (gratuit).
+- Pour suivre tes agents de code (Claude Code, Codex, Gemini CLI) : python3
+  (celui de Homebrew, de python.org, ou des outils de ligne de commande
+  d'Apple).
 
 
 INSTALLER
