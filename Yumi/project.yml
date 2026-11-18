@@ -70,9 +70,9 @@ targets:
         CFBundleName: Yumi
         CFBundleDisplayName: Yumi
         CFBundleIdentifier: app.yumi
-        CFBundleVersion: "10"
+        CFBundleVersion: "11"
         CFBundleShortVersionString: "0.1.0"
-        YumiDisplayVersion: "0.1.0-alpha.10"
+        YumiDisplayVersion: "0.1.0-beta.1"
         # The Yumi GitHub App (Modules/GitHub/GitHubApp.swift): its public Client ID and its slug,
         # filled in once the maintainer registered it. Empty: only the personal token is offered.
         YumiGitHubAppClientID: ""
@@ -119,9 +119,9 @@ targets:
         CFBundleName: Yumi
         CFBundleDisplayName: Yumi
         CFBundleIdentifier: app.yumi.appstore
-        CFBundleVersion: "10"
+        CFBundleVersion: "11"
         CFBundleShortVersionString: "0.1.0"
-        YumiDisplayVersion: "0.1.0-alpha.10"
+        YumiDisplayVersion: "0.1.0-beta.1"
         # The Yumi GitHub App (Modules/GitHub/GitHubApp.swift): its public Client ID and its slug,
         # filled in once the maintainer registered it. Empty: only the personal token is offered.
         YumiGitHubAppClientID: ""

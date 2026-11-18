@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
-# Builds, signs, notarizes and staples Yumi.app, then zips it.
+# Builds, signs, notarizes and staples Yumi.app, then zips it with its install guides.
 #
 # Usage:
 #   YUMI_TEAM_ID=XXXXXXXXXX ./scripts/release.sh <version> [--publish]
 #
+# <version> is YumiDisplayVersion in Yumi/project.yml: 0.1.0, 0.1.0-beta.1. Pre-release
+# words are lowercase ("beta", not "BETA"): Yumi compares them to tell testers a newer
+# version is out.
+#
 # Without --publish the script stops once the notarized zip is ready: nothing is
-# tagged, pushed or uploaded. With --publish it also pushes the tag v<version>
-# and creates the GitHub release.
+# tagged, pushed or uploaded. With --publish it also pushes the tag v<version> and opens
+# a draft GitHub release (a pre-release for a -beta or -alpha version), with the zip and
+# SHA256SUMS.txt. The author reads the draft and publishes it by hand.
 #
 # Environment:
 #   YUMI_TEAM_ID         Apple Developer team ID (10 characters). Required.
@@ -33,7 +38,11 @@ done
 die() { echo "error: $*" >&2; exit 1; }
 
 [ -n "$VERSION" ] || die "usage: YUMI_TEAM_ID=XXXXXXXXXX $0 <version> [--publish]"
-[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "version must look like 1.2.3, got '$VERSION'"
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?$ ]] \
+  || die "version must look like 1.2.3 or 1.2.3-beta.1 (lowercase), got '$VERSION'"
+CORE_VERSION="${VERSION%%-*}"
+PRERELEASE=0
+[ "$CORE_VERSION" != "$VERSION" ] && PRERELEASE=1
 
 TEAM_ID="${YUMI_TEAM_ID:-}"
 NOTARY_PROFILE="${YUMI_NOTARY_PROFILE:-yumi-notary}"
@@ -43,6 +52,8 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$REPO_ROOT/build/release-$VERSION"
 APP="$BUILD_DIR/Yumi.app"
 ZIP="$BUILD_DIR/Yumi-$VERSION.zip"
+STAGE="$BUILD_DIR/stage/Yumi"
+SUMS="$BUILD_DIR/SHA256SUMS.txt"
 TAG="v$VERSION"
 
 # ── 1. Preflight ──────────────────────────────────────────────────────────────
@@ -54,14 +65,19 @@ for tool in xcodegen xcodebuild xcrun codesign ditto; do
 done
 
 cd "$REPO_ROOT"
-[ -z "$(git status --porcelain)" ] || die "the working tree is not clean. Commit or discard your changes first."
+# Files git does not track (videos, notes) are not built: only changes to tracked files block.
+[ -z "$(git status --porcelain --untracked-files=no)" ] || die "the working tree has uncommitted changes. Commit or discard them first."
+
+# The git remote of $REPO, whatever its name ("origin" may point to another copy).
+REMOTE=$(git remote -v | awk -v repo="$REPO" '$2 ~ ("github\\.com[:/]" repo "(\\.git)?$") && $3 == "(push)" { print $1; exit }')
 
 if [ "$PUBLISH" -eq 1 ]; then
   command -v gh >/dev/null || die "gh not found (needed for --publish)"
-  [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || die "--publish only runs from main"
-  git fetch --quiet origin main
-  [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || die "main is not in sync with origin/main"
-  git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && die "tag $TAG already exists"
+  [ -n "$REMOTE" ] || die "no git remote points to github.com/$REPO"
+  git fetch --quiet "$REMOTE" main
+  [ "$(git rev-parse HEAD)" = "$(git rev-parse "$REMOTE/main")" ] || die "HEAD is not $REMOTE/main: publish from the latest main"
+  git ls-remote --exit-code --tags "$REMOTE" "refs/tags/$TAG" >/dev/null 2>&1 && die "tag $TAG already exists on $REMOTE"
+  git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && die "tag $TAG already exists locally"
 fi
 
 IDENTITY=$(security find-identity -v -p codesigning \
@@ -84,8 +100,9 @@ cd "$REPO_ROOT/Yumi"
 xcodegen generate
 
 PLIST_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)
-[ "$PLIST_VERSION" = "$VERSION" ] \
-  || die "project.yml says version $PLIST_VERSION, you asked for $VERSION. Update CFBundleShortVersionString (and CFBundleVersion) in Yumi/project.yml, commit, then retry."
+DISPLAY_VERSION=$(/usr/libexec/PlistBuddy -c "Print :YumiDisplayVersion" Resources/Info.plist 2>/dev/null || echo "$PLIST_VERSION")
+[ "$DISPLAY_VERSION" = "$VERSION" ] && [ "$PLIST_VERSION" = "$CORE_VERSION" ] \
+  || die "project.yml says $DISPLAY_VERSION ($PLIST_VERSION), you asked for $VERSION. Update YumiDisplayVersion, CFBundleShortVersionString and CFBundleVersion in Yumi/project.yml, commit, then retry."
 
 # ── 3. Release build, signed with the Developer ID ────────────────────────────
 rm -rf "$BUILD_DIR" && mkdir -p "$BUILD_DIR"
@@ -141,11 +158,17 @@ xcrun stapler staple "$APP"
 xcrun stapler validate "$APP"
 spctl -a -t exec -vv "$APP"
 
-# ── 7. Zip again, with the stapled app ────────────────────────────────────────
+# ── 7. Zip again: the stapled app and the install guides, in a Yumi folder ───────
 rm "$ZIP"
-ditto -c -k --keepParent "$APP" "$ZIP"
+mkdir -p "$STAGE"
+ditto "$APP" "$STAGE/Yumi.app"
+for guide in LISEZ-MOI.txt README.txt; do
+  sed "s/{{VERSION}}/$VERSION/g" "$REPO_ROOT/release/$guide" > "$STAGE/$guide"
+done
+(cd "$BUILD_DIR/stage" && ditto -c -k --sequesterRsrc --keepParent Yumi "$ZIP")
+(cd "$BUILD_DIR" && shasum -a 256 "$(basename "$ZIP")" > "$SUMS")
 echo "Release zip ready: $ZIP"
-shasum -a 256 "$ZIP"
+cat "$SUMS"
 
 # ── 8. Tag and GitHub release (only with --publish) ───────────────────────────
 if [ "$PUBLISH" -ne 1 ]; then
@@ -156,26 +179,30 @@ fi
 
 cd "$REPO_ROOT"
 git tag "$TAG"
-git push origin "$TAG"
+git push "$REMOTE" "$TAG"
 
-gh release create "$TAG" "$ZIP" \
-  --repo "$REPO" \
-  --title "Yumi $VERSION" \
-  --notes "$(cat <<NOTES
-## Install
+PRE_FLAG=""
+[ "$PRERELEASE" -eq 1 ] && PRE_FLAG="--prerelease"
+SUM=$(cut -d' ' -f1 "$SUMS")
+NOTES_FILE="$BUILD_DIR/notes.md"
+cat > "$NOTES_FILE" <<NOTES
+## Installer / Install
 
-Download **Yumi-$VERSION.zip**, unzip it and move **Yumi.app** to \`/Applications\`. The build is signed and notarized.
+Télécharge **Yumi-$VERSION.zip**, décompresse-le et glisse **Yumi.app** dans Applications. L'app est signée et notarisée par Apple : elle s'ouvre d'un double-clic.
 
-Requires macOS 15 or later, on a Mac with a notch.
+Download **Yumi-$VERSION.zip**, unzip it and move **Yumi.app** to Applications. The app is signed and notarized by Apple: it opens with a double-click.
 
-## Build from source
+macOS 15 ou plus récent, idéalement avec une notch. / macOS 15 or later, ideally with a notch.
 
-\`\`\`bash
-brew install xcodegen
-git clone https://github.com/$REPO.git
-cd Yumi/Yumi && xcodegen && open Yumi.xcodeproj
-\`\`\`
+SHA-256 : \`$SUM\`
 NOTES
-)"
 
-echo "$TAG released: https://github.com/$REPO/releases/tag/$TAG"
+# $PRE_FLAG is left unquoted on purpose: empty, it adds no argument.
+# shellcheck disable=SC2086
+gh release create "$TAG" "$ZIP" "$SUMS" \
+  --repo "$REPO" \
+  --draft $PRE_FLAG \
+  --title "Yumi $VERSION" \
+  --notes-file "$NOTES_FILE"
+
+echo "$TAG drafted: https://github.com/$REPO/releases/tag/$TAG (publish it by hand once read)"
