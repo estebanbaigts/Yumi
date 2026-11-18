@@ -489,8 +489,10 @@ struct AlertActivity: View {
         } else if let approval = state.pendingApproval {
             ActRow {
                 ActMeta(color: IslandTheme.amber, text: IslandAgent.name(state.focusTask)).riseIn(0)
-                ActTitle(text: approval.tool == "Bash" ? loc("Claude veut lancer ça. Je laisse passer ?") : loc("Claude veut utiliser \(approval.tool). Je laisse passer ?")).riseIn(1)
-                ActMono(prompt: approval.tool == "Bash" ? "$" : nil, text: approval.command, color: IslandTheme.amber).riseIn(2)
+                let agent = state.focusTask?.speaker ?? "Claude"
+                let shell = ClaudeToolPhrase.label(for: approval.tool) == loc("Exécute")
+                ActTitle(text: shell ? loc("\(agent) veut lancer ça. Je laisse passer ?") : loc("\(agent) veut utiliser \(approval.tool). Je laisse passer ?")).riseIn(1)
+                ActMono(prompt: shell ? "$" : nil, text: approval.command, color: IslandTheme.amber).riseIn(2)
                 HStack(spacing: 14) {
                     TextButton(label: loc("Toujours autoriser")) { HookServer.shared.sendApprovalDecision("always", for: approval.requestID) }
                     // Where the request was made: to read the whole conversation before answering
@@ -510,7 +512,7 @@ struct AlertActivity: View {
             // A question asked in the session: it can only be answered there
             ActRow {
                 ActMeta(color: IslandTheme.amber, text: IslandAgent.name(state.focusTask)).riseIn(0)
-                ActTitle(text: state.focusTask?.steps.last ?? loc("Claude a une question pour toi."), lines: 2).riseIn(1)
+                ActTitle(text: state.focusTask?.steps.last ?? loc("\(state.focusTask?.speaker ?? "Claude") a une question pour toi."), lines: 2).riseIn(1)
                 ActSub(text: loc("Il t'attend dans la session.")).riseIn(2)
             } trail: {
                 RoundButton(style: .tint, symbol: "arrow.up.forward", label: loc("Voir"), color: IslandTheme.amber) {

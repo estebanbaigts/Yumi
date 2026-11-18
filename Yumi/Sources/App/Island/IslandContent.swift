@@ -10,24 +10,25 @@ enum IslandAgent {
     /// "Claude Code · yumi"
     static func name(_ task: AgentTask?) -> String {
         guard let task else { return "Claude Code" }
-        let source = "Claude Code"
+        let source = task.agentName
         // "VS Code" is the name of the task while no session has given its project
         return task.name.isEmpty || task.name == "VS Code" || task.name == source ? source : "\(source) · \(task.name)"
     }
 
     /// "Claude modifie IslandRootView.swift": the current step, said the way Yumi says it.
     static func doing(_ state: AppState) -> String {
+        let agent = state.focusTask?.speaker ?? "Claude"
         switch state.effectiveState {
-        case .thinking:  return loc("Claude réfléchit")
-        case .searching: return loc("Claude cherche")
+        case .thinking:  return loc("\(agent) réfléchit")
+        case .searching: return loc("\(agent) cherche")
         default:
-            return state.focusTask?.steps.last.flatMap(sentence(forStep:)) ?? loc("Claude travaille")
+            return state.focusTask?.steps.last.flatMap { sentence(forStep: $0, agent: agent) } ?? loc("\(agent) travaille")
         }
     }
 
     /// "Modifie · IslandRootView.swift" → "Claude modifie IslandRootView.swift".
     /// The labels are the ones of HookServer.frenchStep.
-    private static func sentence(forStep step: String) -> String? {
+    private static func sentence(forStep step: String, agent: String) -> String? {
         // The labels are localized the same way (ClaudeToolPhrase), so the step is read back in
         // the language it was written in.
         let verbs: KeyValuePairs<String, String> = [
@@ -39,7 +40,7 @@ enum IslandAgent {
         let parts = step.components(separatedBy: " · ")
         guard let verb = verbs.first(where: { $0.key == parts[0] })?.value else { return nil }
         let detail = parts.dropFirst().joined(separator: " · ")
-        return detail.isEmpty ? loc("Claude \(verb)") : loc("Claude \(verb) \(detail)")
+        return detail.isEmpty ? loc("\(agent) \(verb)") : loc("\(agent) \(verb) \(detail)")
     }
 
     /// "Depuis douze minutes, trois fichiers touchés. Je surveille."

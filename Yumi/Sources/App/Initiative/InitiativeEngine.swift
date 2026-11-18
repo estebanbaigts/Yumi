@@ -98,6 +98,8 @@ struct Surroundings: Sendable {
     var screenShared = false
     var presenting = false
     var doNotDisturb = false
+    /// How Yumi names the coding agent of the latest session: "Claude", "Codex", "Gemini".
+    var agent = "Claude"
 }
 
 struct InitiativeEngine: Codable, Equatable, Sendable {
@@ -254,15 +256,15 @@ enum InitiativePhrases {
         case .back(let finished, let waiting):
             if waiting {
                 return [
-                    Variant(key: "back.waiting.1", text: loc("Te revoilà. Claude attend ta réponse."), mood: .curious, action: .openSession),
-                    Variant(key: "back.waiting.2", text: loc("Ah, te voilà. Claude a une question pour toi."), mood: .curious, action: .openSession),
-                    Variant(key: "back.waiting.3", text: loc("Tu tombes bien. Claude t'attend depuis un moment."), mood: .curious, action: .openSession),
+                    Variant(key: "back.waiting.1", text: loc("Te revoilà. \(around.agent) attend ta réponse."), mood: .curious, action: .openSession),
+                    Variant(key: "back.waiting.2", text: loc("Ah, te voilà. \(around.agent) a une question pour toi."), mood: .curious, action: .openSession),
+                    Variant(key: "back.waiting.3", text: loc("Tu tombes bien. \(around.agent) t'attend depuis un moment."), mood: .curious, action: .openSession),
                 ]
             }
             if finished {
                 return [
-                    Variant(key: "back.finished.1", text: loc("Te revoilà. Claude a fini pendant que tu étais parti."), mood: .happy, action: .openSession),
-                    Variant(key: "back.finished.2", text: loc("Tu as raté la fin : Claude a terminé sans toi."), mood: .wink, action: .openSession),
+                    Variant(key: "back.finished.1", text: loc("Te revoilà. \(around.agent) a fini pendant que tu étais parti."), mood: .happy, action: .openSession),
+                    Variant(key: "back.finished.2", text: loc("Tu as raté la fin : \(around.agent) a terminé sans toi."), mood: .wink, action: .openSession),
                     Variant(key: "back.finished.3", text: loc("Bon retour. C'est passé pendant ton absence."), mood: .happy, action: .openSession),
                 ]
             }
@@ -303,16 +305,16 @@ enum InitiativePhrases {
             let time = FrenchText.spokenMinutes(Double(minutes) * 60)
             return [
                 Variant(key: "done.1", text: loc("C'est passé, après \(time). Bien joué."), mood: .happy, action: .openSession),
-                Variant(key: "done.2", text: loc("Claude a fini sur \(project), en \(time)."), mood: .happy, action: .openSession),
+                Variant(key: "done.2", text: loc("\(around.agent) a fini sur \(project), en \(time)."), mood: .happy, action: .openSession),
                 Variant(key: "done.3", text: loc("\(cap(time)) plus tard, c'est terminé sur \(project)."), mood: .happy, action: .openSession),
             ]
 
         case .meetingWhileAgentWaits(let title, let minutes):
             let time = FrenchText.spokenMinutes(Double(minutes) * 60)
             return [
-                Variant(key: "meeting.1", text: loc("\(title) dans \(time), et Claude attend ta réponse."), mood: .worried, action: .openSession),
-                Variant(key: "meeting.2", text: loc("Claude t'attend, et \(title) commence dans \(time)."), mood: .worried, action: .openSession),
-                Variant(key: "meeting.3", text: loc("Deux choses : Claude attend, et \(title) est dans \(time)."), mood: .worried, action: .openSession),
+                Variant(key: "meeting.1", text: loc("\(title) dans \(time), et \(around.agent) attend ta réponse."), mood: .worried, action: .openSession),
+                Variant(key: "meeting.2", text: loc("\(around.agent) t'attend, et \(title) commence dans \(time)."), mood: .worried, action: .openSession),
+                Variant(key: "meeting.3", text: loc("Deux choses : \(around.agent) attend, et \(title) est dans \(time)."), mood: .worried, action: .openSession),
             ]
 
         case .late:

@@ -12884,6 +12884,286 @@
           }
         }
       }
+    },
+    "%@ dans %@, et %@ attend ta réponse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ in %2$@, and %3$@ is waiting for your answer."
+          }
+        }
+      }
+    },
+    "Ah, te voilà. %@ a une question pour toi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ah, there you are. %@ has a question for you."
+          }
+        }
+      }
+    },
+    "%@ %@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@ %3$@"
+          }
+        }
+      }
+    },
+    "%@ %@ sur %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@ on %3$@."
+          }
+        }
+      }
+    },
+    "%@ a atteint sa limite sur %@. On attend.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ hit its limit on %2$@. We wait."
+          }
+        }
+      }
+    },
+    "%@ a fini sur %@, en %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ finished on %2$@, in %3$@."
+          }
+        }
+      }
+    },
+    "%@ a une question pour toi sur %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ has a question for you on %2$@."
+          }
+        }
+      }
+    },
+    "%@ a une question pour toi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ has a question for you."
+          }
+        }
+      }
+    },
+    "%@ attend ton message sur %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is waiting for your message on %2$@."
+          }
+        }
+      }
+    },
+    "%@ avance sur %@. Je surveille.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is moving on %2$@. I'm watching."
+          }
+        }
+      }
+    },
+    "%@ cherche": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is searching"
+          }
+        }
+      }
+    },
+    "%@ réfléchit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is thinking"
+          }
+        }
+      }
+    },
+    "%@ réfléchit sur %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is thinking on %2$@."
+          }
+        }
+      }
+    },
+    "%@ t'attend sur %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is waiting for you on %2$@"
+          }
+        }
+      }
+    },
+    "%@ t'attend sur %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is waiting for you on %2$@."
+          }
+        }
+      }
+    },
+    "%@ t'attend, et %@ commence dans %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is waiting for you, and %2$@ starts in %3$@."
+          }
+        }
+      }
+    },
+    "%@ travaille": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is working"
+          }
+        }
+      }
+    },
+    "%@ veut lancer ça. Je laisse passer ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ wants to run this. Shall I let it through?"
+          }
+        }
+      }
+    },
+    "%@ veut ton accord sur %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ wants your approval on %2$@"
+          }
+        }
+      }
+    },
+    "%@ veut ton accord sur %@. Je laisse passer ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ wants your approval on %2$@. Shall I let it through?"
+          }
+        }
+      }
+    },
+    "%@ veut utiliser %@. Je laisse passer ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ wants to use %2$@. Shall I let it through?"
+          }
+        }
+      }
+    },
+    "Deux choses : %@ attend, et %@ est dans %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two things: %1$@ is waiting, and %2$@ is in %3$@."
+          }
+        }
+      }
+    },
+    "Te revoilà. %@ a fini pendant que tu étais parti.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There you are. %@ finished while you were away."
+          }
+        }
+      }
+    },
+    "Te revoilà. %@ attend ta réponse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There you are. %@ is waiting for your answer."
+          }
+        }
+      }
+    },
+    "Tu as raté la fin : %@ a terminé sans toi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You missed the ending: %@ finished without you."
+          }
+        }
+      }
+    },
+    "Tu tombes bien. %@ t'attend depuis un moment.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good timing. %@ has been waiting for you for a while."
+          }
+        }
+      }
+    },
+    "Agents": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agents"
+          }
+        }
+      }
+    },
+    "Lance Claude Code, Codex ou Gemini, je regarderai.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Claude Code, Codex or Gemini, I'll watch."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

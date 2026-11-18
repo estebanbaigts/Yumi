@@ -1,6 +1,7 @@
 import AppKit
 
-/// Claude Code, as a module: every session of every terminal, the one that needs you first.
+/// The coding agents, as a module: every session of every terminal (Claude Code, Codex,
+/// Gemini CLI…), the one that needs you first.
 @MainActor
 final class ClaudeCodeModule: YumiModule {
     let id = "claude-code"

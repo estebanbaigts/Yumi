@@ -176,6 +176,7 @@ final class InitiativeDriver {
         var around = Surroundings(now: Date())
         around.talk = defaults.string(forKey: YumiTalk.defaultsKey).flatMap(YumiTalk.init(rawValue:)) ?? .discreet
         around.name = book.name
+        if let agent = saved.watch.agentSpeaker { around.agent = agent }
         around.projects = book.entries(of: .project).map(\.text)
         around.thread = book.entries(of: .thread).filter { around.now.timeIntervalSince($0.date) < 3 * 24 * 3600 }.map(\.text)
         // Cheap checks first; the Mac is only asked about the rest when he would otherwise speak.

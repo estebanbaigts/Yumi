@@ -1,14 +1,23 @@
 import Foundation
 
-/// Turns the JSON a Claude Code hook sends into `YumiEvent`s. This is the only place
-/// that knows the hook format; everything after it works on typed events.
+/// Turns the JSON a coding agent's hook sends into `YumiEvent`s: Claude Code, Codex, Gemini
+/// CLI and the others that speak the same hooks. This is the only place that knows the hook
+/// format; everything after it works on typed events. Which agent sent it, Yumi sees by
+/// himself (`AgentCatalog`).
 enum ClaudeHookTranslator {
-    static let agent = Agent(id: AgentID("claude-code"), name: "Claude Code", kind: .coding)
+    /// The agent of a hook nothing else tells apart.
+    static let agent = AgentCatalog.fallback.agent
+
+    /// Gemini CLI's names for the same moments.
+    private static let aliases = ["BeforeTool": "PreToolUse", "AfterTool": "PostToolUse",
+                                  "BeforeAgent": "UserPromptSubmit", "AfterAgent": "Stop"]
 
     /// Events for one hook payload, in the order they must be applied.
     /// - Parameter requestID: identifier given to a `PermissionRequest`, so its answer can be routed back.
     static func events(for payload: [String: Any], requestID: String = UUID().uuidString) -> [YumiEvent] {
-        let name = payload["hook_event_name"] as? String ?? ""
+        let given = payload["hook_event_name"] as? String ?? ""
+        let name = aliases[given] ?? given
+        let agent = AgentCatalog.agent(forHook: payload).agent
         let id = SessionID(payload["session_id"] as? String ?? "unknown")
 
         if name == "SessionEnd" { return [.sessionEnded(id)] }
@@ -33,7 +42,7 @@ enum ClaudeHookTranslator {
         case "PermissionRequest":
             let tool = payload["tool_name"] as? String ?? "Tool"
             let input = payload["tool_input"] as? [String: Any] ?? [:]
-            let command = input["command"] as? String ?? tool
+            let command = input["command"] as? String ?? (input["command"] as? [String])?.joined(separator: " ") ?? tool
             specific = [.permissionRequested(id, PermissionRequest(id: requestID, tool: tool, command: command))]
 
         case "Notification":
@@ -110,9 +119,13 @@ enum ClaudeHookTranslator {
     private static func detail(of input: [String: Any]) -> String {
         if let command = input["command"] as? String {
             return String(command.prefix(40))
+        } else if let command = input["command"] as? [String] {
+            // Codex gives the command as its words: ["bash", "-lc", "git status"].
+            let words = command.first == "bash" || command.first == "zsh" || command.first == "sh" ? Array(command.suffix(1)) : command
+            return String(words.joined(separator: " ").prefix(40))
         } else if let path = input["path"] as? String {
             return URL(fileURLWithPath: path).lastPathComponent
-        } else if let file = input["file_path"] as? String {
+        } else if let file = (input["file_path"] ?? input["absolute_path"]) as? String {
             return URL(fileURLWithPath: file).lastPathComponent
         } else if let query = input["query"] as? String {
             return String(query.prefix(40))
@@ -139,6 +152,26 @@ enum ClaudeToolPhrase {
             "LS":         loc("Liste"),
             "MultiEdit":  loc("Modifie"),
             "NotebookEdit": loc("Notebook"),
+            // Codex, Gemini CLI and the others name the same tools their own way.
+            "shell":             loc("Exécute"),
+            "exec_command":      loc("Exécute"),
+            "local_shell":       loc("Exécute"),
+            "run_shell_command": loc("Exécute"),
+            "apply_patch":       loc("Modifie"),
+            "replace":           loc("Modifie"),
+            "edit_file":         loc("Modifie"),
+            "read_file":         loc("Lit"),
+            "read_many_files":   loc("Lit"),
+            "write_file":        loc("Écrit"),
+            "list_directory":    loc("Liste"),
+            "glob":              loc("Cherche"),
+            "search_file_content": loc("Recherche"),
+            "grep":              loc("Recherche"),
+            "google_web_search": loc("Recherche web"),
+            "web_search":        loc("Recherche web"),
+            "web_fetch":         loc("Récupère"),
+            "update_plan":       loc("Tâches"),
+            "write_todos":       loc("Tâches"),
         ]
     }
 
