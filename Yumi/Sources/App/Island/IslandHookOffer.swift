@@ -5,7 +5,7 @@ import Foundation
 /// nothing is ever written from here.
 @MainActor
 enum IslandHookOffer {
-    private static let remarkID = "hooks-offer"
+    nonisolated private static let remarkID = "hooks-offer"
     private static var observer: NSObjectProtocol?
     private static var dismissed: NSObjectProtocol?
 

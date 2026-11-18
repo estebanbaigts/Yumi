@@ -12900,7 +12900,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Looking…"
+            "value": "Ah, there you are. %@ has a question for you."
           }
         }
       }
@@ -12910,7 +12910,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ %2$@ %3$@"
+            "value": "No recent push."
           }
         }
       }
@@ -13161,6 +13161,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Start Claude Code, Codex or Gemini, I'll watch."
+          }
+        }
+      }
+    },
+    "PR fusionnée sur %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PR merged into %@"
+          }
+        }
+      }
+    },
+    "%@ · PR fusionnée sur %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · PR merged into %2$@"
           }
         }
       }

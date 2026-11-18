@@ -115,3 +115,13 @@ import Foundation
         #expect(note?.kind == .toolStarted(ToolStep(tool: "run_shell_command", input: ["command": "npm test"])))
     }
 }
+
+@Suite struct ToolDetailTests {
+    @Test func aLongCommandIsCutAtAWordWithSecretsMasked() {
+        let long = ClaudeHookTranslator.short("git commit -m \"une très longue description du changement\"")
+        #expect(long.hasSuffix("…") && long.count <= 41)
+        #expect(!long.hasSuffix(" …"))
+        #expect(ClaudeHookTranslator.short("export API_TOKEN=abcdef123456") == "export API_TOKEN=•••")
+        #expect(ClaudeHookTranslator.short("npm test") == "npm test")
+    }
+}

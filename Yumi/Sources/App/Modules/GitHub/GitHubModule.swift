@@ -83,8 +83,12 @@ final class GitHubModule: YumiModule {
     /// Seconds between two quick looks at the branches of the followed repositories: a push
     /// shows within these seconds instead of waiting for the event feeds, which GitHub serves late.
     static let quickInterval: TimeInterval = 15
-    /// The commit each branch pointed to at the last quick look, per repository.
-    private var heads: [String: [String: String]] = [:]
+    /// Lines of the activity feeds already read (compared once each, even after they leave the list).
+    private var activitySeen: Set<Int64> = []
+    /// Comparisons asked per look at the activity feeds, so the first look never spends the quota.
+    static let comparesPerActivityLook = 8
+    /// Lines asked to each repository's activity feed.
+    static let activityPerRepo = 10
     /// No request before this moment: GitHub said the quota is spent.
     private var blockedUntil = Date.distantPast
     /// The repository opened in the "Dépôts" page, with its latest pushes once read.
@@ -127,7 +131,8 @@ final class GitHubModule: YumiModule {
                             ?? GitHubPages.repos(followed: followed, pushes: pushes, pulls: pulls, hidden: hidden, now: now)]
         // A push of the last two minutes shows in the folded island, after a red check or a review.
         if snapshot.live == nil, let push = GitHubActivity.livePush(pushes, hidden: hidden, now: now) {
-            let text = push.total == 1 ? loc("\(push.repoName) · un commit sur \(push.branch)") : loc("\(push.repoName) · \(push.total) commits sur \(push.branch)")
+            let text = push.merge ? loc("\(push.repoName) · PR fusionnée sur \(push.branch)")
+                : push.total == 1 ? loc("\(push.repoName) · un commit sur \(push.branch)") : loc("\(push.repoName) · \(push.total) commits sur \(push.branch)")
             snapshot.live = ModuleLive(text: text, priority: ModuleLivePriority.activity)
         }
         return snapshot
@@ -302,6 +307,7 @@ final class GitHubModule: YumiModule {
                 announce(quick.swallow(tracker.fresh(events, feed: feed).filter { !hidden.contains($0.repo) }))
             }
         }
+        _ = await readActivities(token: token)
         if slow {
             await readPulls(token: token, login: login)
             if let repo, case .fresh(let data) = await get("/search/issues?per_page=1&q=" + Self.query("repo:\(repo.fullName) is:pr is:open"), token: token) {
@@ -394,7 +400,7 @@ final class GitHubModule: YumiModule {
             // A comparison never changes: its tag is not worth keeping.
             etags[path] = nil
         }
-        pushes = Array(pushes.sorted { $0.eventID > $1.eventID }.prefix(Self.pushesKept))
+        pushes = Array(pushes.sorted(by: GitHubPush.newestFirst).prefix(Self.pushesKept))
     }
 
     /// A quick look, between two looks at the feeds: the branches of the followed repositories
@@ -403,32 +409,62 @@ final class GitHubModule: YumiModule {
     func quickLook() async {
         await prepare()
         guard let token = token(), let login, connection == .connected, Date() >= blockedUntil else { return }
-        var changed = false
+        let changed = await readActivities(token: token)
+        let before = pulls
+        await readPulls(token: token, login: login)
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["YUMI_TRACE_GITHUB"] != nil {
+            print("[github] pushes=\(pushes.sorted(by: GitHubPush.newestFirst).prefix(4).map { "\($0.repoName)@\($0.branch)\($0.merge ? " (merge)" : "")" }) changé=\(changed)")
+            fflush(stdout)
+        }
+        #endif
+        if changed || before != pulls { onChange?() }
+    }
+
+    /// The activity feed of each followed repository (and of the one opened): every push and
+    /// merge as soon as it happens, where the event feeds can lag by hours. Returns whether
+    /// something new was added.
+    private func readActivities(token: String) async -> Bool {
         var names = followed
         if let opened, !names.contains(opened) { names.append(opened) }
         let hidden = GitHubRepos.hidden(in: defaults)
+        var budget = Self.comparesPerActivityLook
+        var added = false
         for repo in names where !hidden.contains(repo) {
-            guard case .fresh(let data) = await get("/repos/\(repo)/git/matching-refs/heads", token: token) else { continue }
-            let now = GitHubFeed.heads(from: data)
-            defer { heads[repo] = now }
-            guard let before = heads[repo] else { continue }
-            for (branch, head) in now where before[branch] != head && !pushes.contains(where: { $0.repo == repo && $0.head == head }) {
-                let old = before[branch] ?? ""
-                guard let path = GitHubFeed.comparePath(repo: repo, before: old, head: head),
-                      case .fresh(let compare) = await get(path, token: token),
-                      let found = GitHubFeed.commits(fromCompare: compare) else { continue }
-                etags[path] = nil
-                // No event number yet: one above every known, so it sorts first until its event comes.
-                let id = (pushes.map(\.eventID).max() ?? 0) + 1
-                pushes.insert(GitHubPush(eventID: id, repo: repo, branch: branch, actor: found.commits.first?.author ?? login,
-                                         date: Date(), total: found.total, commits: found.commits,
-                                         files: GitHubFeed.files(fromCompare: compare), head: head, before: old), at: 0)
-                changed = true
-            }
+            let found = await readActivity(of: repo, token: token, budget: &budget)
+            guard !found.isEmpty else { continue }
+            pushes = Array((pushes + found).sorted(by: GitHubPush.newestFirst).prefix(Self.pushesKept))
+            if repo == opened { repoPushes[repo] = Array(((repoPushes[repo] ?? []) + found).sorted(by: GitHubPush.newestFirst).prefix(GitHubPages.repoPushes)) }
+            added = true
         }
-        let before = pulls
-        await readPulls(token: token, login: login)
-        if changed || before != pulls { onChange?() }
+        return added
+    }
+
+    /// The pushes and merges of one repository's activity feed not read yet, with their commits
+    /// and files (through compare, `budget` comparisons at most).
+    /// - Parameter again: reads lines already seen too, unless their push is still known (the
+    ///   opened repository's page may need pushes that left the main list).
+    private func readActivity(of repo: String, token: String, budget: inout Int, again: Bool = false) async -> [GitHubPush] {
+        guard case .fresh(let data) = await get("/repos/\(repo)/activity?per_page=\(Self.activityPerRepo)", token: token) else { return [] }
+        var found: [GitHubPush] = []
+        let known = Set(pushes(of: repo).map(\.eventID))
+        for item in GitHubFeed.activity(from: data) where budget > 0 && !known.contains(item.id) && (again || !activitySeen.contains(item.id)) {
+            if pushes.contains(where: { $0.repo == repo && !$0.merge && $0.head == item.after }) && !item.merge {
+                activitySeen.insert(item.id)
+                continue
+            }
+            guard let path = GitHubFeed.comparePath(repo: repo, before: item.before, head: item.after) else { continue }
+            budget -= 1
+            guard case .fresh(let compare) = await get(path, token: token), let commits = GitHubFeed.commits(fromCompare: compare) else { continue }
+            etags[path] = nil
+            activitySeen.insert(item.id)
+            found.append(GitHubPush(eventID: item.id, repo: repo, branch: item.branch, actor: item.actor, date: item.date,
+                                    total: commits.total, commits: commits.commits, files: GitHubFeed.files(fromCompare: compare),
+                                    head: item.after, before: item.before, merge: item.merge))
+        }
+        // The feed was read but not all of it could be compared: ask it again next time.
+        if budget == 0 { etags["/repos/\(repo)/activity?per_page=\(Self.activityPerRepo)"] = nil }
+        return found
     }
 
     /// The latest pushes of one repository, for the "Dépôts" page: its event feed, then the
@@ -439,21 +475,12 @@ final class GitHubModule: YumiModule {
             onChange?()
         }
         await prepare()
-        guard let token = token(), let login, Date() >= blockedUntil else { return }
-        guard case .fresh(let data) = await get("/repos/\(repo)/events?per_page=50", token: token) else { return }
-        let events = GitHubFeed.events(from: data, login: login, received: false, repos: repos).filter { $0.kind == .push }
-        var list = repoPushes[repo] ?? []
-        for event in events.sorted(by: { $0.id > $1.id }).prefix(GitHubPages.repoPushes)
-            where !list.contains(where: { $0.eventID == event.id }) && !pushes.contains(where: { $0.eventID == event.id || (!event.head.isEmpty && $0.head == event.head) }) {
-            guard let path = GitHubFeed.comparePath(repo: repo, before: event.before, head: event.head),
-                  case .fresh(let compare) = await get(path, token: token),
-                  let found = GitHubFeed.commits(fromCompare: compare) else { continue }
-            etags[path] = nil
-            list.append(GitHubPush(eventID: event.id, repo: repo, branch: event.detail, actor: event.actor, date: event.date,
-                                   total: found.total, commits: found.commits, files: GitHubFeed.files(fromCompare: compare),
-                                   head: event.head, before: event.before))
-        }
-        repoPushes[repo] = Array(list.sorted { $0.eventID > $1.eventID }.prefix(GitHubPages.repoPushes))
+        guard let token = token(), login != nil, Date() >= blockedUntil else { return }
+        // Asked again even if the quick looks read it: the opened repository may not be followed.
+        etags["/repos/\(repo)/activity?per_page=\(Self.activityPerRepo)"] = nil
+        var budget = GitHubPages.repoPushes
+        let found = await readActivity(of: repo, token: token, budget: &budget, again: true)
+        repoPushes[repo] = Array(((repoPushes[repo] ?? []) + found).sorted(by: GitHubPush.newestFirst).prefix(GitHubPages.repoPushes))
     }
 
     /// The pushes known for a repository, from every source, each once.
@@ -546,7 +573,9 @@ final class GitHubModule: YumiModule {
     /// A conditional request: the tag of the last answer goes with it, and "not modified" costs nothing.
     private func get(_ path: String, token: String, paced: Bool = false) async -> Answer {
         guard let url = URL(string: "https://api.github.com" + path) else { return .failed }
-        var request = URLRequest(url: url, timeoutInterval: 15)
+        // GitHub says "max-age=60": the system's cache would serve the same answer for a minute
+        // without asking. The tag below already makes an unchanged answer free.
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")

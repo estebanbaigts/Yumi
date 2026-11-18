@@ -58,7 +58,7 @@ struct IslandLayout: Equatable {
     }
 
     func size(_ stage: IslandStage, openHeight: CGFloat) -> CGSize {
-        let k = IslandConst.openScale, l = IslandConst.launchScale
+        let l = IslandConst.launchScale
         switch stage {
         case .hidden:  return CGSize(width: notchWidth, height: notchHeight)
         case .compact: return CGSize(width: notchWidth + compactEar * 2, height: notchHeight)

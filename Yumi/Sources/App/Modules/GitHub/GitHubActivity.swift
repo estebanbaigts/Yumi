@@ -33,8 +33,35 @@ struct GitHubPush: Equatable, Sendable, Codable {
     var head: String = ""
     /// The commit the branch pointed to before it; empty for a new branch.
     var before: String = ""
+    /// A pull request merged into the branch, rather than commits pushed to it.
+    var merge: Bool = false
 
     var repoName: String { repo.split(separator: "/").last.map(String.init) ?? repo }
+
+    /// Newest first, by date: the numbers of the event feed and of the activity feed do not
+    /// compare with each other. Without a date, the number decides.
+    static func newestFirst(_ a: GitHubPush, _ b: GitHubPush) -> Bool {
+        let first = a.date ?? .distantPast, second = b.date ?? .distantPast
+        return first != second ? first > second : a.eventID > b.eventID
+    }
+
+    /// "3 commits sur main", "PR fusionnée sur main".
+    var title: String {
+        if merge { return loc("PR fusionnée sur \(branch)") }
+        return total == 1 ? loc("Un commit sur \(branch)") : loc("\(total) commits sur \(branch)")
+    }
+}
+
+/// One line of `/repos/{repo}/activity`: what happened to a branch, as soon as it happened
+/// (the event feeds can lag by hours).
+struct GitHubBranchActivity: Equatable, Sendable {
+    var id: Int64
+    var branch: String
+    var before: String
+    var after: String
+    var actor: String
+    var date: Date?
+    var merge: Bool
 }
 
 /// A file a push touched.
@@ -103,15 +130,21 @@ extension GitHubFeed {
         return Array(files.sorted { $0.additions + $0.deletions > $1.additions + $1.deletions }.prefix(limit))
     }
 
-    /// Branch name → commit, from `/repos/{repo}/git/matching-refs/heads`.
-    static func heads(from data: Data) -> [String: String] {
-        guard let items = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [:] }
-        var heads: [String: String] = [:]
-        for item in items {
-            guard let ref = item["ref"] as? String, let sha = (item["object"] as? [String: Any])?["sha"] as? String else { continue }
-            heads[ref.replacingOccurrences(of: "refs/heads/", with: "")] = sha
+    /// The pushes and merges of `/repos/{repo}/activity`, newest first. A deleted branch is left out.
+    static func activity(from data: Data) -> [GitHubBranchActivity] {
+        guard let items = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
+        let kept: Set<String> = ["push", "force_push", "pr_merge", "merge_queue_merge", "branch_creation"]
+        return items.compactMap { item in
+            guard let type = item["activity_type"] as? String, kept.contains(type),
+                  let id = (item["id"] as? NSNumber)?.int64Value, let after = item["after"] as? String,
+                  !after.allSatisfy({ $0 == "0" }) else { return nil }
+            let ref = item["ref"] as? String ?? ""
+            return GitHubBranchActivity(id: id, branch: ref.replacingOccurrences(of: "refs/heads/", with: ""),
+                                        before: item["before"] as? String ?? "", after: after,
+                                        actor: (item["actor"] as? [String: Any])?["login"] as? String ?? "",
+                                        date: (item["timestamp"] as? String).flatMap { try? Date($0, strategy: .iso8601) },
+                                        merge: type == "pr_merge" || type == "merge_queue_merge")
         }
-        return heads
     }
 
     /// What to ask for the commits of a push: the comparison, or the head alone for a new branch.
@@ -134,7 +167,8 @@ enum GitHubActivity {
         let startOfToday = calendar.startOfDay(for: now)
         let weekAgo = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
         var counts: [String: (today: Int, week: Int)] = [:]
-        for push in pushes {
+        // A merge brings commits already counted when they were pushed.
+        for push in pushes where !push.merge {
             guard let date = push.date, date >= weekAgo else { continue }
             var count = counts[push.repo] ?? (0, 0)
             count.week += push.total
@@ -164,8 +198,8 @@ enum GitHubActivity {
                 section += " · " + loc("\(count.today) aujourd'hui, \(count.week) cette semaine")
             }
             var first = true
-            for push in shownPushes.filter({ $0.repo == repo }).sorted(by: { $0.eventID > $1.eventID }).prefix(Self.pushesPerRepo) {
-                let title = push.total == 1 ? loc("Un commit sur \(push.branch)") : loc("\(push.total) commits sur \(push.branch)")
+            for push in shownPushes.filter({ $0.repo == repo }).sorted(by: GitHubPush.newestFirst).prefix(Self.pushesPerRepo) {
+                let title = push.title
                 rows.append(ModuleRow(id: "push-\(push.eventID)", title: title, detail: push.actor, state: .busy, label: "push",
                                       date: push.date, section: first ? section : nil,
                                       action: "https://github.com/\(repo)/commits/\(push.branch)"))
@@ -190,7 +224,7 @@ enum GitHubActivity {
     /// A push of the last two minutes, for the folded island.
     static func livePush(_ pushes: [GitHubPush], hidden: Set<String>, now: Date) -> GitHubPush? {
         pushes.filter { !hidden.contains($0.repo) && ($0.date.map { now.timeIntervalSince($0) < 120 } ?? false) }
-            .max { $0.eventID < $1.eventID }
+            .min(by: GitHubPush.newestFirst)
     }
 }
 

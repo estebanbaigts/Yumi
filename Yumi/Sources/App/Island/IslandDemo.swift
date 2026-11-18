@@ -172,7 +172,7 @@ enum IslandDemo {
 
         let lines = ["#!/bin/zsh", "# bonjour.sh", "nom=${1:-toi}", "echo \"Bonjour, $nom !\"", "date \"+Il est %H:%M.\"", "exit 0"]
         live.activity = ChatActivity(id: "w1", kind: .writing, label: "Écrit bonjour.sh", detail: "")
-        for (index, line) in lines.enumerated() {
+        for index in lines.indices {
             live.activity?.detail = lines[0...index].joined(separator: "\n")
             state.chatLive = live
             await pause(0.3)

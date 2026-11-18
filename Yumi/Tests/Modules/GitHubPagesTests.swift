@@ -76,7 +76,7 @@ import Testing
     }
 
     @Test func anOpenedRepositoryListsItsLatestPushesWithTheirCommitsAndFiles() {
-        var pushes = (1...7).map { push(Int64($0), "me/a", ago: Double(100 * $0), commits: ["c\($0)"]) }
+        var pushes = (1...7).map { push(Int64($0), "me/a", ago: Double(100 * (8 - $0)), commits: ["c\($0)"]) }
         pushes[6].files = [GitHubFile(name: "Sources/App.swift", additions: 12, deletions: 3)]
         pushes[6].head = "abc"
         pushes[6].before = "def"
@@ -95,5 +95,16 @@ import Testing
     @Test func anOpenedRepositoryWithoutPushesSaysSo() {
         #expect(GitHubPages.repo("me/a", pushes: [], loading: true).last?.title == "Je regarde…")
         #expect(GitHubPages.repo("me/a", pushes: [], loading: false).last?.title == "Aucun push récent.")
+    }
+}
+
+@Suite struct GitHubMergeCountTests {
+    @Test func aMergeIsNotCountedTwice() {
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        var merge = GitHubPush(eventID: 2, repo: "me/a", branch: "main", actor: "me", date: now, total: 3, commits: [])
+        merge.merge = true
+        let pushes = [GitHubPush(eventID: 1, repo: "me/a", branch: "feat", actor: "me", date: now, total: 3, commits: []), merge]
+        #expect(GitHubActivity.counts(pushes, now: now, calendar: .current)["me/a"]?.today == 3)
+        #expect(merge.title == "PR fusionnée sur main")
     }
 }
