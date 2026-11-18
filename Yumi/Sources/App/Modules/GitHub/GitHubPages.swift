@@ -52,6 +52,51 @@ extension Notification.Name {
 
 enum GitHubPages {
     static let recentLimit = 12
+    /// Pushes shown when a repository is opened.
+    static let repoPushes = 5
+    /// The action of a repository line: its latest pushes open in place.
+    static let repoAction = "yumi-repo:"
+    /// The action of the line that goes back to every repository.
+    static let backAction = "yumi-repos"
+
+    /// One repository opened: a line back, then its latest pushes. Each push unfolds into its
+    /// commits and the files it touched; the button under them opens the comparison on GitHub.
+    static func repo(_ repo: String, pushes: [GitHubPush], loading: Bool) -> [ModuleRow] {
+        let name = repo.split(separator: "/").last.map(String.init) ?? repo
+        var rows = [ModuleRow(id: "repo-back", title: loc("‹ Tous les dépôts"), detail: name, state: .neutral, label: "",
+                              action: backAction)]
+        let shown = pushes.filter { $0.repo == repo }.sorted { $0.eventID > $1.eventID }.prefix(repoPushes)
+        if shown.isEmpty {
+            rows.append(ModuleRow(id: "repo-empty", title: loading ? loc("Je regarde…") : loc("Aucun push récent."),
+                                  detail: "", state: .neutral, label: ""))
+            return rows
+        }
+        for push in shown {
+            let title = push.total == 1 ? loc("Un commit sur \(push.branch)") : loc("\(push.total) commits sur \(push.branch)")
+            var details = push.commits.map { commit in
+                (ApprovalRequest.oneLine(commit.message, limit: 80) ?? commit.shortSHA) + " (\(commit.shortSHA))"
+            }
+            if push.total > push.commits.count {
+                details.append("· " + loc("et \(push.total - push.commits.count) de plus"))
+            }
+            details += push.files.map { "· \($0.name)  +\($0.additions) −\($0.deletions)" }
+            var row = ModuleRow(id: "repo-push-\(push.eventID)", title: title, detail: push.actor, state: .busy, label: "push",
+                                date: push.date, action: compareURL(push))
+            row.details = details
+            row.actionLabel = loc("Ouvrir sur GitHub")
+            rows.append(row)
+        }
+        return rows
+    }
+
+    /// Where the push reads on GitHub: its comparison, or its head, or the branch.
+    static func compareURL(_ push: GitHubPush) -> String {
+        if !push.head.isEmpty, !push.before.isEmpty, !push.before.allSatisfy({ $0 == "0" }) {
+            return "https://github.com/\(push.repo)/compare/\(push.before.prefix(12))...\(push.head.prefix(12))"
+        }
+        if !push.head.isEmpty { return "https://github.com/\(push.repo)/commit/\(push.head)" }
+        return "https://github.com/\(push.repo)/commits/\(push.branch)"
+    }
 
     /// The latest commits, every repository mixed, newest first: repository, branch, message, when.
     static func recent(pushes: [GitHubPush], hidden: Set<String>, limit: Int = recentLimit) -> [ModuleRow] {
@@ -94,7 +139,7 @@ enum GitHubPages {
             var parts = [count.week > 0 ? loc("\(count.today) aujourd'hui, \(count.week) cette semaine") : loc("rien cette semaine")]
             if !open.isEmpty { parts.append(open.count == 1 ? loc("une PR ouverte") : loc("\(open.count) PR ouvertes")) }
             var row = ModuleRow(id: "repo-\(repo)", title: name, detail: parts.joined(separator: " · "), state: .neutral,
-                                label: "", action: "https://github.com/\(repo)")
+                                label: "", action: repoAction + repo)
             let checks = open.compactMap(\.checks)
             if checks.contains(.failed) {
                 row.state = .failure; row.label = loc("CI rouge")

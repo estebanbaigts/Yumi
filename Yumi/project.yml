@@ -163,41 +163,27 @@ targets:
     sources:
       - path: Tests
       - path: Sources/App/Island/IslandStateMachine.swift
-        group: Tests/UnderTest
       - path: Sources/App/Island/IslandLayout.swift
-        group: Tests/UnderTest
       - path: Sources/App/Core
       - path: Sources/App/Modules
       - path: Sources/App/Contracts/ModuleTypes.swift
-        group: Tests/UnderTest
       - path: Sources/App/Contracts/ChatLive.swift
-        group: Tests/UnderTest
       - path: Sources/App/Contracts/MemoryTypes.swift
-        group: Tests/UnderTest
       - path: Sources/App/Memory
       - path: Sources/App/Initiative
       - path: Sources/App/Context
       - path: Sources/App/AgentRuntime
       - path: Sources/App/Permissions
       - path: Sources/App/Contracts/RemarkTypes.swift
-        group: Tests/UnderTest
       - path: Sources/App/Contracts/IslandLookTypes.swift
-        group: Tests/UnderTest
       - path: Sources/App/Contracts/CharacterCommands.swift
-        group: Tests/UnderTest
       - path: Sources/App/Character/YumiWorkHabit.swift
-        group: Tests/UnderTest
       - path: Sources/App/Character/YumiFaceTurn.swift
-        group: Tests/UnderTest
       - path: Sources/App/Contracts/AgentLook.swift
-        group: Tests/UnderTest
       - path: Sources/App/Contracts/EventAnimations.swift
-        group: Tests/UnderTest
       - path: Sources/App/App/AppIdentity.swift
-        group: Tests/UnderTest
       # The tests read the translations too, in French and in English
       - path: Sources/App/Localization/Localizable.xcstrings
-        group: Tests/UnderTest
         buildPhase: resources
     settings:
       base:

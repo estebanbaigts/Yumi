@@ -365,6 +365,26 @@ private let noReview = #"{"total_count":0,"items":[]}"#
         #expect(github.asked("/user/repos")[1].value(forHTTPHeaderField: "If-None-Match") != nil)
     }
 
+    @Test func aQuickLookSeesAPushBeforeTheFeeds() async {
+        let (module, github, _) = make()
+        github.set("/repos/estebanbaigts/Yumi/git/matching-refs/heads", #"[{"ref":"refs/heads/main","object":{"sha":"aaa"}}]"#)
+        await module.look()
+        await module.quickLook()
+        #expect(module.snapshot.pages["recent"]?.isEmpty == true)
+        github.set("/repos/estebanbaigts/Yumi/git/matching-refs/heads", #"[{"ref":"refs/heads/main","object":{"sha":"bbb"}}]"#)
+        github.set("/repos/estebanbaigts/Yumi/compare/aaa...bbb",
+                   #"{"total_commits":1,"commits":[{"sha":"bbb1234567","commit":{"message":"Fix the notch"},"author":{"login":"estebanbaigts"}}],"files":[{"filename":"a.swift","additions":4,"deletions":1}]}"#)
+        await module.quickLook()
+        #expect(module.snapshot.pages["recent"]?.first?.title == "Fix the notch")
+        #expect(module.snapshot.live != nil)
+        // The same push, when the feed brings it later, is not counted twice.
+        github.set("/users/estebanbaigts/events",
+                   #"[{"id":"50000000099","type":"PushEvent","actor":{"login":"estebanbaigts"},"repo":{"name":"estebanbaigts/Yumi"},"payload":{"ref":"refs/heads/main","before":"aaa","head":"bbb"}}]"#)
+        await module.look()
+        #expect(module.snapshot.pages["recent"]?.count == 1)
+        #expect(github.asked("/compare/aaa...bbb").count == 1)
+    }
+
     @Test func aNewFollowerHasItsScene() async {
         let (module, github, seen) = make()
         await module.look()

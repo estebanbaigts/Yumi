@@ -80,6 +80,17 @@ final class GitHubModule: YumiModule {
     /// Commits of pushes read per look at most, so a burst never spends the quota.
     static let comparesPerLook = 6
     static let pushesKept = 60
+    /// Seconds between two quick looks at the branches of the followed repositories: a push
+    /// shows within these seconds instead of waiting for the event feeds, which GitHub serves late.
+    static let quickInterval: TimeInterval = 15
+    /// The commit each branch pointed to at the last quick look, per repository.
+    private var heads: [String: [String: String]] = [:]
+    /// No request before this moment: GitHub said the quota is spent.
+    private var blockedUntil = Date.distantPast
+    /// The repository opened in the "Dépôts" page, with its latest pushes once read.
+    private var opened: String?
+    private var openedLoading = false
+    private var repoPushes: [String: [GitHubPush]] = [:]
 
     init(token: @escaping @MainActor () -> String?,
          prepare: @escaping @MainActor () async -> Void = {},
@@ -112,7 +123,8 @@ final class GitHubModule: YumiModule {
         snapshot.rows = GitHubActivity.rows(pushes: pushes, events: recent, hidden: hidden, now: now) + snapshot.rows
         // The pages of the island: the latest commits, then the repositories one line each.
         snapshot.pages = ["recent": GitHubPages.recent(pushes: pushes, hidden: hidden),
-                          "repos": GitHubPages.repos(followed: followed, pushes: pushes, pulls: pulls, hidden: hidden, now: now)]
+                          "repos": opened.map { GitHubPages.repo($0, pushes: pushes(of: $0), loading: openedLoading) }
+                            ?? GitHubPages.repos(followed: followed, pushes: pushes, pulls: pulls, hidden: hidden, now: now)]
         // A push of the last two minutes shows in the folded island, after a red check or a review.
         if snapshot.live == nil, let push = GitHubActivity.livePush(pushes, hidden: hidden, now: now) {
             let text = push.total == 1 ? loc("\(push.repoName) · un commit sur \(push.branch)") : loc("\(push.repoName) · \(push.total) commits sur \(push.branch)")
@@ -157,7 +169,13 @@ final class GitHubModule: YumiModule {
             while !Task.isCancelled {
                 guard let self else { return }
                 await self.look()
-                try? await Task.sleep(for: .seconds(self.wait), tolerance: .seconds(10))
+                // Between two looks at the feeds, quick looks at the branches and pull requests.
+                var waited: TimeInterval = 0
+                while waited < self.wait, !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(Self.quickInterval), tolerance: .seconds(2))
+                    waited += Self.quickInterval
+                    await self.quickLook()
+                }
             }
         }
     }
@@ -196,6 +214,19 @@ final class GitHubModule: YumiModule {
 
     /// A line of the list was clicked: its page opens.
     private func open(_ row: String) {
+        if row == GitHubPages.backAction {
+            opened = nil
+            onChange?()
+            return
+        }
+        if row.hasPrefix(GitHubPages.repoAction) {
+            let repo = String(row.dropFirst(GitHubPages.repoAction.count))
+            opened = repo
+            openedLoading = true
+            onChange?()
+            Task { [weak self] in await self?.readRepo(repo) }
+            return
+        }
         guard let url = URL(string: row), url.host == "github.com" else { return }
         if red?.url == url {
             red = nil
@@ -349,14 +380,89 @@ final class GitHubModule: YumiModule {
         for event in events.sorted(by: { $0.id > $1.id }) where !asked.contains(event.id) && !hidden.contains(event.repo) && budget > 0 {
             guard let path = GitHubFeed.comparePath(repo: event.repo, before: event.before, head: event.head) else { continue }
             asked.insert(event.id)
+            // Already seen by a quick look: the event only brings its number and its author.
+            if let known = pushes.firstIndex(where: { $0.repo == event.repo && !event.head.isEmpty && $0.head == event.head }) {
+                pushes[known].eventID = event.id
+                pushes[known].actor = event.actor
+                continue
+            }
             budget -= 1
             guard case .fresh(let data) = await get(path, token: token), let found = GitHubFeed.commits(fromCompare: data) else { continue }
             pushes.append(GitHubPush(eventID: event.id, repo: event.repo, branch: event.detail, actor: event.actor, date: event.date,
-                                     total: found.total, commits: found.commits))
+                                     total: found.total, commits: found.commits, files: GitHubFeed.files(fromCompare: data),
+                                     head: event.head, before: event.before))
             // A comparison never changes: its tag is not worth keeping.
             etags[path] = nil
         }
         pushes = Array(pushes.sorted { $0.eventID > $1.eventID }.prefix(Self.pushesKept))
+    }
+
+    /// A quick look, between two looks at the feeds: the branches of the followed repositories
+    /// (and of the one opened), then the pull requests. Conditional requests: an unchanged
+    /// answer is free, so this can run every few seconds.
+    func quickLook() async {
+        await prepare()
+        guard let token = token(), let login, connection == .connected, Date() >= blockedUntil else { return }
+        var changed = false
+        var names = followed
+        if let opened, !names.contains(opened) { names.append(opened) }
+        let hidden = GitHubRepos.hidden(in: defaults)
+        for repo in names where !hidden.contains(repo) {
+            guard case .fresh(let data) = await get("/repos/\(repo)/git/matching-refs/heads", token: token) else { continue }
+            let now = GitHubFeed.heads(from: data)
+            defer { heads[repo] = now }
+            guard let before = heads[repo] else { continue }
+            for (branch, head) in now where before[branch] != head && !pushes.contains(where: { $0.repo == repo && $0.head == head }) {
+                let old = before[branch] ?? ""
+                guard let path = GitHubFeed.comparePath(repo: repo, before: old, head: head),
+                      case .fresh(let compare) = await get(path, token: token),
+                      let found = GitHubFeed.commits(fromCompare: compare) else { continue }
+                etags[path] = nil
+                // No event number yet: one above every known, so it sorts first until its event comes.
+                let id = (pushes.map(\.eventID).max() ?? 0) + 1
+                pushes.insert(GitHubPush(eventID: id, repo: repo, branch: branch, actor: found.commits.first?.author ?? login,
+                                         date: Date(), total: found.total, commits: found.commits,
+                                         files: GitHubFeed.files(fromCompare: compare), head: head, before: old), at: 0)
+                changed = true
+            }
+        }
+        let before = pulls
+        await readPulls(token: token, login: login)
+        if changed || before != pulls { onChange?() }
+    }
+
+    /// The latest pushes of one repository, for the "Dépôts" page: its event feed, then the
+    /// commits and files of each push not read yet.
+    private func readRepo(_ repo: String) async {
+        defer {
+            if opened == repo { openedLoading = false }
+            onChange?()
+        }
+        await prepare()
+        guard let token = token(), let login, Date() >= blockedUntil else { return }
+        guard case .fresh(let data) = await get("/repos/\(repo)/events?per_page=50", token: token) else { return }
+        let events = GitHubFeed.events(from: data, login: login, received: false, repos: repos).filter { $0.kind == .push }
+        var list = repoPushes[repo] ?? []
+        for event in events.sorted(by: { $0.id > $1.id }).prefix(GitHubPages.repoPushes)
+            where !list.contains(where: { $0.eventID == event.id }) && !pushes.contains(where: { $0.eventID == event.id || (!event.head.isEmpty && $0.head == event.head) }) {
+            guard let path = GitHubFeed.comparePath(repo: repo, before: event.before, head: event.head),
+                  case .fresh(let compare) = await get(path, token: token),
+                  let found = GitHubFeed.commits(fromCompare: compare) else { continue }
+            etags[path] = nil
+            list.append(GitHubPush(eventID: event.id, repo: repo, branch: event.detail, actor: event.actor, date: event.date,
+                                   total: found.total, commits: found.commits, files: GitHubFeed.files(fromCompare: compare),
+                                   head: event.head, before: event.before))
+        }
+        repoPushes[repo] = Array(list.sorted { $0.eventID > $1.eventID }.prefix(GitHubPages.repoPushes))
+    }
+
+    /// The pushes known for a repository, from every source, each once.
+    private func pushes(of repo: String) -> [GitHubPush] {
+        var all = pushes.filter { $0.repo == repo }
+        for push in repoPushes[repo] ?? [] where !all.contains(where: { $0.eventID == push.eventID || (!push.head.isEmpty && $0.head == push.head) }) {
+            all.append(push)
+        }
+        return all
     }
 
     /// Keeps the latest events for the list.
@@ -458,6 +564,7 @@ final class GitHubModule: YumiModule {
         case 401:
             return .refused
         case 403, 429:
+            defer { blockedUntil = Date().addingTimeInterval(wait) }
             // Out of quota: wait until GitHub says it is back, an hour at most.
             if let reset = response.headers["x-ratelimit-reset"].flatMap(Double.init) {
                 wait = min(3600, max(Self.pollInterval, reset - Date().timeIntervalSince1970))
