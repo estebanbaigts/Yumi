@@ -39,7 +39,7 @@ Aujourd'hui Yumi n'installe que ceux de Claude Code. Codex lit `~/.codex/hooks.j
 C'est ce qui sert à la fois au grand public et aux développeurs. Aujourd'hui la carte d'accord montre la commande brute ; elle doit dire ce que l'action change et si elle se défait (« Codex veut supprimer le dossier build. Il se reconstruit. »). Le chat de Yumi le fait déjà pour ses propres outils (`AgentRuntime`, `PermissionManager`).
 
 - Étendre l'explication aux demandes venues des hooks : un classement des commandes courantes (lecture, tests, git, suppression, réseau) dans un fichier pur et testé de `Permissions/`.
-- Décision à prendre avant de coder : les règles personnelles (« toujours laisser passer les tests »). `CLAUDE.md` interdit d'approuver une permission sans clic explicite. Une règle peut refuser ou toujours demander sans toucher à cette interdiction ; une règle qui accepte toute seule demande de changer la règle du projet, à décider par écrit dans le journal.
+- Décidé le 18 novembre 2026 : ce qui ne change rien (lire, regarder git, lancer les tests) peut passer sans clic si la personne l'active dans les réglages ; le reste attend toujours un clic. Fait dans la branche `yumi/garde-fou` (`Permissions/AgentRequestReader.swift`).
 
 ### 4. Le premier lancement selon la personne
 
@@ -66,7 +66,7 @@ Deux usages à séparer, parce qu'ils ne demandent pas la même chose.
 ## Décisions en attente
 
 - Mémoire : quand un nouveau souvenir dit la même chose qu'un ancien avec d'autres mots, le remplacer ou garder les deux. Le code garde aujourd'hui les deux exprès (`Memory/MemoryNotes.swift`, test `somethingNewIsAddedAndOlderMemoriesAreLeftAlone`). Un essai de fusion à 0,6 de mots communs séparait bien le vrai doublon, mais cassait ce choix.
-- Règles d'acceptation automatique (chantier 3).
+- ~~Règles d'acceptation automatique (chantier 3)~~ : décidé le 18 novembre 2026, voir le journal.
 - Lien Mac et iPhone (chantier 6).
 - Faire les releases sur GitHub Actions plutôt que sur le Mac : il faudrait y mettre la clé Developer ID. Pour l'instant, non.
 

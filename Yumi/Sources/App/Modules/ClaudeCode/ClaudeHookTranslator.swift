@@ -40,9 +40,7 @@ enum ClaudeHookTranslator {
             specific = [.toolFinished(id, tool(from: payload)), .activityNoted(id, loc("Échec"))]
 
         case "PermissionRequest":
-            let tool = payload["tool_name"] as? String ?? "Tool"
-            let input = payload["tool_input"] as? [String: Any] ?? [:]
-            let command = input["command"] as? String ?? (input["command"] as? [String])?.joined(separator: " ") ?? tool
+            let (tool, command) = approvalSubject(payload)
             specific = [.permissionRequested(id, PermissionRequest(id: requestID, tool: tool, command: command))]
 
         case "Notification":
@@ -115,14 +113,39 @@ enum ClaudeHookTranslator {
         return ToolInfo(name: name, summary: detail(of: input))
     }
 
+    /// The tool and the command of a hook, as an approval shows them: the same for the request
+    /// and for the run that follows it, so a request answered in the terminal is recognised.
+    static func approvalSubject(_ payload: [String: Any]) -> (tool: String, command: String) {
+        let tool = payload["tool_name"] as? String ?? "Tool"
+        let input = payload["tool_input"] as? [String: Any] ?? [:]
+        let command = input["command"] as? String ?? (input["command"] as? [String]).map(unwrapped) ?? tool
+        return (tool, command)
+    }
+
+    /// Hooks that say a session moved on: whatever it was waiting for was answered somewhere.
+    /// A finished tool only says so for its own request; the end of a turn or a new request for all.
+    static let movesOn: Set<String> = ["PostToolUse", "PostToolUseFailure", "AfterTool",
+                                       "Stop", "StopFailure", "AfterAgent", "UserPromptSubmit", "BeforeAgent", "SessionEnd"]
+    static let finishesATool: Set<String> = ["PostToolUse", "PostToolUseFailure", "AfterTool"]
+
+    /// A command given as its words: `["bash", "-lc", "rm -rf build"]` is the script it runs,
+    /// `["git", "status"]` is itself. What the person approves is what really runs.
+    static func unwrapped(_ words: [String]) -> String {
+        let shells: Set<String> = ["bash", "sh", "zsh", "/bin/bash", "/bin/sh", "/bin/zsh"]
+        if let first = words.first, shells.contains(first), words.count >= 3,
+           ["-c", "-lc", "-ic", "-cl"].contains(words[words.count - 2]) {
+            return words[words.count - 1]
+        }
+        return words.joined(separator: " ")
+    }
+
     /// The part of a tool input worth showing: the command, the file name or the query.
     private static func detail(of input: [String: Any]) -> String {
         if let command = input["command"] as? String {
             return short(command)
         } else if let command = input["command"] as? [String] {
             // Codex gives the command as its words: ["bash", "-lc", "git status"].
-            let words = command.first == "bash" || command.first == "zsh" || command.first == "sh" ? Array(command.suffix(1)) : command
-            return short(words.joined(separator: " "))
+            return short(unwrapped(command))
         } else if let path = input["path"] as? String {
             return URL(fileURLWithPath: path).lastPathComponent
         } else if let file = (input["file_path"] ?? input["absolute_path"]) as? String {

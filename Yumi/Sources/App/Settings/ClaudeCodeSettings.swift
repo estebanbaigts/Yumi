@@ -9,6 +9,8 @@ struct ClaudeCodeSettings: View {
     @State private var outdated = HookServer.hooksNeedUpdate()
     @State private var preview: String?
     @State private var message: String?
+    /// Off until the person turns it on: see `AgentRules`.
+    @AppStorage(AgentRules.harmlessKey) private var letHarmlessThrough = false
     #if APPSTORE
     @State private var folderGranted = UserDefaults.standard.data(forKey: Self.bookmarkKey) != nil
     private static let bookmarkKey = "claudeDirectoryBookmark"
@@ -88,6 +90,14 @@ struct ClaudeCodeSettings: View {
                             .keyboardShortcut(.defaultAction)
                     }
                 }
+            }
+
+            Section {
+                Toggle(loc("Laisser passer tout seul ce qui ne change rien"), isOn: $letHarmlessThrough)
+            } header: {
+                Text("Demandes d'accord")
+            } footer: {
+                SettingsHelp(loc("Lire des fichiers, regarder git et lancer les tests passent sans ton clic, et la session le note. Supprimer, pousser, installer, contacter internet ou agir en administrateur attend toujours ta réponse."))
             }
 
             #if !APPSTORE

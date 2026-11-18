@@ -42,13 +42,15 @@ struct ActTitle: View {
 /// `.a-sub`
 struct ActSub: View {
     let text: String
+    var lines = 1
 
     var body: some View {
         Text(text)
             .font(IslandTheme.text(12.5, .regular))
             .foregroundStyle(IslandTheme.muted)
-            .lineLimit(1)
+            .lineLimit(lines)
             .truncationMode(.tail)
+            .fixedSize(horizontal: false, vertical: lines > 1)
     }
 }
 
@@ -491,10 +493,16 @@ struct AlertActivity: View {
                 ActMeta(color: IslandTheme.amber, text: IslandAgent.name(state.focusTask)).riseIn(0)
                 let agent = state.focusTask?.speaker ?? "Claude"
                 let shell = ClaudeToolPhrase.label(for: approval.tool) == loc("Exécute")
-                ActTitle(text: shell ? loc("\(agent) veut lancer ça. Je laisse passer ?") : loc("\(agent) veut utiliser \(approval.tool). Je laisse passer ?")).riseIn(1)
+                // What the request does, in plain words, and whether it can be undone.
+                let reading = AgentRequestReader.read(tool: approval.tool, command: approval.command)
+                ActTitle(text: loc("\(agent) veut \(reading.action). Je laisse passer ?"), lines: 2).riseIn(1)
                 ActMono(prompt: shell ? "$" : nil, text: approval.command, color: IslandTheme.amber).riseIn(2)
+                if let undo = reading.undo { ActSub(text: undo).riseIn(2) }
                 HStack(spacing: 14) {
-                    TextButton(label: loc("Toujours autoriser")) { HookServer.shared.sendApprovalDecision("always", for: approval.requestID) }
+                    // What cannot be undone or leaves the Mac is allowed one time at most.
+                    if reading.risk < .high {
+                        TextButton(label: loc("Toujours autoriser")) { HookServer.shared.sendApprovalDecision("always", for: approval.requestID) }
+                    }
                     // Where the request was made: to read the whole conversation before answering
                     if let open = ClaudeTaskMirror.openLabel(session: approval.sessionId) {
                         TextButton(label: open) { ClaudeTaskMirror.openSession(approval.sessionId) }
@@ -572,16 +580,37 @@ private struct AgentApprovalCard: View {
 struct FinishedActivity: View {
     @ObservedObject var state: AppState
     @ObservedObject var model: IslandModel
+    /// The turn's summary, read once the journal has it: it is written a moment after the end
+    /// of the turn reaches the island.
+    @State private var summary: String?
 
     var body: some View {
+        // The summary of the turn that just ended (files, commands, the agent's last sentence), and
+        // what the person refused in it: the agent's answer to the refusal is that last sentence.
+        let session = ClaudeTaskMirror.lastFinished
+        let refused = session.flatMap { ClaudeTaskMirror.refusals[$0] }
         ActRow {
-            ActMeta(color: IslandTheme.green, text: IslandAgent.name(state.focusTask)).riseIn(0)
-            ActTitle(text: loc("C'est passé.")).riseIn(1)
-            ActSub(text: IslandAgent.finishedLine(state, model)).riseIn(2)
+            ActMeta(color: refused == nil ? IslandTheme.green : IslandTheme.amber, text: IslandAgent.name(state.focusTask)).riseIn(0)
+            ActTitle(text: refused.map { loc("Tu as refusé : \($0). Voilà ce qu'il a fait ensuite.") } ?? loc("C'est passé."), lines: 2).riseIn(1)
+            if let summary { ActSub(text: summary, lines: 3).riseIn(2) }
         } trail: {
-            RoundButton(style: .fill, symbol: "checkmark", label: loc("OK"), color: IslandTheme.green, drawsCheck: true) {
-                IslandActions.fold()
+            EmptyView()
+        }
+        // Nothing to answer: the summary is read, then the island folds by itself. Longer text,
+        // longer stay; another view opened meanwhile is left alone.
+        .task(id: session?.value) {
+            summary = nil
+            for _ in 0..<10 {
+                if let text = session.flatMap({ ClaudeSessionJournals.shared.journals[$0.value]?.summary }) {
+                    summary = text
+                    break
+                }
+                try? await Task.sleep(for: .milliseconds(200))
             }
+            let seconds = min(12, 6 + Double((summary ?? "").count) / 40)
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, state.view == .finished else { return }
+            IslandActions.fold()
         }
     }
 }
