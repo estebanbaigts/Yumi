@@ -268,7 +268,7 @@ struct SessionBoard: Equatable, Sendable {
     /// The sessions to list, the ones waiting for something first.
     /// - Parameter journals: what each session is working on (ClaudeSessionJournals), by session id.
     func rows(now: Date = .now, journals: [String: SessionJournal] = [:]) -> [ModuleRow] {
-        seen.values
+        let listed = seen.values
             .filter { !Self.expired($0, now: now) }
             .sorted { a, b in
                 let rankA = Self.rank(a), rankB = Self.rank(b)
@@ -276,7 +276,14 @@ struct SessionBoard: Equatable, Sendable {
                 if a.session.recency != b.session.recency { return a.session.recency > b.session.recency }
                 return a.session.id.value < b.session.id.value
             }
-            .map { Self.enriched(Self.row($0), journals[$0.session.id.value], now: now) }
+        // Several agents at once: each line says whose it is ("site · Codex"). With one agent,
+        // the module already carries its name.
+        let severalAgents = Set(listed.map(\.session.agent.id)).count > 1
+        return listed.map { entry in
+            var row = Self.enriched(Self.row(entry), journals[entry.session.id.value], now: now)
+            if severalAgents { row.title += " · " + AgentCatalog.speaker(of: entry.session.agent) }
+            return row
+        }
     }
 
     /// The row with what the journal knows: the action or the task in progress instead of
