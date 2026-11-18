@@ -23,7 +23,7 @@ Contrat partagé entre les trois sessions de travail. Lire aussi `ARCHITECTURE.m
 | Target App Store | Plus tard. Le target et les blocs `#if APPSTORE` restent en place et doivent continuer à compiler, sans travail spécifique. |
 | Windows et Linux | Plus tard. Le portage Windows de Coucou n'a pas été importé. |
 | Identifiant de bundle | `app.yumi` (repris de la première version de Yumi). Target App Store : `app.yumi.appstore`. |
-| Équipe de signature | À fournir avant la première release. Le build Debug n'est pas signé et n'en a pas besoin. |
+| Équipe de signature | `J5U6R6ZV6K` (Developer ID Application, Esteban Baigts, valable jusqu'au 18 décembre 2027). Les releases sont construites, signées et notarisées sur le Mac de l'auteur par `scripts/release.sh` (profil notarytool `yumi-notary`), à partir de la 0.1.0-beta.1. Le build Debug n'est pas signé et n'en a pas besoin. |
 
 ## Valeurs d'identité (à utiliser telles quelles)
 

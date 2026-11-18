@@ -1,18 +1,25 @@
 name: Release
 
-# Builds the alpha that testers download, from the public code, on GitHub's machines.
-# Push a tag v<version> (the version of Yumi/project.yml, YumiDisplayVersion) and this
-# workflow builds, tests, signs with the "Yumi Local" certificate, zips the app with its
-# install guides, publishes SHA256SUMS.txt and a build provenance attestation, and opens a
-# draft pre-release. The author reads it and publishes it by hand.
+# Fallback only, started by hand (Actions > Release > Run workflow, with an existing tag).
+# Releases are now built on the author's Mac by scripts/release.sh: signed with the Developer
+# ID and notarized by Apple, which this workflow cannot do. It no longer starts on a tag push,
+# so it never replaces a notarized zip in a draft.
+#
+# Given a tag v<version> (the version of Yumi/project.yml, YumiDisplayVersion), it builds,
+# tests, signs with the "Yumi Local" certificate (not notarized: macOS blocks it until the
+# person allows it in Privacy & Security), zips the app with its install guides, publishes
+# SHA256SUMS.txt and a build provenance attestation, and opens a draft pre-release.
 #
 # Secrets (Settings > Secrets and variables > Actions):
 #   YUMI_LOCAL_P12           the "Yumi Local" certificate and its key, exported as .p12, base64
 #   YUMI_LOCAL_P12_PASSWORD  the password chosen at export
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build, for instance v0.1.0-beta.1"
+        required: true
 
 permissions:
   contents: write       # create the draft release
@@ -20,19 +27,23 @@ permissions:
   attestations: write   # publish the attestation
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag }}
   cancel-in-progress: false
 
 jobs:
   release:
     runs-on: macos-latest
+    env:
+      TAG: ${{ inputs.tag }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Read the version
         id: version
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="${TAG}"
           wanted="${tag#v}"
           declared=$(grep -m1 'YumiDisplayVersion:' Yumi/project.yml | sed -E 's/.*"(.*)".*/\1/')
           if [ "$wanted" != "$declared" ]; then
@@ -122,11 +133,11 @@ jobs:
           SHA-256: \`$sum\`
 
           Check: \`gh attestation verify ${{ steps.zip.outputs.zip }} --repo ${GITHUB_REPOSITORY}\`"
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+          if gh release view "$TAG" >/dev/null 2>&1; then
             # A draft already exists for this tag (the tag was moved): replace its files and notes
-            gh release upload "$GITHUB_REF_NAME" "${{ steps.zip.outputs.zip }}" SHA256SUMS.txt --clobber
-            gh release edit "$GITHUB_REF_NAME" --draft --prerelease --title "Yumi $version" --notes "$notes"
+            gh release upload "$TAG" "${{ steps.zip.outputs.zip }}" SHA256SUMS.txt --clobber
+            gh release edit "$TAG" --draft --prerelease --title "Yumi $version" --notes "$notes"
           else
-            gh release create "$GITHUB_REF_NAME" "${{ steps.zip.outputs.zip }}" SHA256SUMS.txt \
+            gh release create "$TAG" "${{ steps.zip.outputs.zip }}" SHA256SUMS.txt \
               --draft --prerelease --title "Yumi $version" --notes "$notes"
           fi

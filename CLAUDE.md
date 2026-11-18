@@ -12,7 +12,7 @@ Yumi is a native macOS app: a small animated character living in the MacBook not
 - `Yumi/Sources/App/AgentRuntime/`: the agent runtime (request, plan, tools, permissions, execution). It never acts without going through `PermissionManager`, and captures no context by itself.
 - `Yumi/Sources/App/Core/`: typed event engine and session store. `Yumi/Sources/App/Modules/`: one folder per module, each producing a `ModuleSnapshot`. Neither may use a view, `AppState`, the hook server or a sound.
 - `Yumi/Tests/`: unit tests (Swift Testing). The bundle is not hosted by the app: a file under test is listed in the `YumiTests` target of `project.yml` and must have no dependency on the rest of the app.
-- `scripts/release.sh`: signed and notarized build. Never run it unless the user asks: with `--publish` it pushes a tag and creates a GitHub release.
+- `scripts/release.sh`: build signed with the Developer ID (team `J5U6R6ZV6K`) and notarized, zipped with the install guides of `release/`. Never run it unless the user asks: with `--publish` it pushes a tag to `estebanbaigts/Yumi` and opens a draft GitHub release. `.github/workflows/release.yml` is a manual fallback (not notarized).
 - `.github/workflows/build.yml`: build and tests on every push.
 - Branch `legacy-v0`: the first Yumi attempt (typed event engine, multi-session store, tests). Reference only.
 

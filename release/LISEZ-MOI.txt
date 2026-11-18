@@ -1,8 +1,8 @@
 YUMI, version {{VERSION}}
 Un petit compagnon qui vit dans la notch de ton Mac.
 
-Merci de tester Yumi. Cette version est une alpha : elle n'est pas encore
-notarisée par Apple, d'où l'étape 3 ci-dessous, à faire une seule fois.
+Merci de tester Yumi. Cette version est une bêta : elle est signée et
+vérifiée par Apple, elle s'ouvre comme n'importe quelle app.
 
 
 IL TE FAUT
@@ -23,25 +23,20 @@ INSTALLER
 
 1. Glisse Yumi.app dans ton dossier Applications.
 
-2. Ouvre-le (double-clic). macOS affiche « Impossible d'ouvrir Yumi » :
-   clique sur Terminé, c'est normal pour une alpha.
+2. Ouvre-le (double-clic). macOS te demande si tu veux ouvrir une app
+   téléchargée sur internet : clique sur Ouvrir.
 
-3. Ouvre Réglages Système > Confidentialité et sécurité.
-   Tout en bas, à côté de « Yumi a été bloqué », clique sur
-   « Ouvrir quand même », puis confirme avec ton mot de passe.
-
-4. Yumi apparaît dans la notch. C'est fait : la prochaine fois, il s'ouvre
-   normalement.
+3. Yumi apparaît dans la notch. C'est fait.
 
 Yumi te demandera l'accès à ton agenda, tes rappels ou ta position
 seulement quand tu utilises le module concerné. Tu peux tout refuser :
 chaque accès ne débloque qu'une fonction.
 
 
-SUIVRE CLAUDE CODE (facultatif)
+SUIVRE TES AGENTS DE CODE (facultatif)
 
 Dans les réglages de Yumi (icône dans la barre des menus), installe les
-hooks Claude Code. Yumi montre le changement avant de l'écrire, garde une
+hooks Claude Code. Codex et Gemini CLI passent par les mêmes hooks. Yumi montre le changement avant de l'écrire, garde une
 copie de ton fichier de réglages, et refuse d'y toucher s'il est abîmé.
 
 
