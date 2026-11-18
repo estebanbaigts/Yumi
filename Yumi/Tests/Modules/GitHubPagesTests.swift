@@ -70,8 +70,30 @@ import Testing
                                      now: now, calendar: calendar)
         #expect(rows.map(\.title) == ["b", "a"])
         #expect(rows[0].state == .failure)
-        #expect(rows[0].action == "https://github.com/me/b")
+        #expect(rows[0].action == "yumi-repo:me/b")
         #expect(rows[1].state == .neutral)
         #expect(rows[1].detail.contains("5"))
+    }
+
+    @Test func anOpenedRepositoryListsItsLatestPushesWithTheirCommitsAndFiles() {
+        var pushes = (1...7).map { push(Int64($0), "me/a", ago: Double(100 * $0), commits: ["c\($0)"]) }
+        pushes[6].files = [GitHubFile(name: "Sources/App.swift", additions: 12, deletions: 3)]
+        pushes[6].head = "abc"
+        pushes[6].before = "def"
+        pushes[6].total = 3
+        pushes.append(push(9, "me/other", ago: 1, commits: ["o1"]))
+        let rows = GitHubPages.repo("me/a", pushes: pushes, loading: false)
+        #expect(rows.first?.action == GitHubPages.backAction)
+        #expect(rows.count == 1 + GitHubPages.repoPushes)
+        #expect(rows[1].id == "repo-push-7")
+        #expect(rows[1].details == ["fix c7 (c700000)", "· et 2 de plus", "· Sources/App.swift  +12 −3"])
+        #expect(rows[1].action == "https://github.com/me/a/compare/def...abc")
+        #expect(rows[1].actionLabel == "Ouvrir sur GitHub")
+        #expect(rows[2].action == "https://github.com/me/a/commits/main")
+    }
+
+    @Test func anOpenedRepositoryWithoutPushesSaysSo() {
+        #expect(GitHubPages.repo("me/a", pushes: [], loading: true).last?.title == "Je regarde…")
+        #expect(GitHubPages.repo("me/a", pushes: [], loading: false).last?.title == "Aucun push récent.")
     }
 }

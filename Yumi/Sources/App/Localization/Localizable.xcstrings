@@ -12900,12 +12900,12 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ah, there you are. %@ has a question for you."
+            "value": "Looking…"
           }
         }
       }
     },
-    "%@ %@ %@": {
+    "Aucun push récent.": {
       "localizations": {
         "en": {
           "stringUnit": {
