@@ -200,11 +200,34 @@ enum IslandActions {
     // MARK: First name
 
     /// The person gave their first name: the core keeps it (Contracts/MemoryTypes.swift).
-    static func giveName(_ name: String) {
+    /// - Parameter leave: false when the first launch goes on (the activity question).
+    static func giveName(_ name: String, leave: Bool = true) {
         UserDefaults.standard.set(Date.now, forKey: IslandPrefs.nameAskedKey)
         NotificationCenter.default.post(name: .memorySetName, object: nil, userInfo: ["name": name])
         SoundEngine.shared.play("approve")
         IslandModel.shared.pose(.wave)
+        if leave { go(.overview) }
+    }
+
+    /// What the person mostly does, chosen at the first launch: the modules follow it (only
+    /// while they were never chosen), and Yumi remembers it.
+    static func chooseProfiles(_ chosen: [WorkProfile], freeAnswer: String) {
+        var profiles = chosen
+        if let matched = WorkProfiles.match(freeAnswer), !profiles.contains(matched) { profiles.append(matched) }
+        if profiles.isEmpty, !freeAnswer.trimmingCharacters(in: .whitespaces).isEmpty, let mix = WorkProfiles.profile("mix") {
+            profiles = [mix]
+        }
+        let every = Array(Set(WorkProfiles.all.flatMap(\.modules)))
+        let modules = WorkProfiles.modules(for: profiles, available: every, limit: ModuleCatalog.selectionLimit)
+        NotificationCenter.default.post(name: .profilesChosen, object: nil, userInfo: ["modules": modules])
+        for profile in chosen {
+            NotificationCenter.default.post(name: .memoryRemember, object: nil, userInfo: ["text": profile.memory])
+        }
+        if let said = WorkProfiles.memory(ofFreeAnswer: freeAnswer) {
+            NotificationCenter.default.post(name: .memoryRemember, object: nil, userInfo: ["text": said])
+        }
+        SoundEngine.shared.play("approve")
+        IslandModel.shared.pose(.celebrate)
         go(.overview)
     }
 

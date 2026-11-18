@@ -161,4 +161,7 @@ extension Notification.Name {
     /// Posted by the island when a line of a module's list is clicked.
     /// userInfo: ["module": String (module id), "row": String (the row's `action`)]
     static let moduleRowAction = AppIdentity.notification("moduleRowAction")
+    /// Posted by the first launch with the modules of the profiles the person chose.
+    /// userInfo: ["modules": [String]]. Applied only while the modules were never chosen.
+    static let profilesChosen = AppIdentity.notification("profilesChosen")
 }

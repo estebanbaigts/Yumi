@@ -13724,6 +13724,306 @@
           }
         }
       }
+    },
+    "Je code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I code"
+          }
+        }
+      }
+    },
+    "J'ai un commerce ou une boutique": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I run a shop or a business"
+          }
+        }
+      }
+    },
+    "Je suis artisan ou sur le terrain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm a tradesperson or out in the field"
+          }
+        }
+      }
+    },
+    "Je suis freelance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm a freelancer"
+          }
+        }
+      }
+    },
+    "Je travaille en équipe, au bureau": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I work in a team, at the office"
+          }
+        }
+      }
+    },
+    "Je crée (design, illustration, photo)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I create (design, illustration, photo)"
+          }
+        }
+      }
+    },
+    "Je fais des vidéos ou du contenu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I make videos or content"
+          }
+        }
+      }
+    },
+    "Je fais de la musique": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I make music"
+          }
+        }
+      }
+    },
+    "J'étudie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm a student"
+          }
+        }
+      }
+    },
+    "J'enseigne": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I teach"
+          }
+        }
+      }
+    },
+    "C'est surtout pour ma vie perso": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's mostly for my personal life"
+          }
+        }
+      }
+    },
+    "Un peu de tout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A bit of everything"
+          }
+        }
+      }
+    },
+    "Tu codes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You code."
+          }
+        }
+      }
+    },
+    "Tu as un commerce ou une boutique.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You run a shop or a business."
+          }
+        }
+      }
+    },
+    "Tu es artisan ou tu travailles sur le terrain.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're a tradesperson or work out in the field."
+          }
+        }
+      }
+    },
+    "Tu es freelance.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're a freelancer."
+          }
+        }
+      }
+    },
+    "Tu travailles en équipe, au bureau.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You work in a team, at the office."
+          }
+        }
+      }
+    },
+    "Tu fais de la création : design, illustration ou photo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do creative work: design, illustration or photo."
+          }
+        }
+      }
+    },
+    "Tu fais des vidéos ou du contenu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You make videos or content."
+          }
+        }
+      }
+    },
+    "Tu fais de la musique.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You make music."
+          }
+        }
+      }
+    },
+    "Tu fais des études.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're a student."
+          }
+        }
+      }
+    },
+    "Tu enseignes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You teach."
+          }
+        }
+      }
+    },
+    "Tu utilises surtout ton Mac pour ta vie perso.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You mostly use your Mac for your personal life."
+          }
+        }
+      }
+    },
+    "Tu fais un peu de tout sur ton Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do a bit of everything on your Mac."
+          }
+        }
+      }
+    },
+    "Ton activité : %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you do: %@."
+          }
+        }
+      }
+    },
+    "Quand je bosse pour toi, je prends": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While I work for you, I have"
+          }
+        }
+      }
+    },
+    "Et tu fais quoi, surtout, sur ton Mac ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "And what do you mostly do on your Mac?"
+          }
+        }
+      }
+    },
+    "Choisis-en autant que tu veux. Je mets les bons modules dans l'encoche.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick as many as you like. I put the right modules in the notch."
+          }
+        }
+      }
+    },
+    "C'est parti": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let's go"
+          }
+        }
+      }
+    },
+    "Autre : ton métier, en un mot": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other: your job, in a word"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
