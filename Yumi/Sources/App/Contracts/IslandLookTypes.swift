@@ -121,7 +121,7 @@ enum IslandOpenWidth: Equatable, Sendable {
 
     /// What the menu bar row needs on each side of the notch: the three tabs on the left,
     /// the status and two buttons on the right.
-    static let side: CGFloat = 196
+    static let side: CGFloat = 250
 
     /// The width, in content units. `notch` is the notch's width in content units, 0 without one.
     func width(notch: CGFloat) -> CGFloat {

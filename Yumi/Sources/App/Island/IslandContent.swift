@@ -151,6 +151,14 @@ enum IslandActions {
         go(.prompt)
     }
 
+    /// A past conversation comes back on screen; the one on screen goes to the archive.
+    static func resume(_ chat: SavedChat) {
+        newConversation()
+        state.chatHistory = chat.lines.map { ChatMessage(role: $0.mine ? .user : .assistant, content: $0.text) }
+        ChatArchiveStore.shared.resumedID = chat.id
+        tap()
+    }
+
     /// The colour of the island changed in the settings.
     static func setAccent(_ accent: IslandAccent) {
         accent.save()
@@ -363,6 +371,7 @@ enum IslandActions {
 
     /// A new file or window is a new subject: the conversation starts again with it.
     static func newConversation() {
+        ChatArchiveStore.shared.keep(state.chatHistory)
         ClaudeService.shared.clearConversation()
         state.chatHistory = []
         state.noteMessage = nil

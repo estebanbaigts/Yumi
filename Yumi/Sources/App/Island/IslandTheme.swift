@@ -5,11 +5,11 @@ import SwiftUI
 
 enum IslandTheme {
     static let surface  = Color(hex: "#14161F")   // --isl-surface
-    static let raise    = Color(hex: "#1F2231")   // --isl-raise
+    static let raise    = Color(hex: "#232738")   // --isl-raise, a step lighter than the surface
     static let line     = Color.white.opacity(0.09)   // --isl-line
     static let fg       = Color(hex: "#F4F5F8")   // --isl-fg
-    static let muted    = Color(hex: "#8D92A8")   // --isl-muted
-    static let faint    = Color(hex: "#5A5F74")   // --isl-faint
+    static let muted    = Color(hex: "#A6ABC0")   // --isl-muted, lighter for reading
+    static let faint    = Color(hex: "#7C8199")   // --isl-faint, lighter for reading
     /// Text on a main button
     static let ink      = Color(hex: "#06070C")
     static let code     = Color(hex: "#D6DAEA")
@@ -24,17 +24,23 @@ enum IslandTheme {
 
     /// `--round`: SF Pro Rounded
     static func round(_ size: CGFloat, _ weight: Font.Weight) -> Font {
-        .system(size: size, weight: weight, design: .rounded)
+        .system(size: readable(size), weight: weight, design: .rounded)
+    }
+
+    /// Small text reads one point larger than the mock-up asked, and nothing goes under 10.5:
+    /// the island is read at a glance, from a distance.
+    static func readable(_ size: CGFloat) -> CGFloat {
+        size >= 14 ? size : max(10.5, size + 1)
     }
 
     /// `--text`: SF Pro Text
     static func text(_ size: CGFloat, _ weight: Font.Weight = .medium) -> Font {
-        .system(size: size, weight: weight)
+        .system(size: readable(size), weight: weight)
     }
 
     /// `--mono`: SF Mono
     static func mono(_ size: CGFloat, _ weight: Font.Weight = .medium) -> Font {
-        .system(size: size, weight: weight, design: .monospaced)
+        .system(size: readable(size), weight: weight, design: .monospaced)
     }
 }
 

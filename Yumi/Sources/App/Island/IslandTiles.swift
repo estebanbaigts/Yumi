@@ -165,6 +165,24 @@ private struct MusicTile: View {
     private var playing: Bool { module.live.map { $0.priority >= ModuleLivePriority.activity } ?? false }
 
     var body: some View {
+        // Whatever the size of its tile: the full player when it fits, else one line
+        ViewThatFits(in: .vertical) {
+            full
+            compact
+        }
+    }
+
+    private var compact: some View {
+        HStack(spacing: 8) {
+            Headline(text: module.title, size: 12.5)
+            Spacer(minLength: 4)
+            TileButton(symbol: playing ? "pause.fill" : "play.fill", label: module.primaryAction, filled: true, size: 24) {
+                IslandActions.module(module.id, "primary")
+            }
+        }
+    }
+
+    private var full: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -203,8 +221,31 @@ private struct FocusTile: View {
     let large: Bool
 
     var body: some View {
+        ViewThatFits(in: .vertical) {
+            full
+            compact
+        }
+    }
+
+    /// One line: the time left and its button, for a short tile.
+    private var compact: some View {
+        HStack(spacing: 8) {
+            Text(module.status)
+                .font(IslandTheme.round(15, .bold))
+                .monospacedDigit()
+                .foregroundStyle(IslandTheme.fg)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            ProgressLine(fraction: module.progress?.fraction ?? 0, color: module.color)
+            TileButton(symbol: module.primarySymbol ?? "play.fill", label: module.primaryAction, filled: true, color: module.color, size: 24) {
+                IslandActions.module(module.id, "primary")
+            }
+        }
+    }
+
+    private var full: some View {
         let side: CGFloat = large ? 76 : 62
-        VStack(spacing: 8) {
+        return VStack(spacing: 8) {
             ZStack {
                 Circle().stroke(Color.white.opacity(0.08), lineWidth: 5)
                 Circle()

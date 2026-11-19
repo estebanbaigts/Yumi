@@ -60,6 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         // A chat answer still being written would leave its Claude Code process behind.
+        ChatArchiveStore.shared.keep(AppState.shared.chatHistory)
         ClaudeService.shared.clearConversation(remember: false)
     }
 

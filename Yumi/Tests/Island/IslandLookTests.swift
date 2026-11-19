@@ -29,7 +29,7 @@ import Foundation
             #expect(kind.width(notch: notch) >= notch + 2 * IslandOpenWidth.side)
         }
         // The widest tab is not stretched by a notch it already clears
-        #expect(IslandOpenWidth.tab(.work).width(notch: 160) == IslandOpenWidth.tab(.work).preferred)
+        #expect(IslandOpenWidth.tab(.work).width(notch: 130) == IslandOpenWidth.tab(.work).preferred)
     }
 
     // MARK: Colour
