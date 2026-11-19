@@ -20,6 +20,8 @@ enum IslandView: String, CaseIterable {
     case memory
     /// The quick task field and the day's list of its destination.
     case quickTask
+    /// Every module at once, the tasks, the memory and the conversations ("Tout voir").
+    case apps
 }
 
 // MARK: - What the island shows (design/maquette/reference.html)
@@ -28,7 +30,7 @@ enum IslandView: String, CaseIterable {
 /// the hook server and the chat service, land on the same screen.
 enum IslandScreen: String, CaseIterable {
     /// `home` is the overview ("Tous"): what the island opens on when nothing is urgent.
-    case home, working, alert, finished, error, module, talk, drop, settings, welcome, memory, quickTask
+    case home, working, alert, finished, error, module, talk, drop, settings, welcome, memory, quickTask, apps
 
     /// The screen for what the application says right now. A view that names a screen wins;
     /// on the home view, only what is urgent takes its place.
@@ -44,6 +46,7 @@ enum IslandScreen: String, CaseIterable {
         case .welcome:                                  return .welcome
         case .memory:                                   return .memory
         case .quickTask:                                return .quickTask
+        case .apps:                                     return .apps
         case .overview, .empty, .confused, .greeting:
             // Only what waits for the person takes the home's place. An error or a finished
             // session is shown once, when it happens (`view` .error or .finished): it must never

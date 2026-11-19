@@ -26,7 +26,7 @@ struct IslandOpenLayer: View {
         switch screen {
         case .home, .module, .working:            return .tab(category)
         case .alert, .finished, .error:           return .alert
-        case .settings:                           return .settings
+        case .settings, .apps:                    return .settings
         case .talk, .memory, .quickTask, .drop, .welcome: return .chat
         }
     }
@@ -53,6 +53,7 @@ struct IslandOpenLayer: View {
         .animation(.islandSpring(0.42), value: model.remark(in: state)?.id)
         .frame(width: width, alignment: .topLeading)
         .foregroundStyle(IslandTheme.fg)
+        .onDrop(of: [.text], delegate: TabDrop(state: state, model: model))
         .coordinateSpace(name: islandOpenSpace)
     }
 
@@ -89,9 +90,11 @@ struct IslandOpenLayer: View {
         case .error:
             card(slot: 64, tint: IslandTheme.red) { ErrorActivity(state: state) }
         case .talk:
-            card(slot: 44, top: true) { IslandTalkView(state: state) }
+            trail(loc("Parler à Yumi")) { card(slot: 44, top: true) { IslandTalkView(state: state) } }
+        case .apps:
+            trail(loc("Tout voir")) { IslandCard { AllModulesGrid(state: state) }.fixedSize(horizontal: false, vertical: true) }
         case .settings:
-            IslandCard {
+            trail(loc("Réglages")) { IslandCard {
                 HStack(alignment: .top, spacing: 14) {
                     VStack(alignment: .leading, spacing: 10) {
                         YumiSlot(width: 60)
@@ -104,15 +107,15 @@ struct IslandOpenLayer: View {
                     SettingsActivity(state: state)
                 }
             }
-            .fixedSize(horizontal: false, vertical: true)
+            .fixedSize(horizontal: false, vertical: true) }
         case .welcome:
             card(slot: 60) { WelcomeActivity() }
         case .memory:
-            card(slot: 48, top: true) { MemoryActivity(state: state) }
+            trail(loc("Mémoire")) { card(slot: 48, top: true) { MemoryActivity(state: state) } }
         case .quickTask:
-            card(slot: 48, top: true) { QuickTaskActivity() }
+            trail(loc("Tâche rapide")) { card(slot: 48, top: true) { QuickTaskActivity() } }
         case .drop:
-            card(slot: 56) { DropActivity(state: state) }
+            trail(loc("Déposer un fichier")) { card(slot: 56) { DropActivity(state: state) } }
         }
     }
 
@@ -191,6 +194,15 @@ struct IslandOpenLayer: View {
         }
     }
 
+    /// A view under its trail: ‹ Accueil · title.
+    private func trail<Inner: View>(_ title: String, @ViewBuilder _ inner: () -> Inner) -> some View {
+        let built = inner()
+        return VStack(alignment: .leading, spacing: 6) {
+            BackTrail(title: title).padding(.horizontal, 2)
+            built
+        }
+    }
+
     /// One card: Yumi on the left, the activity beside him.
     private func card<Inner: View>(slot: CGFloat, tint: Color? = nil, top: Bool = false,
                                    @ViewBuilder _ inner: () -> Inner) -> some View {
@@ -218,6 +230,8 @@ struct IslandTalkView: View {
     /// becomes the final one without a blank in between.
     @State private var held: String?
     @FocusState private var focused: Bool
+    @ObservedObject private var model = IslandModel.shared
+    @ObservedObject private var archive = ChatArchiveStore.shared
 
     /// The island grows with the conversation up to `IslandConst.openHeightMax`; past
     /// that, older lines scroll.
@@ -257,6 +271,22 @@ struct IslandTalkView: View {
     var body: some View {
         let lines = lines
         VStack(alignment: .leading, spacing: 8) {
+            // The conversations before this one, and a fresh start
+            HStack(spacing: 12) {
+                TextButton(label: model.showChatHistory ? loc("‹ La conversation")
+                           : archive.chats.isEmpty ? loc("Historique") : loc("Historique (\(archive.chats.count))")) {
+                    withAnimation(.islandSpring(0.4)) { model.showChatHistory.toggle() }
+                }
+                if !state.chatHistory.isEmpty, !model.showChatHistory {
+                    TextButton(label: loc("Nouvelle conversation")) {
+                        withAnimation(.islandSpring(0.4)) { IslandActions.newConversation() }
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            if model.showChatHistory {
+                ChatHistoryList { withAnimation(.islandSpring(0.4)) { model.showChatHistory = false } }
+            } else {
             if let contextName {
                 // A control, not a label: one click detaches what is in front, one click attaches it again.
                 Button { state.contextAttached.toggle() } label: {
@@ -340,6 +370,7 @@ struct IslandTalkView: View {
             .padding(.vertical, 4)
             .background(RoundedRectangle(cornerRadius: 19).fill(Color.white.opacity(0.1)))
             .riseIn(2)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onChange(of: state.chatLive) { _, new in
@@ -360,6 +391,7 @@ struct IslandTalkView: View {
             }
             focused = true
         }
+        .onDisappear { model.showChatHistory = false }
     }
 
     private func send() {
@@ -403,5 +435,64 @@ struct ChatSuggestions: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - A module dropped on a space's tab
+
+/// The tabs sit in the menu bar row: the island takes the drop as a whole and finds the tab
+/// under the pointer. Hovering a tab for a moment opens it, so the module can be put down in
+/// its place there.
+struct TabDrop: DropDelegate {
+    let state: AppState
+    let model: IslandModel
+
+    private func tab(at point: CGPoint) -> ModuleCategory? {
+        model.tabFrames.first { $0.value.insetBy(dx: -6, dy: -6).contains(point) }?.key
+    }
+
+    func validateDrop(info: DropInfo) -> Bool { tab(at: info.location) != nil }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        let over = tab(at: info.location)
+        if over != model.dropTab {
+            model.dropTab = over
+            if over != nil {
+                model.setMood(.curious)
+                model.pose(.pop)
+                // Held over a tab: it opens, so the module can go to an exact place there
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                    if let over, model.dropTab == over { withAnimation(.islandSpring(0.45)) { IslandActions.showTab(over) } }
+                }
+            }
+        }
+        return DropProposal(operation: over == nil ? .forbidden : .move)
+    }
+
+    func dropExited(info: DropInfo) { model.dropTab = nil; model.setMood(nil) }
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let space = tab(at: info.location), let provider = info.itemProviders(for: [.text]).first else { return false }
+        model.dropTab = nil
+        _ = provider.loadObject(ofClass: NSString.self) { object, _ in
+            guard let id = object as? String else { return }
+            DispatchQueue.main.async {
+                if id == IslandModel.tasksID {
+                    _ = IslandBento.moveTasks(moved: id, on: nil, in: space, state: state, model: model)
+                } else if state.modules.contains(where: { $0.id == id }) {
+                    withAnimation(.islandSpring(0.5)) {
+                        ModuleSpaces.put(id, in: space)
+                        IslandActions.showTab(space)
+                        model.objectWillChange.send()
+                        state.objectWillChange.send()
+                    }
+                    SoundEngine.shared.play("pop")
+                    model.setMood(.happy)
+                    model.pose(.boing)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { model.setMood(nil) }
+                }
+            }
+        }
+        return true
     }
 }

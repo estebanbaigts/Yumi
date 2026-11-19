@@ -46,7 +46,7 @@ struct ModuleSnapshot: Identifiable, Equatable, Sendable {
     var category: ModuleCategory? = nil
 
     /// Where the island puts it.
-    var tab: ModuleCategory { category ?? ModuleCategory.of(moduleID: id) }
+    var tab: ModuleCategory { ModuleSpaces.chosen(id) ?? category ?? ModuleCategory.of(moduleID: id) }
 }
 
 /// One line of a module's list: a session, a pull request, an event.

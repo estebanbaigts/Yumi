@@ -84,7 +84,7 @@ struct GitHubPager: View {
         if let key = each.rowsKey {
             let rows = module.pages[key] ?? []
             if rows.isEmpty {
-                ActSub(text: each == .recent ? loc("Rien de poussé récemment.") : loc("Aucun dépôt suivi."))
+                ActSub(text: each == .recent ? loc("Rien de poussé récemment.") : each == .pulls ? loc("Aucune pull request ouverte.") : loc("Aucun dépôt suivi."))
             } else {
                 ModuleRowsList(module: listing(rows), lines: 3).padding(.leading, -7)
             }

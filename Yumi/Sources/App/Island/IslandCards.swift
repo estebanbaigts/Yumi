@@ -42,7 +42,7 @@ enum IslandCardTheme {
     static let line = Color(hex: "#26262A")
     static let button = Color(hex: "#1C1C1E")
     static let chipLine = Color(hex: "#2C2C2E")
-    static let mute = Color(hex: "#98989F")
+    static let mute = Color(hex: "#ADADB5")
 }
 
 // MARK: - Yumi's place
@@ -152,6 +152,14 @@ struct IslandTopBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(on ? .isSelected : [])
+                // Where the tab is: the island's drop zone finds the space under the pointer
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(islandOpenSpace)) } action: { model.tabFrames[tab] = $0 }
+                .overlay {
+                    Capsule().strokeBorder(accent, lineWidth: 1.5).opacity(model.dropTab == tab ? 1 : 0)
+                        .scaleEffect(model.dropTab == tab ? 1.06 : 0.9)
+                        .animation(.islandSpring(0.3), value: model.dropTab)
+                        .allowsHitTesting(false)
+                }
             }
             Spacer(minLength: 8)
             if let status = IslandSessions.status(state.modules) {
@@ -161,6 +169,7 @@ struct IslandTopBar: View {
                     .lineLimit(1)
                     .padding(.trailing, 4)
             }
+            IconCircle(symbol: "square.grid.2x2", label: loc("Tout voir"), on: screen == .apps) { IslandActions.go(.apps) }
             IconCircle(symbol: "pencil", label: loc("Parler à Yumi"), on: screen == .talk) { IslandActions.talk() }
             IconCircle(symbol: "gearshape", label: loc("Réglages"), on: screen == .settings) { IslandActions.go(.settings) }
         }

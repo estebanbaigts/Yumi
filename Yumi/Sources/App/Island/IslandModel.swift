@@ -98,6 +98,8 @@ final class IslandModel: ObservableObject {
     @Published var selectedSessionID: String?
     /// A letter typed while the island was open: the chat opens with it in its field.
     var chatSeed: String?
+    /// The chat opens on the list of past conversations ("Tout voir" › Conversations).
+    @Published var showChatHistory = false
 
     /// The pseudo module of the work tab that shows the quick task and its list.
     static let tasksID = "tasks"
@@ -105,7 +107,23 @@ final class IslandModel: ObservableObject {
     /// What the open tab offers, in the person's order: its modules, and the tasks in "Travail".
     func entries(in category: ModuleCategory, modules: [ModuleSnapshot]) -> [String] {
         let ids = modules.filter { $0.tab == category }.map(\.id)
-        return category == .work ? ids + [Self.tasksID] : ids
+        guard category == tasksSpace else { return ids }
+        // The tasks tile sits where the person put it, at the end until then
+        var out = ids
+        out.insert(Self.tasksID, at: min(max(0, tasksPlace ?? ids.count), ids.count))
+        return out
+    }
+
+    /// The space the tasks tile lives in: Travail until the person moves it.
+    var tasksSpace: ModuleCategory {
+        get { (UserDefaults.standard.string(forKey: "island.tasks.space")).flatMap(ModuleCategory.init(rawValue:)) ?? .work }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: "island.tasks.space"); objectWillChange.send() }
+    }
+
+    /// The place of the tasks tile among its tab's tiles, once the person moved it.
+    var tasksPlace: Int? {
+        get { UserDefaults.standard.object(forKey: "island.tasks.place") as? Int }
+        set { UserDefaults.standard.set(newValue, forKey: "island.tasks.place"); objectWillChange.send() }
     }
 
     /// The module of the open tab on screen: the chosen one if it is in the tab, else the first.
@@ -117,8 +135,14 @@ final class IslandModel: ObservableObject {
 
     /// The tabs worth showing: the ones that hold something.
     func tabs(modules: [ModuleSnapshot]) -> [ModuleCategory] {
-        ModuleCategory.allCases.filter { !entries(in: $0, modules: modules).isEmpty }
+        // The three spaces are always there, so a module can be dropped into an empty one
+        modules.isEmpty ? [] : ModuleCategory.allCases
     }
+
+    /// Where each tab of the top row is, in the open island's coordinates.
+    var tabFrames: [ModuleCategory: CGRect] = [:]
+    /// The tab a dragged module hovers.
+    @Published var dropTab: ModuleCategory?
     /// Height the open island needs for what it shows: it is as low as the content allows.
     @Published var openHeight: CGFloat = IslandConst.openHeightDefault
 
@@ -412,7 +436,7 @@ final class IslandModel: ObservableObject {
         case .module where isMusic(moduleID): return nil   // his headphones bring their own face
         case .module where moduleID == "focus": return (.focused, .think)
         case .module where moduleID == "agenda": return (.neutral, .calm)
-        case .settings, .memory, .quickTask: return (.curious, .calm)
+        case .settings, .memory, .quickTask, .apps: return (.curious, .calm)
         case .welcome: return (.happy, .joy)
         case .home:     return nil   // the state of the agent decides (neutral and calm at rest)
         case .working:  return (.focused, .work)
@@ -432,7 +456,7 @@ final class IslandModel: ObservableObject {
         case .error:    return .squash
         case .drop:     return .stretch
         case .welcome: return .wave
-        case .home, .working, .module, .talk, .settings, .memory, .quickTask: return .pop
+        case .home, .working, .module, .talk, .settings, .memory, .quickTask, .apps: return .pop
         }
     }
 

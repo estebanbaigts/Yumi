@@ -126,7 +126,8 @@ final class GitHubModule: YumiModule {
         // What happens, by repository, then the open pull requests and their checks.
         snapshot.rows = GitHubActivity.rows(pushes: pushes, events: recent, hidden: hidden, now: now) + snapshot.rows
         // The pages of the island: the latest commits, then the repositories one line each.
-        snapshot.pages = ["recent": GitHubPages.recent(pushes: pushes, hidden: hidden),
+        snapshot.pages = ["recent": GitHubPages.recent(pushes: pushes, hidden: hidden, now: now),
+                          "pulls": GitHubPages.pulls(pulls, hidden: hidden),
                           "repos": opened.map { GitHubPages.repo($0, pushes: pushes(of: $0), loading: openedLoading) }
                             ?? GitHubPages.repos(followed: followed, pushes: pushes, pulls: pulls, hidden: hidden, now: now)]
         // A push of the last two minutes shows in the folded island, after a red check or a review.

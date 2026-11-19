@@ -7,7 +7,7 @@ import Foundation
 
 /// A page of the GitHub view, remembered between openings.
 enum GitHubPage: Int, CaseIterable, Sendable {
-    case activity, recent, repos
+    case activity, recent, pulls, repos
 
     static let storageKey = "island.github.page"
 
@@ -15,6 +15,7 @@ enum GitHubPage: Int, CaseIterable, Sendable {
         switch self {
         case .activity: return loc("Activité")
         case .recent:   return loc("Récent")
+        case .pulls:    return loc("Pull requests")
         case .repos:    return loc("Dépôts")
         }
     }
@@ -24,6 +25,7 @@ enum GitHubPage: Int, CaseIterable, Sendable {
         switch self {
         case .activity: return nil
         case .recent:   return "recent"
+        case .pulls:    return "pulls"
         case .repos:    return "repos"
         }
     }
@@ -100,7 +102,8 @@ enum GitHubPages {
     }
 
     /// The latest commits, every repository mixed, newest first: repository, branch, message, when.
-    static func recent(pushes: [GitHubPush], hidden: Set<String>, limit: Int = recentLimit) -> [ModuleRow] {
+    static func recent(pushes: [GitHubPush], hidden: Set<String>, limit: Int = recentLimit,
+                       now: Date = .now, calendar: Calendar = .current) -> [ModuleRow] {
         var rows: [ModuleRow] = []
         for push in pushes.filter({ !hidden.contains($0.repo) }).sorted(by: GitHubPush.newestFirst) {
             let place = "\(push.repoName) · \(push.branch)"
@@ -124,7 +127,48 @@ enum GitHubPages {
             }
             if rows.count >= limit { break }
         }
-        return Array(rows.prefix(limit))
+        return days(Array(rows.prefix(limit)), now: now, calendar: calendar)
+    }
+
+    /// Each day's first line carries the day as its heading: "Aujourd'hui", "Hier", "lundi 16 nov.".
+    static func days(_ rows: [ModuleRow], now: Date, calendar: Calendar = .current) -> [ModuleRow] {
+        var out = rows
+        var last: Date?
+        for index in out.indices {
+            guard let date = out[index].date else { continue }
+            let day = calendar.startOfDay(for: date)
+            if day != last { out[index].section = dayName(day, now: now, calendar: calendar); last = day }
+        }
+        return out
+    }
+
+    static func dayName(_ day: Date, now: Date, calendar: Calendar = .current) -> String {
+        if calendar.isDate(day, inSameDayAs: now) { return loc("Aujourd'hui") }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(day, inSameDayAs: yesterday) { return loc("Hier") }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
+    }
+
+    /// The open pull requests, the ones that ask the person's review first, then the red ones,
+    /// then the newest: number and title, repository and author, the state of the checks.
+    static func pulls(_ pulls: [GitHubPull], hidden: Set<String>) -> [ModuleRow] {
+        func rank(_ pull: GitHubPull) -> Int { pull.asksMyReview ? 0 : pull.checks == .failed ? 1 : 2 }
+        let shown = pulls.filter { !hidden.contains($0.repo) }.sorted {
+            rank($0) != rank($1) ? rank($0) < rank($1) : ($0.updated ?? .distantPast) > ($1.updated ?? .distantPast)
+        }
+        return shown.map { pull in
+            let name = pull.repo.split(separator: "/").last.map(String.init) ?? pull.repo
+            let (state, label): (ModuleRowState, String) =
+                pull.asksMyReview ? (.waiting, loc("à relire"))
+                : pull.checks == .failed ? (.failure, loc("tests rouges"))
+                : pull.checks == .running ? (.busy, loc("tests en cours"))
+                : pull.checks == .passed ? (.success, loc("tests verts"))
+                : (.neutral, loc("ouverte"))
+            var row = ModuleRow(id: "pull-\(pull.key)", title: "#\(pull.number) · \(pull.title)", detail: "\(name) · \(pull.author)",
+                                state: state, label: label, date: pull.updated,
+                                action: pull.url?.absoluteString ?? "https://github.com/\(pull.repo)/pull/\(pull.number)")
+            row.actionLabel = loc("Ouvrir sur GitHub")
+            return row
+        }
     }
 
     /// One line per followed repository (and per repository pushed to this week): commits of

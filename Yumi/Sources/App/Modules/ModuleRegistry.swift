@@ -62,7 +62,7 @@ final class ModuleRegistry {
     /// The selected modules of one tab, in the person's order.
     func selected(in category: ModuleCategory) -> [String] {
         let byID = Dictionary(modules.map { ($0.id, $0.category) }, uniquingKeysWith: { first, _ in first })
-        return ModuleCategory.ids(selection.ids, in: category) { byID[$0] ?? ModuleCategory.of(moduleID: $0) }
+        return ModuleCategory.ids(selection.ids, in: category) { ModuleSpaces.chosen($0) ?? byID[$0] ?? ModuleCategory.of(moduleID: $0) }
     }
 
     /// Identifiers of every module of this build, in catalogue order.
