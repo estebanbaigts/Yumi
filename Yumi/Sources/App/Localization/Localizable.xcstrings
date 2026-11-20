@@ -14824,6 +14824,16 @@
           }
         }
       }
+    },
+    "Demain %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -126,6 +126,19 @@ final class PhoneToday {
         }
     }
 
+    /// When a reminder is due, short: « 18:00 », « Demain 9:00 », « lun. 23 nov. », « En retard ».
+    static func dueLabel(_ reminder: ReminderItem, now: Date = Date()) -> (text: String, late: Bool)? {
+        guard let due = reminder.due else { return nil }
+        let calendar = Calendar.current
+        let time = due.formatted(.dateTime.hour().minute().locale(AppLanguage.locale))
+        let late = reminder.hasTime ? due < now : calendar.startOfDay(for: due) < calendar.startOfDay(for: now)
+        if late { return (loc("En retard"), true) }
+        if calendar.isDateInToday(due) { return (reminder.hasTime ? time : loc("Aujourd'hui"), false) }
+        if calendar.isDateInTomorrow(due) { return (reminder.hasTime ? loc("Demain \(time)") : loc("Demain"), false) }
+        let day = due.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).locale(AppLanguage.locale))
+        return (reminder.hasTime ? "\(day) \(time)" : day, false)
+    }
+
     /// Today and the six days after it.
     static func days(from now: Date) -> [Date] {
         let start = Calendar.current.startOfDay(for: now)

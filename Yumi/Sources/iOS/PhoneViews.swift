@@ -185,7 +185,15 @@ struct PhoneHomeView: View {
             case .granted:
                 if phone.today.reminders.isEmpty { Text(loc("Aucun rappel en cours.")).foregroundStyle(.secondary) }
                 ForEach(phone.today.reminders.prefix(5), id: \.id) { reminder in
-                    Label(reminder.title, systemImage: "circle")
+                    HStack(alignment: .firstTextBaseline) {
+                        Label(reminder.title, systemImage: "circle")
+                        Spacer(minLength: 8)
+                        if let due = PhoneToday.dueLabel(reminder) {
+                            Text(due.text)
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(due.late ? Color.red : Color.secondary)
+                        }
+                    }
                 }
             case .notDetermined:
                 Button(loc("Voir mes rappels")) { Task { await phone.today.askReminders() } }
