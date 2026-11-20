@@ -142,7 +142,7 @@ extension YumiRenderer {
         let light = GraphicsContext.Shading.color(Color(.sRGB, red: 0.565, green: 0.580, blue: 0.627))
         c.fill(Path(CGRect(x: 39.2, y: 65.2, width: 5.6, height: 1.6)), with: light)
         c.fill(Path(CGRect(x: 41.2, y: 63.2, width: 1.6, height: 5.6)), with: light)
-        let colours: [Color] = [Color(hex: "#FF5D6C"), Color(hex: "#3DDC97"), Color(hex: "#5B8CFF"), Color(hex: "#FFB547")]
+        let colours: [Color] = [YumiRGB(hex: 0xFF5D6C).color, YumiRGB(hex: 0x3DDC97).color, YumiRGB(hex: 0x5B8CFF).color, YumiRGB(hex: 0xFFB547).color]
         for (i, d) in [(0.0, -1.9), (1.9, 0.0), (0.0, 1.9), (-1.9, 0.0)].enumerated() {
             c.fill(circle(58 + d.0, 66 + d.1, 0.9), with: .color(colours[i]))
         }

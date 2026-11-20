@@ -118,11 +118,19 @@ struct AddEventTool: Tool {
     // MARK: - Arguments
 
     private func accessProblem() -> String? {
+        #if os(iOS)
+        switch store.access {
+        case .granted: nil
+        case .notDetermined: loc("iOS ne m'a pas encore donné accès à ton calendrier. Réponds « Autoriser » à sa question, ou autorise Yumi dans Réglages, Confidentialité et sécurité, Calendriers, puis redemande-moi")
+        case .denied: loc("iOS ne me laisse pas accéder à ton calendrier. Autorise Yumi dans Réglages, Confidentialité et sécurité, Calendriers")
+        }
+        #else
         switch store.access {
         case .granted: nil
         case .notDetermined: loc("macOS ne m'a pas encore donné accès à ton calendrier. Réponds « Autoriser » à sa question, ou autorise Yumi dans Réglages Système, Confidentialité et sécurité, Calendriers, puis redemande-moi")
         case .denied: loc("macOS ne me laisse pas accéder à ton calendrier. Autorise Yumi dans Réglages Système, Confidentialité et sécurité, Calendriers")
         }
+        #endif
     }
 
     private func fields(_ arguments: ToolArguments, allowingPast: Bool = false) throws(ToolError) -> (String, Date, Date, String?) {

@@ -686,9 +686,14 @@ final class BotEngine: ObservableObject {
         wake()
     }
 
+    /// The character's own sounds, the same WAV files on the Mac and the iPhone.
+    private func playSound(_ name: String) {
+        SoundEngine.shared.play(name)
+    }
+
     func greet() {
         play(.wave)
-        SoundEngine.shared.play("greet")
+        playSound("greet")
     }
 
     /// A click on Yumi: he bounces. Three in a row and he gets dizzy.
@@ -696,7 +701,7 @@ final class BotEngine: ObservableObject {
         guard state != .dizzy else { return }
         slapTimes = slapTimes.filter { clock - $0 < 1.7 }
         slapTimes.append(clock)
-        SoundEngine.shared.play("slap")
+        playSound("slap")
         play(.boing)
         if slapTimes.count >= 3 {
             slapTimes = []
@@ -724,7 +729,7 @@ final class BotEngine: ObservableObject {
         case .annoyed:
             emote = (.annoyed, clock + 0.8)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
-                SoundEngine.shared.play("annoyed")
+                self.playSound("annoyed")
             }
         }
     }

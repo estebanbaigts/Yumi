@@ -101,11 +101,19 @@ struct AddReminderTool: Tool {
     // MARK: - Arguments
 
     private func accessProblem() -> String? {
+        #if os(iOS)
+        switch store.access {
+        case .granted: nil
+        case .notDetermined: loc("iOS ne m'a pas encore donné accès à tes Rappels. Réponds « Autoriser » à sa question, ou autorise Yumi dans Réglages, Confidentialité et sécurité, Rappels, puis redemande-moi")
+        case .denied: loc("iOS ne me laisse pas accéder à tes Rappels. Autorise Yumi dans Réglages, Confidentialité et sécurité, Rappels")
+        }
+        #else
         switch store.access {
         case .granted: nil
         case .notDetermined: loc("macOS ne m'a pas encore donné accès à tes Rappels. Réponds « Autoriser » à sa question, ou autorise Yumi dans Réglages Système, Confidentialité et sécurité, Rappels, puis redemande-moi")
         case .denied: loc("macOS ne me laisse pas accéder à tes Rappels. Autorise Yumi dans Réglages Système, Confidentialité et sécurité, Rappels")
         }
+        #endif
     }
 
     /// One line, not empty, not too long.
