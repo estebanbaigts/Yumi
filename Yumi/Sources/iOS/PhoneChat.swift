@@ -73,6 +73,12 @@ final class PhoneChat {
         let request = AgentRequest(userIntent: text, conversation: conversation)
         let planned = await agent.plan(for: request)
         let route = ChatRoute.route(planned, message: text)
+        // Deleting or ticking off is not something he does on iPhone yet: he says so
+        if case .agent = route {} else if Self.asksToDelete(text) {
+            succeeded = false
+            append(.init(role: .yumi, text: loc("Je ne sais pas encore effacer ou cocher tes rappels depuis ici. Touche la carte Rappels sur l'accueil pour les cocher dans l'app Rappels.")))
+            return
+        }
         // A question about the day: answered from the calendar itself, never guessed
         if case .agent = route {} else if let day, Self.asksAboutTheDay(text) {
             append(.init(role: .yumi, text: day(Self.meansTomorrow(text))))
@@ -96,10 +102,19 @@ final class PhoneChat {
     /// « qu'est-ce que j'ai aujourd'hui », « j'ai quoi de prévu demain », « mon agenda »...
     static func asksAboutTheDay(_ text: String) -> Bool {
         if ChatRoute.isPersonalAgenda(text) { return true }
+        // A short follow-up: « et demain ? », « et aujourd'hui ? »
+        let words = text.split(whereSeparator: { !$0.isLetter && $0 != "'" && $0 != "’" })
+        if words.count <= 4, ["demain", "aujourd", "tomorrow", "today"].contains(where: text.lowercased().contains) { return true }
         let folded = " " + text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "fr_FR"))
             .replacingOccurrences(of: "’", with: "'") + " "
         let asks = ["de prevu", "j'ai quoi", "ma journee", "mes rappels", "mon programme", "what's on", "my day"]
         return asks.contains(where: folded.contains)
+    }
+
+    /// « efface mes rappels », « supprime le rendez-vous », « coche tout »...
+    static func asksToDelete(_ text: String) -> Bool {
+        let folded = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "fr_FR"))
+        return ["efface", "supprime", "enleve", "retire", "coche", "annule", "delete", "remove"].contains(where: folded.contains)
     }
 
     static func meansTomorrow(_ text: String) -> Bool {
@@ -133,12 +148,10 @@ final class PhoneChat {
         guard availability.isAvailable else { return Self.withoutModel(availability) }
         #if canImport(FoundationModels)
         if #available(iOS 26, *) {
-            let chat = (apple as? PhoneAppleChat) ?? PhoneAppleChat(day: { [weak self] in
-                await MainActor.run { self?.day?(false) ?? "" }
-            })
+            let chat = (apple as? PhoneAppleChat) ?? PhoneAppleChat()
             apple = chat
             do {
-                let answer = try await chat.reply(to: text, knowledge: knowledge)
+                let answer = try await chat.reply(to: text, knowledge: knowledge, day: day?(false) ?? "")
                 return VoiceRules.withoutLongDashes(MemoryNotes.extract(from: answer).visible)
             } catch {
                 return loc("Je n'ai pas réussi à répondre. Redemande-moi.")

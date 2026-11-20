@@ -14724,6 +14724,16 @@
           }
         }
       }
+    },
+    "Je ne sais pas encore effacer ou cocher tes rappels depuis ici. Touche la carte Rappels sur l'accueil pour les cocher dans l'app Rappels.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't delete or tick off your reminders from here yet. Tap the Reminders card on the home screen to tick them in the Reminders app."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
