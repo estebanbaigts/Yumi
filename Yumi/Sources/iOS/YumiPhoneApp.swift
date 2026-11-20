@@ -38,6 +38,9 @@ struct YumiPhoneApp: App {
 @Observable
 final class Phone {
     let studio = StudioMode.isOn
+    /// The link with the Mac is ready on both sides. False until the signed Mac build carries
+    /// the iCloud container: the iPhone then says « bientôt » instead of a switch that does nothing.
+    static let linkReady = false
     let chat: PhoneChat
     let today: PhoneToday
     let approvals = PhoneApprovals()
@@ -90,7 +93,8 @@ final class Phone {
         today = PhoneToday(live: true, notesURL: folder.appendingPathComponent("notes.md"))
         let today = today
         chat.day = { tomorrow in today.told(tomorrow: tomorrow) }
-        linkOn = LinkSetting.isOn()
+        // Off until the Mac's side is switched on (Phone.linkReady), whatever was chosen before
+        linkOn = Self.linkReady && LinkSetting.isOn()
         // The opening says hello (PhoneSplash): the screens do not greet a second time
         character.greetedAtLaunch()
     }

@@ -14834,6 +14834,26 @@
           }
         }
       }
+    },
+    "Bientôt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soon"
+          }
+        }
+      }
+    },
+    "La connexion avec ton Mac arrive bientôt : tes sessions Claude Code et les demandes d'accord, sur ton iPhone, par ton iCloud.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The connection with your Mac is coming soon: your Claude Code sessions and approval requests on your iPhone, through your iCloud."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -480,15 +480,29 @@ struct PhoneSettingsView: View {
                         Text(why).font(.footnote).foregroundStyle(.secondary)
                     }
                 }
-                if YumiLinks.isBuiltIn || phone.studio {
                 Section {
-                    Toggle(loc("Retrouver mon Mac"), isOn: $phone.linkOn)
-                    if let error = PhoneLink.shared.lastError { Text(error).font(.footnote).foregroundStyle(.secondary) }
+                    if Phone.linkReady || phone.studio {
+                        Toggle(loc("Retrouver mon Mac"), isOn: $phone.linkOn)
+                        if let error = PhoneLink.shared.lastError { Text(error).font(.footnote).foregroundStyle(.secondary) }
+                    } else {
+                        // The Mac's side is not switched on yet: said plainly rather than a switch that does nothing
+                        HStack {
+                            Text(loc("Retrouver mon Mac")).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(loc("Bientôt"))
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10).padding(.vertical, 4)
+                                .background(PhoneTheme.rim.opacity(0.35), in: Capsule())
+                        }
+                    }
                 } header: {
                     Text(loc("Mac"))
                 } footer: {
-                    Text(loc("Par ton iCloud uniquement, jamais par un serveur de Yumi. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir."))
-                }
+                    if Phone.linkReady || phone.studio {
+                        Text(loc("Par ton iCloud uniquement, jamais par un serveur de Yumi. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir."))
+                    } else {
+                        Text(loc("La connexion avec ton Mac arrive bientôt : tes sessions Claude Code et les demandes d'accord, sur ton iPhone, par ton iCloud."))
+                    }
                 }
                 Section(loc("Yumi")) {
                     NavigationLink(loc("Son apparence")) { PhoneLookView(phone: phone) }
