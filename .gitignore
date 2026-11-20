@@ -5,6 +5,8 @@
 *.xcodeproj
 Yumi/Resources/Info.plist
 Yumi/Resources/InfoAppStore.plist
+Yumi/Resources/InfoPhone.plist
+Yumi/Resources/InfoPhoneWidgets.plist
 
 # Build artifacts
 build/

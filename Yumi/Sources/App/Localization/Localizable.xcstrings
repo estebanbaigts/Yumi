@@ -14024,6 +14024,606 @@
           }
         }
       }
+    },
+    "Bonjour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hello"
+          }
+        }
+      }
+    },
+    "Bonsoir": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good evening"
+          }
+        }
+      }
+    },
+    "Rien de prévu aujourd'hui.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing planned today."
+          }
+        }
+      }
+    },
+    "Voir mon agenda": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show my calendar"
+          }
+        }
+      }
+    },
+    "L'accès au calendrier est refusé. Tu peux le rendre dans Réglages.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar access is off. You can turn it back on in Settings."
+          }
+        }
+      }
+    },
+    "Rappels et notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders and notes"
+          }
+        }
+      }
+    },
+    "Aucun rappel en cours.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No reminders right now."
+          }
+        }
+      }
+    },
+    "Voir mes rappels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show my reminders"
+          }
+        }
+      }
+    },
+    "L'accès aux rappels est refusé. Tu peux le rendre dans Réglages.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders access is off. You can turn it back on in Settings."
+          }
+        }
+      }
+    },
+    "Je n'arrive pas à avoir la météo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't get the weather."
+          }
+        }
+      }
+    },
+    "La localisation est refusée. Tu peux la rendre dans Réglages.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location is off. You can turn it back on in Settings."
+          }
+        }
+      }
+    },
+    "Voir le ciel d'ici": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the sky here"
+          }
+        }
+      }
+    },
+    "Dis-moi ce dont tu as besoin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell me what you need."
+          }
+        }
+      }
+    },
+    "Écris à Yumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write to Yumi"
+          }
+        }
+      }
+    },
+    "Intelligence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intelligence"
+          }
+        }
+      }
+    },
+    "Modèle d'Apple": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple's model"
+          }
+        }
+      }
+    },
+    "Prêt, sur cet iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready, on this iPhone."
+          }
+        }
+      }
+    },
+    "Indisponible": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unavailable"
+          }
+        }
+      }
+    },
+    "Retrouver mon Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to my Mac"
+          }
+        }
+      }
+    },
+    "Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac"
+          }
+        }
+      }
+    },
+    "Par ton iCloud uniquement, jamais par un serveur de Yumi. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Through your iCloud only, never through a Yumi server. An answer given here is always checked by the Mac before anything happens."
+          }
+        }
+      }
+    },
+    "Oublier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forget"
+          }
+        }
+      }
+    },
+    "Effacer la conversation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the conversation"
+          }
+        }
+      }
+    },
+    "En mode tournage, je fais semblant d'écouter.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In filming mode, I only pretend to listen."
+          }
+        }
+      }
+    },
+    "Je n'ai pas réussi à répondre. Redemande-moi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't answer. Ask me again."
+          }
+        }
+      }
+    },
+    "Sans modèle, je sais déjà noter un rappel ou un rendez-vous : « rappelle-moi d'appeler maman demain 18 h ».": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without a model, I can already note a reminder or an appointment: “remind me to call mum tomorrow at 6 pm”."
+          }
+        }
+      }
+    },
+    "Pour discuter de tout, il me faut iOS 26 ou plus récent.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To talk about anything, I need iOS 26 or later."
+          }
+        }
+      }
+    },
+    "Cet iPhone ne peut pas faire tourner le modèle d'Apple.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This iPhone can't run Apple's model."
+          }
+        }
+      }
+    },
+    "Active Apple Intelligence dans Réglages, Apple Intelligence et Siri, et je pourrai discuter de tout.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on Apple Intelligence in Settings, Apple Intelligence & Siri, and I'll be able to talk about anything."
+          }
+        }
+      }
+    },
+    "Le modèle d'Apple se télécharge sur ton iPhone. Je m'en sers dès qu'il est prêt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple's model is downloading to your iPhone. I'll use it as soon as it's ready."
+          }
+        }
+      }
+    },
+    "Le modèle d'Apple ne parle pas encore ma langue sur cet iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple's model doesn't speak my language on this iPhone yet."
+          }
+        }
+      }
+    },
+    "Envoyé : autorisé": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent: allowed"
+          }
+        }
+      }
+    },
+    "Envoyé : refusé": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent: refused"
+          }
+        }
+      }
+    },
+    "Demande": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request"
+          }
+        }
+      }
+    },
+    "Empreinte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fingerprint"
+          }
+        }
+      }
+    },
+    "Répondre à une demande du Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answer a request from the Mac"
+          }
+        }
+      }
+    },
+    "Je n'arrive pas à joindre ton iCloud.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't reach your iCloud."
+          }
+        }
+      }
+    },
+    "Le Mac vérifie ta réponse avant d'agir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Mac checks your answer before acting."
+          }
+        }
+      }
+    },
+    "Mode tournage au prochain lancement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filming mode at next launch"
+          }
+        }
+      }
+    },
+    "attend ton accord": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "waiting for your OK"
+          }
+        }
+      }
+    },
+    "te pose une question": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "has a question for you"
+          }
+        }
+      }
+    },
+    "terminé": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "done"
+          }
+        }
+      }
+    },
+    "Retrouver mon iPhone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to my iPhone"
+          }
+        }
+      }
+    },
+    "iPhone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone"
+          }
+        }
+      }
+    },
+    "Par ton iCloud uniquement, jamais par un serveur de Yumi. Ton iPhone voit tes sessions et peut répondre aux demandes des agents ; chaque réponse est vérifiée ici avant d'agir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Through your iCloud only, never through a Yumi server. Your iPhone sees your sessions and can answer the agents' requests; every answer is checked here before anything happens."
+          }
+        }
+      }
+    },
+    "iOS ne m'a pas encore donné accès à tes Rappels. Réponds « Autoriser » à sa question, ou autorise Yumi dans Réglages, Confidentialité et sécurité, Rappels, puis redemande-moi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS hasn't given me access to your Reminders yet. Answer “Allow” to its question, or allow Yumi in Settings, Privacy & Security, Reminders, then ask me again"
+          }
+        }
+      }
+    },
+    "iOS ne me laisse pas accéder à tes Rappels. Autorise Yumi dans Réglages, Confidentialité et sécurité, Rappels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS won't let me access your Reminders. Allow Yumi in Settings, Privacy & Security, Reminders"
+          }
+        }
+      }
+    },
+    "iOS ne m'a pas encore donné accès à ton calendrier. Réponds « Autoriser » à sa question, ou autorise Yumi dans Réglages, Confidentialité et sécurité, Calendriers, puis redemande-moi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS hasn't given me access to your calendar yet. Answer “Allow” to its question, or allow Yumi in Settings, Privacy & Security, Calendars, then ask me again"
+          }
+        }
+      }
+    },
+    "iOS ne me laisse pas accéder à ton calendrier. Autorise Yumi dans Réglages, Confidentialité et sécurité, Calendriers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS won't let me access your calendar. Allow Yumi in Settings, Privacy & Security, Calendars"
+          }
+        }
+      }
+    },
+    "Hmm… je suis là.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hmm… I'm here."
+          }
+        }
+      }
+    },
+    "Rien d'autre à l'agenda aujourd'hui. Profite.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing else on the calendar today. Enjoy."
+          }
+        }
+      }
+    },
+    "Je suis là. Parle-moi quand tu veux.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm here. Talk to me whenever you like."
+          }
+        }
+      }
+    },
+    "« %@ » dans %lld min.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%1$@” in %2$lld min."
+          }
+        }
+      }
+    },
+    "Prochain : « %@ » à %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next: “%1$@” at %2$@."
+          }
+        }
+      }
+    },
+    "N'oublie pas : %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't forget: %@."
+          }
+        }
+      }
+    },
+    "%lld rappels t'attendent, dont « %@ ».": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld reminders are waiting, including “%2$@”."
+          }
+        }
+      }
+    },
+    "Ton Mac attend ton accord : %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Mac is waiting for your OK: %@."
+          }
+        }
+      }
+    },
+    "Je suis là, %@. Parle-moi quand tu veux.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm here, %@. Talk to me whenever you like."
+          }
+        }
+      }
+    },
+    "Hello %@ !": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hello %@!"
+          }
+        }
+      }
+    },
+    "Hello !": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hello!"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
