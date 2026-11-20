@@ -10,6 +10,8 @@ struct YumiTodayWidget: Widget {
             YumiTodayView(entry: entry)
                 .containerBackground(for: .widget) { WidgetNight() }
         }
+        // His night is drawn by the view itself (see YumiTodayView), edge to edge
+        .contentMarginsDisabled()
         .configurationDisplayName("Yumi")
         .description("Ce que Yumi a à te dire aujourd'hui.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular])
@@ -54,15 +56,32 @@ struct YumiTodayWidget: Widget {
 }
 
 /// His night, light enough for a black Yumi to stand out: violet at the top, a halo behind him.
+/// Drawn as a picture so that iOS keeps its colours on a tinted or clear home screen, where it
+/// takes the widget's own background away and turns the rest to one colour.
 private struct WidgetNight: View {
     var body: some View {
-        ZStack {
-            LinearGradient(colors: [Color(red: 0.24, green: 0.2, blue: 0.5), Color(red: 0.1, green: 0.1, blue: 0.27)],
-                           startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [Color(red: 0.62, green: 0.5, blue: 1).opacity(0.55), .clear],
-                           center: UnitPoint(x: 0.25, y: 0.35), startRadius: 2, endRadius: 120)
-        }
+        Image(uiImage: Self.picture)
+            .resizable()
+            .widgetAccentedRenderingMode(.fullColor)
+            .scaledToFill()
     }
+
+    private static let picture: UIImage = {
+        let size = CGSize(width: 360, height: 360)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            let cg = context.cgContext
+            let space = CGColorSpaceCreateDeviceRGB()
+            let linear = CGGradient(colorsSpace: space, colors: [
+                UIColor(red: 0.24, green: 0.2, blue: 0.5, alpha: 1).cgColor,
+                UIColor(red: 0.1, green: 0.1, blue: 0.27, alpha: 1).cgColor] as CFArray, locations: [0, 1])!
+            cg.drawLinearGradient(linear, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
+            let halo = CGGradient(colorsSpace: space, colors: [
+                UIColor(red: 0.62, green: 0.5, blue: 1, alpha: 0.55).cgColor,
+                UIColor(red: 0.62, green: 0.5, blue: 1, alpha: 0).cgColor] as CFArray, locations: [0, 1])!
+            let center = CGPoint(x: size.width * 0.27, y: size.height * 0.36)
+            cg.drawRadialGradient(halo, startCenter: center, startRadius: 2, endCenter: center, endRadius: 150, options: [])
+        }
+    }()
 }
 
 private struct YumiTodayView: View {
@@ -104,6 +123,17 @@ private struct YumiTodayView: View {
     private var line: String { entry.data.macWaiting.map { "Ton Mac attend ton accord : \($0)" } ?? entry.data.remark }
 
     var body: some View {
+        if family == .systemSmall || family == .systemMedium {
+            ZStack {
+                WidgetNight()
+                content.padding(16)
+            }
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder private var content: some View {
         switch family {
         case .accessoryCircular:
             ZStack {

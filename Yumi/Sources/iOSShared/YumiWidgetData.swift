@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import WidgetKit
 
 /// What the app leaves for its widgets, in the App Group both share: what Yumi says now, the
 /// next event, the reminders, the Mac, and pictures of him drawn by the real renderer (a widget
@@ -48,7 +49,10 @@ struct YumiPicture: View {
 
     var body: some View {
         if let url = YumiWidgetData.imageURL(name), let image = UIImage(contentsOfFile: url.path) {
-            Image(uiImage: image).resizable().scaledToFit().frame(width: size, height: size)
+            Image(uiImage: image).resizable()
+                // His own colours, even on a tinted or clear home screen
+                .widgetAccentedRenderingMode(.fullColor)
+                .scaledToFit().frame(width: size, height: size)
         } else {
             YumiBadge(size: size * 0.7).frame(width: size, height: size)
         }
