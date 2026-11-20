@@ -88,6 +88,8 @@ final class Phone {
         chat = PhoneChat(agent: Self.makeAgent(permissions: permissions), memory: memory,
                          fileURL: folder.appendingPathComponent("conversation.json"))
         today = PhoneToday(live: true, notesURL: folder.appendingPathComponent("notes.md"))
+        let today = today
+        chat.day = { tomorrow in today.told(tomorrow: tomorrow) }
         linkOn = LinkSetting.isOn()
         // The opening says hello (PhoneSplash): the screens do not greet a second time
         character.greetedAtLaunch()
@@ -136,12 +138,11 @@ final class Phone {
         memory?.change { _ = $0.forget(id: entry.id) }
     }
 
-    /// The agent of the iPhone: Apple's model when it is there, the simple mode otherwise, and
+    /// The agent of the iPhone: the simple mode first, Apple's model for what it cannot read, and
     /// only what an iPhone can do (reminders, calendar). Every step goes through `permissions`.
     private static func makeAgent(permissions: LocalPermissionManager) -> RuntimeAgent {
-        let planner = EngineAgentPlanner(llm: LLMAgentPlanner(provider: AppleLLMProvider()),
-                                         simple: SimplePlanner(taskDestination: { (.reminders, nil) }),
-                                         choice: { nil })
+        let planner = PhonePlanner(simple: SimplePlanner(taskDestination: { (.reminders, nil) }),
+                                   llm: LLMAgentPlanner(provider: AppleLLMProvider()))
         var tools = ToolRegistry.standard
         try? tools.register(AddReminderTool(store: EventKitReminderStore()))
         try? tools.register(AddEventTool(store: EventKitEventStore()))

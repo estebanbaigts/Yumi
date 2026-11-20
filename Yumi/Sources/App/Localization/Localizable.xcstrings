@@ -14624,6 +14624,106 @@
           }
         }
       }
+    },
+    "Rien de prévu demain.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing planned tomorrow."
+          }
+        }
+      }
+    },
+    "Plus rien de prévu aujourd'hui.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing more planned today."
+          }
+        }
+      }
+    },
+    "Demain : %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow: %@."
+          }
+        }
+      }
+    },
+    "Aujourd'hui : %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today: %@."
+          }
+        }
+      }
+    },
+    "Je ne vois pas encore ton agenda : touche « Voir mon agenda » sur l'accueil.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't see your calendar yet: tap “Show my calendar” on the home screen."
+          }
+        }
+      }
+    },
+    "Rappels : %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders: %@."
+          }
+        }
+      }
+    },
+    "Je ne sais pas encore faire ça sur iPhone. Je sais ajouter un rappel ou un rendez-vous, et te dire ce que tu as de prévu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't do that on iPhone yet. I can add a reminder or an event, and tell you what you have planned."
+          }
+        }
+      }
+    },
+    "Conversation effacée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversation cleared"
+          }
+        }
+      }
+    },
+    "%lld messages gardés sur cet iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld messages kept on this iPhone."
+          }
+        }
+      }
+    },
+    "Effacer toute la conversation avec Yumi ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the whole conversation with Yumi?"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

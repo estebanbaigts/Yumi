@@ -136,7 +136,8 @@ struct PhoneHomeView: View {
     }
 
     @ViewBuilder private var agenda: some View {
-        PhoneCard(title: loc("Agenda"), symbol: "calendar") {
+        PhoneCard(title: loc("Agenda"), symbol: "calendar",
+                  opens: phone.today.calendarAccess == .granted ? PhoneApps.calendar : nil) {
             switch phone.today.calendarAccess {
             case .granted:
                 if phone.today.events.isEmpty {
@@ -160,7 +161,8 @@ struct PhoneHomeView: View {
     }
 
     @ViewBuilder private var reminders: some View {
-        PhoneCard(title: loc("Rappels et notes"), symbol: "checklist") {
+        PhoneCard(title: loc("Rappels et notes"), symbol: "checklist",
+                  opens: phone.today.remindersAccess == .granted ? PhoneApps.reminders : nil) {
             switch phone.today.remindersAccess {
             case .granted:
                 if phone.today.reminders.isEmpty { Text(loc("Aucun rappel en cours.")).foregroundStyle(.secondary) }
@@ -179,7 +181,8 @@ struct PhoneHomeView: View {
     }
 
     @ViewBuilder private var weather: some View {
-        PhoneCard(title: loc("Météo"), symbol: WeatherSummary.symbol(for: phone.today.weather)) {
+        PhoneCard(title: loc("Météo"), symbol: WeatherSummary.symbol(for: phone.today.weather),
+                  opens: { if case .ready = phone.today.weather { return PhoneApps.weather }; return nil }()) {
             switch phone.today.weather {
             case .ready(let report):
                 Text("\(Int(report.temperature.rounded())) °C · \(WeatherSummary.sky(report.code))").font(.headline)
@@ -233,18 +236,37 @@ struct PhoneMacCard: View {
 struct PhoneCard<Content: View>: View {
     let title: String
     let symbol: String
+    /// The app a tap on the card opens (Calendar, Reminders, Weather), when there is one.
+    var opens: URL? = nil
     @ViewBuilder var content: Content
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: symbol).font(.subheadline.weight(.semibold))
-                .foregroundStyle(PhoneTheme.rim)
+            HStack {
+                Label(title, systemImage: symbol).font(.subheadline.weight(.semibold))
+                    .foregroundStyle(PhoneTheme.rim)
+                Spacer()
+                if opens != nil {
+                    Image(systemName: "arrow.up.forward.app").font(.footnote).foregroundStyle(.secondary)
+                }
+            }
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .phoneCard()
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .onTapGesture { if let opens { openURL(opens) } }
+        .accessibilityAddTraits(opens == nil ? [] : .isButton)
     }
+}
+
+/// The apps of the iPhone the cards open.
+enum PhoneApps {
+    static let calendar = URL(string: "calshow:")
+    static let reminders = URL(string: "x-apple-reminderkit://")
+    static let weather = URL(string: "weather://")
 }
 
 // MARK: - Chat
@@ -367,6 +389,8 @@ struct PhoneApprovalSheet: View {
 
 struct PhoneSettingsView: View {
     @Bindable var phone: Phone
+    @State private var confirmClear = false
+    @State private var cleared = false
 
     var body: some View {
         NavigationStack {
@@ -402,7 +426,29 @@ struct PhoneSettingsView: View {
                     }
                 }
                 Section {
-                    Button(loc("Effacer la conversation"), role: .destructive) { phone.chat.clear() }
+                    if cleared {
+                        Label(loc("Conversation effacée"), systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .transition(.opacity)
+                    } else {
+                        Button(loc("Effacer la conversation"), role: .destructive) { confirmClear = true }
+                            .disabled(phone.chat.messages.isEmpty)
+                    }
+                } footer: {
+                    if !cleared, !phone.chat.messages.isEmpty {
+                        Text(loc("\(phone.chat.messages.count) messages gardés sur cet iPhone."))
+                    }
+                }
+                .confirmationDialog(loc("Effacer toute la conversation avec Yumi ?"), isPresented: $confirmClear,
+                                    titleVisibility: .visible) {
+                    Button(loc("Effacer"), role: .destructive) {
+                        phone.chat.clear()
+                        withAnimation { cleared = true }
+                        Task {
+                            try? await Task.sleep(for: .seconds(2.5))
+                            withAnimation { cleared = false }
+                        }
+                    }
                 }
             }
             .phoneScreen()

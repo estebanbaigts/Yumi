@@ -29,6 +29,11 @@ final class PhoneChat {
     @ObservationIgnored private let memory: MemoryStore?
     @ObservationIgnored private let fileURL: URL?
     @ObservationIgnored private let model: any LLMProvider
+    /// The day told from the real data (`PhoneToday.told`): answers about the agenda come from
+    /// there, never from a model. `true` for tomorrow.
+    @ObservationIgnored var day: (@MainActor (Bool) -> String)?
+    /// Apple's model with its tools, one thread until the conversation is cleared (iOS 26).
+    @ObservationIgnored private var apple: AnyObject?
 
     /// The live chat. `agent`, `memory` and `fileURL` are nil while filming.
     init(agent: RuntimeAgent?, memory: MemoryStore?, fileURL: URL?, model: any LLMProvider = AppleLLMProvider()) {
@@ -67,7 +72,13 @@ final class PhoneChat {
 
         let request = AgentRequest(userIntent: text, conversation: conversation)
         let planned = await agent.plan(for: request)
-        switch ChatRoute.route(planned, message: text) {
+        let route = ChatRoute.route(planned, message: text)
+        // A question about the day: answered from the calendar itself, never guessed
+        if case .agent = route {} else if let day, Self.asksAboutTheDay(text) {
+            append(.init(role: .yumi, text: day(Self.meansTomorrow(text))))
+            return
+        }
+        switch route {
         case .agent(let plan):
             let result = await agent.execute(plan, for: request)
             // The same verdict as the island: written from the result, never by a model alone
@@ -75,15 +86,39 @@ final class PhoneChat {
             succeeded = result.status.succeeded
         case .blocked(let reason):
             succeeded = false
-            append(.init(role: .yumi, text: reason))
+            append(.init(role: .yumi, text: Self.readable(reason)))
         case .agendaKeptFromChat, .chat:
             succeeded = AppleModelAvailability.current.isAvailable
             append(.init(role: .yumi, text: await converse(text)))
         }
     }
 
+    /// « qu'est-ce que j'ai aujourd'hui », « j'ai quoi de prévu demain », « mon agenda »...
+    static func asksAboutTheDay(_ text: String) -> Bool {
+        if ChatRoute.isPersonalAgenda(text) { return true }
+        let folded = " " + text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "fr_FR"))
+            .replacingOccurrences(of: "’", with: "'") + " "
+        let asks = ["de prevu", "j'ai quoi", "ma journee", "mes rappels", "mon programme", "what's on", "my day"]
+        return asks.contains(where: folded.contains)
+    }
+
+    static func meansTomorrow(_ text: String) -> Bool {
+        let folded = text.lowercased()
+        return folded.contains("demain") || folded.contains("tomorrow")
+    }
+
+    /// A reason meant for a person, not a code: « cannotPlan » never reaches the screen.
+    static func readable(_ reason: String) -> String {
+        let clean = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard clean.contains(" ") else {
+            return loc("Je ne sais pas encore faire ça sur iPhone. Je sais ajouter un rappel ou un rendez-vous, et te dire ce que tu as de prévu.")
+        }
+        return clean
+    }
+
     func clear() {
         messages = []
+        apple = nil
         save()
     }
 
@@ -96,20 +131,30 @@ final class PhoneChat {
     private func converse(_ text: String) async -> String {
         let availability = AppleModelAvailability.current
         guard availability.isAvailable else { return Self.withoutModel(availability) }
-        var system = ChatPhrases.engineSystemPrompt(characterName: AppIdentity.characterName)
-        if let memory { system += "\n\n" + MemoryPrompt.knowledge(memory.book) + "\n\n" + MemoryNotes.instructions }
-        let history = messages.suffix(8).map {
-            LLMMessage(role: $0.role == .person ? .user : .assistant, content: $0.text)
+        #if canImport(FoundationModels)
+        if #available(iOS 26, *) {
+            let chat = (apple as? PhoneAppleChat) ?? PhoneAppleChat(day: { [weak self] in
+                await MainActor.run { self?.day?(false) ?? "" }
+            })
+            apple = chat
+            do {
+                let answer = try await chat.reply(to: text, knowledge: knowledge)
+                return VoiceRules.withoutLongDashes(MemoryNotes.extract(from: answer).visible)
+            } catch {
+                return loc("Je n'ai pas réussi à répondre. Redemande-moi.")
+            }
         }
-        let request = LLMRequest(system: system, messages: Array(history), expectsJSON: false, maxOutputTokens: 800)
-        do {
-            let answer = try await model.complete(request)
-            let (visible, learnt) = MemoryNotes.extract(from: answer.text)
-            if !learnt.isEmpty { memory?.change { MemoryNotes.apply(learnt, to: &$0) } }
-            return VoiceRules.withoutLongDashes(visible)
-        } catch {
-            return loc("Je n'ai pas réussi à répondre. Redemande-moi.")
-        }
+        #endif
+        return Self.withoutModel(availability)
+    }
+
+    /// What Yumi knows of the person, short: a small model drowns in long instructions.
+    private var knowledge: String {
+        guard let memory else { return "" }
+        var lines: [String] = []
+        if let name = memory.book.name { lines.append("Elle s'appelle \(name).") }
+        lines += memory.book.entries.prefix(6).map(\.text)
+        return lines.isEmpty ? "" : "Ce que tu sais d'elle : " + lines.joined(separator: " ")
     }
 
     /// What Yumi says when this iPhone cannot run Apple's model: why, and what still works.

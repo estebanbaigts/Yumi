@@ -100,15 +100,53 @@ final class PhoneToday {
     // MARK: - Reading
 
     private func loadEvents() {
-        let start = Calendar.current.startOfDay(for: Date())
-        guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return }
+        events = events(on: Date())
+    }
+
+    /// The events of a day, read again from the calendar (empty without access, or in filming
+    /// mode for any day but today).
+    func events(on day: Date) -> [AgendaEvent] {
+        guard live else { return Calendar.current.isDateInToday(day) ? events : [] }
+        guard calendarAccess == .granted else { return [] }
+        let start = Calendar.current.startOfDay(for: day)
+        guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return [] }
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
-        events = store.events(matching: predicate).sorted { $0.startDate < $1.startDate }.map { event in
+        return store.events(matching: predicate).sorted { $0.startDate < $1.startDate }.map { event in
             AgendaEvent(id: event.eventIdentifier ?? UUID().uuidString, title: event.title ?? "",
                         start: event.startDate, end: event.endDate, isAllDay: event.isAllDay,
                         location: event.location ?? "",
                         joinURL: AgendaSummary.joinURL(in: [event.location, event.notes, event.url?.absoluteString]))
         }
+    }
+
+    /// The day told plainly, from the real data only: what Yumi answers when asked « qu'est-ce
+    /// que j'ai aujourd'hui ? », and what Apple's model reads through its tool.
+    func told(tomorrow: Bool = false, now: Date = Date()) -> String {
+        let day = tomorrow ? (Calendar.current.date(byAdding: .day, value: 1, to: now) ?? now) : now
+        var parts: [String] = []
+        switch calendarAccess {
+        case .granted:
+            let upcoming = events(on: day).filter { tomorrow || $0.isAllDay || $0.end > now }
+            if upcoming.isEmpty {
+                parts.append(tomorrow ? loc("Rien de prévu demain.") : loc("Plus rien de prévu aujourd'hui."))
+            } else {
+                let list = upcoming.map { event in
+                    event.isAllDay ? event.title
+                                   : "\(event.start.formatted(date: .omitted, time: .shortened)) \(event.title)"
+                }.joined(separator: ", ")
+                parts.append(tomorrow ? loc("Demain : \(list).") : loc("Aujourd'hui : \(list)."))
+            }
+        default:
+            parts.append(loc("Je ne vois pas encore ton agenda : touche « Voir mon agenda » sur l'accueil."))
+        }
+        if remindersAccess == .granted, !reminders.isEmpty {
+            let names = reminders.prefix(4).map(\.title).joined(separator: ", ")
+            parts.append(loc("Rappels : \(names)."))
+        }
+        if !tomorrow, case .ready(let report) = weather {
+            parts.append(WeatherSummary.advice(report, now: now))
+        }
+        return parts.joined(separator: "\n")
     }
 
     private func loadReminders() async {
