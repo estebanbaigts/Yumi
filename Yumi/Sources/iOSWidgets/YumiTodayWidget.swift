@@ -29,23 +29,26 @@ struct YumiTodayWidget: Widget {
             completion(Entry(date: Date(), data: YumiWidgetData.load() ?? .placeholder))
         }
 
-        /// An hour of moments, ten minutes apart: iOS shows each in turn, with a transition, so
-        /// that he lives a little on the home screen (a widget cannot run an animation).
+        /// An hour of moments, one a minute: iOS shows each in turn with a transition, so that
+        /// he looks around and changes expression on the home screen (a widget cannot run a
+        /// continuous animation).
         func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
             let data = YumiWidgetData.load() ?? .placeholder
-            let now = Date()
-            let entries = (0..<6).map { Entry(date: now.addingTimeInterval(Double($0) * 600), data: data, beat: $0) }
+            let start = Calendar.current.date(bySetting: .second, value: 0, of: Date()) ?? Date()
+            let entries = (0..<60).map { Entry(date: start.addingTimeInterval(Double($0) * 60), data: data, beat: $0) }
             completion(Timeline(entries: entries, policy: .atEnd))
         }
     }
 }
 
+/// His night, light enough for a black Yumi to stand out: violet at the top, a halo behind him.
 private struct WidgetNight: View {
     var body: some View {
         ZStack {
-            Color(red: 0.055, green: 0.06, blue: 0.15)
-            RadialGradient(colors: [Color(red: 0.55, green: 0.42, blue: 1).opacity(0.35), .clear],
-                           center: .top, startRadius: 4, endRadius: 180)
+            LinearGradient(colors: [Color(red: 0.24, green: 0.2, blue: 0.5), Color(red: 0.1, green: 0.1, blue: 0.27)],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [Color(red: 0.62, green: 0.5, blue: 1).opacity(0.55), .clear],
+                           center: UnitPoint(x: 0.25, y: 0.35), startRadius: 2, endRadius: 120)
         }
     }
 }
@@ -58,7 +61,7 @@ private struct YumiTodayView: View {
         if entry.data.macWaiting != nil { return "asking" }
         let hour = Calendar.current.component(.hour, from: entry.date)
         if hour >= 23 || hour < 6 { return "asleep" }
-        return ["happy", "calm", "wink", "happy", "calm", "happy"][entry.beat % 6]
+        return ["happy", "left", "calm", "right", "wink", "happy", "surprised", "calm"][entry.beat % 8]
     }
 
     /// His face of the moment, swapped with a soft transition from one moment to the next.
@@ -99,7 +102,7 @@ private struct YumiTodayView: View {
             }
         case .systemMedium:
             HStack(spacing: 12) {
-                yumi(96)
+                yumi(118)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(line).font(.subheadline.weight(.semibold)).foregroundStyle(.white).lineLimit(3)
                     countdown
@@ -114,7 +117,7 @@ private struct YumiTodayView: View {
             }
         default:
             VStack(alignment: .leading, spacing: 4) {
-                yumi(64)
+                yumi(78)
                 Spacer(minLength: 0)
                 countdown
                 Text(line).font(.caption.weight(.semibold)).foregroundStyle(.white).lineLimit(3)

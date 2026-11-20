@@ -6,12 +6,15 @@ import WidgetKit
 @MainActor
 enum PhoneWidgets {
     /// The faces the widgets use, by name.
-    static let faces: [(name: String, mood: YumiMood?, state: BotState, lit: Bool)] = [
-        ("happy", .happy, .idle, true),
-        ("calm", nil, .idle, true),
-        ("asking", .curious, .approval, true),
-        ("asleep", .asleep, .sleeping, false),
-        ("wink", .wink, .idle, true),
+    static let faces: [(name: String, mood: YumiMood?, state: BotState, lit: Bool, gaze: CGPoint?)] = [
+        ("happy", .happy, .idle, true, nil),
+        ("calm", nil, .idle, true, nil),
+        ("asking", .curious, .approval, true, nil),
+        ("asleep", .asleep, .sleeping, false, nil),
+        ("wink", .wink, .idle, true, nil),
+        ("left", nil, .idle, true, CGPoint(x: -1, y: 0.2)),
+        ("right", nil, .idle, true, CGPoint(x: 1, y: 0.2)),
+        ("surprised", .surprised, .idle, true, nil),
     ]
 
     private static var drawn = false
@@ -22,7 +25,7 @@ enum PhoneWidgets {
         drawn = true
         for face in faces {
             guard let url = YumiWidgetData.imageURL(face.name) else { continue }
-            let renderer = ImageRenderer(content: StillYumi(mood: face.mood, state: face.state, lit: face.lit)
+            let renderer = ImageRenderer(content: StillYumi(mood: face.mood, state: face.state, lit: face.lit, gaze: face.gaze)
                 .frame(width: 180, height: 180))
             renderer.scale = 3
             if let image = renderer.uiImage, let png = image.pngData() {
@@ -64,6 +67,7 @@ private struct StillYumi: View {
     let mood: YumiMood?
     let state: BotState
     let lit: Bool
+    var gaze: CGPoint? = nil
 
     var body: some View {
         Canvas { context, size in
@@ -72,7 +76,10 @@ private struct StillYumi: View {
             engine.setState(state, force: true)
             engine.setLit(lit)
             engine.setMood(mood)
-            let frame = CGRect(origin: .zero, size: size).insetBy(dx: size.width * 0.18, dy: size.height * 0.18)
+            if let gaze { engine.setGaze(gaze) }
+            // He fills the picture: a widget shows him small enough as it is
+            let frame = CGRect(origin: .zero, size: size).insetBy(dx: size.width * 0.07, dy: size.height * 0.1)
+                .offsetBy(dx: 0, dy: size.height * 0.04)
             let start = Date()
             for step in 0...90 { engine.advance(to: start.addingTimeInterval(Double(step) / 30)) }
             engine.draw(context: context, frame: frame)
