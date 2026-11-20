@@ -390,11 +390,23 @@ struct PhoneApprovalSheet: View {
 struct PhoneSettingsView: View {
     @Bindable var phone: Phone
     @State private var confirmClear = false
+    @State private var language = AppLanguage.stored()
     @State private var cleared = false
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Picker(loc("Langue"), selection: Binding(get: { language }, set: { language = $0; AppLanguage.choose($0) })) {
+                        Text(loc("Automatique")).tag(AppLanguage.automatic)
+                        Text(verbatim: "Français").tag(AppLanguage.french)
+                        Text(verbatim: "English").tag(AppLanguage.english)
+                    }
+                } footer: {
+                    if language.code.map({ $0 != AppLanguage.current }) ?? (AppLanguage.resolve(Locale.preferredLanguages.first) != AppLanguage.current) {
+                        Text(loc("La nouvelle langue s'applique au prochain lancement de Yumi."))
+                    }
+                }
                 Section(loc("Intelligence")) {
                     LabeledContent(loc("Modèle d'Apple"),
                                    value: PhoneChat.whyNoModel(AppleModelAvailability.current) == nil ? loc("Prêt, sur cet iPhone.") : loc("Indisponible"))
