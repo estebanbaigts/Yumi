@@ -14794,6 +14794,16 @@
           }
         }
       }
+    },
+    "Toucher Yumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch Yumi"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

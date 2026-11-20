@@ -20,6 +20,8 @@ struct YumiTodayWidget: Widget {
         var data: YumiWidgetData
         /// Which of his faces this moment shows: he changes expression through the hour.
         var beat = 0
+        /// Just touched: the face of his reaction, which wins over the hour's.
+        var reaction: String? = nil
     }
 
     struct Provider: TimelineProvider {
@@ -34,8 +36,18 @@ struct YumiTodayWidget: Widget {
         /// continuous animation).
         func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
             let data = YumiWidgetData.load() ?? .placeholder
-            let start = Calendar.current.date(bySetting: .second, value: 0, of: Date()) ?? Date()
-            let entries = (0..<60).map { Entry(date: start.addingTimeInterval(Double($0) * 60), data: data, beat: $0) }
+            let now = Date()
+            var entries: [Entry] = []
+            // Just touched: a short reaction, one face every 0.9 s
+            if let poke = YumiWidgetPokes.recent(now: now) {
+                for (i, face) in YumiWidgetPokes.reaction(poke.count).enumerated() {
+                    entries.append(Entry(date: now.addingTimeInterval(Double(i) * 0.9), data: data, beat: 0, reaction: face))
+                }
+            }
+            // Then a face a minute, from the next whole minute
+            let minute = (now.timeIntervalSince1970 / 60).rounded(.down) * 60 + 60
+            entries += (0..<60).map { Entry(date: Date(timeIntervalSince1970: minute + Double($0) * 60), data: data, beat: $0) }
+            if entries.first.map({ $0.date > now }) ?? true { entries.insert(Entry(date: now, data: data, beat: 0), at: 0) }
             completion(Timeline(entries: entries, policy: .atEnd))
         }
     }
@@ -58,6 +70,7 @@ private struct YumiTodayView: View {
     @Environment(\.widgetFamily) private var family
 
     private var face: String {
+        if let reaction = entry.reaction { return reaction }
         if entry.data.macWaiting != nil { return "asking" }
         let hour = Calendar.current.component(.hour, from: entry.date)
         if hour >= 23 || hour < 6 { return "asleep" }
@@ -65,10 +78,15 @@ private struct YumiTodayView: View {
     }
 
     /// His face of the moment, swapped with a soft transition from one moment to the next.
+    /// Touch him and he reacts (YumiWidgetPoke), without opening the app.
     private func yumi(_ size: CGFloat) -> some View {
-        YumiPicture(name: face, size: size)
-            .id(face)
-            .transition(.push(from: .bottom).combined(with: .opacity))
+        Button(intent: YumiWidgetPoke()) {
+            YumiPicture(name: face, size: size)
+                .id(face)
+                .transition(entry.reaction == nil ? .push(from: .bottom).combined(with: .opacity)
+                                                  : .scale(scale: 0.7).combined(with: .opacity))
+        }
+        .buttonStyle(.plain)
     }
 
     /// « dans 2 h 15 », kept up to date by iOS itself.
