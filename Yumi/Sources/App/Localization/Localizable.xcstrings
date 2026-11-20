@@ -14734,6 +14734,66 @@
           }
         }
       }
+    },
+    "Comment tu t'appelles ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's your name?"
+          }
+        }
+      }
+    },
+    "Je le garde sur ton iPhone, pour te dire bonjour comme il faut.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I keep it on your iPhone, to say hello properly."
+          }
+        }
+      }
+    },
+    "C'est moi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's me"
+          }
+        }
+      }
+    },
+    "Ce qu'il porte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What he wears"
+          }
+        }
+      }
+    },
+    "Son apparence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "His look"
+          }
+        }
+      }
+    },
+    "Ce que Yumi a à te dire aujourd'hui.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What Yumi has to tell you today."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

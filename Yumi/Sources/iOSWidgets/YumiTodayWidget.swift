@@ -12,12 +12,14 @@ struct YumiTodayWidget: Widget {
         }
         .configurationDisplayName("Yumi")
         .description("Ce que Yumi a à te dire aujourd'hui.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular])
     }
 
     struct Entry: TimelineEntry {
         var date: Date
         var data: YumiWidgetData
+        /// Which of his faces this moment shows: he changes expression through the hour.
+        var beat = 0
     }
 
     struct Provider: TimelineProvider {
@@ -27,9 +29,13 @@ struct YumiTodayWidget: Widget {
             completion(Entry(date: Date(), data: YumiWidgetData.load() ?? .placeholder))
         }
 
+        /// An hour of moments, ten minutes apart: iOS shows each in turn, with a transition, so
+        /// that he lives a little on the home screen (a widget cannot run an animation).
         func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
-            let entry = Entry(date: Date(), data: YumiWidgetData.load() ?? .placeholder)
-            completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15 * 60))))
+            let data = YumiWidgetData.load() ?? .placeholder
+            let now = Date()
+            let entries = (0..<6).map { Entry(date: now.addingTimeInterval(Double($0) * 600), data: data, beat: $0) }
+            completion(Timeline(entries: entries, policy: .atEnd))
         }
     }
 }
@@ -52,27 +58,51 @@ private struct YumiTodayView: View {
         if entry.data.macWaiting != nil { return "asking" }
         let hour = Calendar.current.component(.hour, from: entry.date)
         if hour >= 23 || hour < 6 { return "asleep" }
-        return "happy"
+        return ["happy", "calm", "wink", "happy", "calm", "happy"][entry.beat % 6]
+    }
+
+    /// His face of the moment, swapped with a soft transition from one moment to the next.
+    private func yumi(_ size: CGFloat) -> some View {
+        YumiPicture(name: face, size: size)
+            .id(face)
+            .transition(.push(from: .bottom).combined(with: .opacity))
+    }
+
+    /// « dans 2 h 15 », kept up to date by iOS itself.
+    @ViewBuilder private var countdown: some View {
+        if let at = entry.data.nextEventAt, at > entry.date, let event = entry.data.nextEvent {
+            HStack(spacing: 4) {
+                Image(systemName: "calendar")
+                Text(event).lineLimit(1)
+                Text(at, style: .relative).monospacedDigit()
+            }
+            .font(.caption).foregroundStyle(.white.opacity(0.75))
+        }
     }
 
     private var line: String { entry.data.macWaiting.map { "Ton Mac attend ton accord : \($0)" } ?? entry.data.remark }
 
     var body: some View {
         switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                YumiPicture(name: face, size: 46)
+            }
         case .accessoryRectangular:
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Yumi").font(.headline)
-                Text(line).font(.caption).lineLimit(2)
+            HStack(spacing: 6) {
+                YumiPicture(name: face, size: 34)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Yumi").font(.headline)
+                    Text(line).font(.caption).lineLimit(2)
+                }
             }
         case .systemMedium:
             HStack(spacing: 12) {
-                YumiPicture(name: face, size: 96)
+                yumi(96)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(line).font(.subheadline.weight(.semibold)).foregroundStyle(.white).lineLimit(3)
-                    if let event = entry.data.nextEvent, let at = entry.data.nextEventAt {
-                        Label("\(at.formatted(date: .omitted, time: .shortened)) · \(event)", systemImage: "calendar")
-                            .font(.caption).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
-                    }
+                    countdown
                     if let first = entry.data.reminders.first {
                         Label(first, systemImage: "circle").font(.caption).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
                     }
@@ -84,8 +114,9 @@ private struct YumiTodayView: View {
             }
         default:
             VStack(alignment: .leading, spacing: 4) {
-                YumiPicture(name: face, size: 64)
+                yumi(64)
                 Spacer(minLength: 0)
+                countdown
                 Text(line).font(.caption.weight(.semibold)).foregroundStyle(.white).lineLimit(3)
             }
         }

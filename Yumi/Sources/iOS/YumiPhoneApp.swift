@@ -134,6 +134,26 @@ final class Phone {
         PhoneWidgets.publish(remark: character.remark, today: today, mac: linkOn ? mac : nil)
     }
 
+    /// The first launch: Yumi asks the person's first name, once (never while filming).
+    var asksName: Bool {
+        revealed && !studio && memoryBook.name == nil && !UserDefaults.standard.bool(forKey: Self.nameAskedKey)
+    }
+    static let nameAskedKey = "phoneNameAsked"
+
+    /// The answer, or « plus tard »: asked once either way (the settings keep the memory).
+    func answerName(_ name: String?) {
+        UserDefaults.standard.set(true, forKey: Self.nameAskedKey)
+        if let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            memory?.change { $0.setName(name) }
+            character.engine.play(.celebrate)
+            SoundEngine.shared.play("love")
+        }
+        nameAsked.toggle()
+        updateRemarks()
+    }
+    /// Seen by the screens when the question has been answered.
+    private(set) var nameAsked = false
+
     func forget(_ entry: MemoryEntry) {
         memory?.change { _ = $0.forget(id: entry.id) }
     }

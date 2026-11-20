@@ -10,6 +10,9 @@ struct PhoneRootView: View {
             Tab(loc("Réglages"), systemImage: "gearshape") { PhoneSettingsView(phone: phone) }
         }
         .tint(PhoneTheme.violet)
+        .sheet(isPresented: Binding(get: { phone.asksName && !phone.nameAsked }, set: { if !$0 { phone.answerName(nil) } })) {
+            PhoneNameSheet(phone: phone)
+        }
         .sheet(item: Binding(get: { phone.approvals.current }, set: { _ in })) { approval in
             PhoneApprovalSheet(approval: approval, approvals: phone.approvals)
                 .interactiveDismissDisabled()
@@ -358,6 +361,46 @@ struct PhoneBubble: View {
     }
 }
 
+// MARK: - First launch
+
+/// Yumi asks the person's first name the first time, the way he does on the Mac.
+struct PhoneNameSheet: View {
+    let phone: Phone
+    @State private var name = ""
+    @FocusState private var typing: Bool
+
+    var body: some View {
+        VStack(spacing: 18) {
+            PhoneMiniYumi(state: .idle).frame(width: 110, height: 110).padding(.top, 28)
+            Text(loc("Comment tu t'appelles ?")).font(.title2.weight(.bold))
+            Text(loc("Je le garde sur ton iPhone, pour te dire bonjour comme il faut."))
+                .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            TextField(loc("Ton prénom"), text: $name)
+                .textContentType(.givenName)
+                .submitLabel(.done)
+                .focused($typing)
+                .multilineTextAlignment(.center)
+                .font(.title3)
+                .padding(.vertical, 12)
+                .background(.white.opacity(0.08), in: Capsule())
+                .overlay(Capsule().strokeBorder(PhoneTheme.rim.opacity(0.5), lineWidth: 0.8))
+                .onSubmit { phone.answerName(name) }
+            Spacer()
+            Button { phone.answerName(name) } label: {
+                Text(loc("C'est moi")).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent).controlSize(.large)
+            .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            Button(loc("Plus tard")) { phone.answerName(nil) }
+                .foregroundStyle(.secondary)
+        }
+        .padding(24)
+        .presentationDetents([.medium, .large])
+        .onAppear { typing = true }
+    }
+}
+
 // MARK: - Approval
 
 /// The only place an action of the agent is allowed on the iPhone: a tap on « Autoriser ».
@@ -425,6 +468,7 @@ struct PhoneSettingsView: View {
                 }
                 }
                 Section(loc("Yumi")) {
+                    NavigationLink(loc("Son apparence")) { PhoneLookView(phone: phone) }
                     Toggle(loc("Sons"), isOn: $phone.soundOn)
                     Toggle(loc("Mode tournage au prochain lancement"), isOn: $phone.studioNextLaunch)
                 }

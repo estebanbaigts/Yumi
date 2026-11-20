@@ -31,6 +31,13 @@ enum PhoneWidgets {
         }
     }
 
+    /// His colour or costume changed: draw the pictures again and show them.
+    static func lookChanged() {
+        drawn = false
+        drawFaces()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
     /// The day as the widgets show it. Reloads them only when something changed.
     static func publish(remark: String, today: PhoneToday, mac: LinkSnapshot?) {
         drawFaces()
