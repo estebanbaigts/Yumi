@@ -14804,6 +14804,26 @@
           }
         }
       }
+    },
+    "Rien de prévu cette semaine.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing planned this week."
+          }
+        }
+      }
+    },
+    "Demain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -9,6 +9,8 @@ import Observation
 @Observable
 final class PhoneToday {
     private(set) var events: [AgendaEvent] = []
+    /// The days ahead that have something, today first, a week at most.
+    private(set) var week: [(day: Date, events: [AgendaEvent])] = []
     private(set) var calendarAccess: PermissionState = .notDetermined
     private(set) var reminders: [ReminderItem] = []
     private(set) var remindersAccess: PermissionState = .notDetermined
@@ -27,6 +29,7 @@ final class PhoneToday {
     static func studio() -> PhoneToday {
         let today = PhoneToday(live: false, notesURL: nil)
         today.events = PhoneStudio.events
+        today.week = PhoneStudio.week
         today.calendarAccess = .granted
         today.reminders = PhoneStudio.reminders
         today.remindersAccess = .granted
@@ -101,6 +104,10 @@ final class PhoneToday {
 
     private func loadEvents() {
         events = events(on: Date())
+        week = Self.days(from: Date()).compactMap { day in
+            let list = Calendar.current.isDateInToday(day) ? events : events(on: day)
+            return list.isEmpty ? nil : (day, list)
+        }
     }
 
     /// The events of a day, read again from the calendar (empty without access, or in filming
@@ -117,6 +124,19 @@ final class PhoneToday {
                         location: event.location ?? "",
                         joinURL: AgendaSummary.joinURL(in: [event.location, event.notes, event.url?.absoluteString]))
         }
+    }
+
+    /// Today and the six days after it.
+    static func days(from now: Date) -> [Date] {
+        let start = Calendar.current.startOfDay(for: now)
+        return (0..<7).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: start) }
+    }
+
+    /// « Aujourd'hui », « Demain », « lundi 23 novembre ».
+    static func dayName(_ day: Date) -> String {
+        if Calendar.current.isDateInToday(day) { return loc("Aujourd'hui") }
+        if Calendar.current.isDateInTomorrow(day) { return loc("Demain") }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(AppLanguage.locale))
     }
 
     /// The day told plainly, from the real data only: what Yumi answers when asked « qu'est-ce

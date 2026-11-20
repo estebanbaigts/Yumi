@@ -143,15 +143,30 @@ struct PhoneHomeView: View {
                   opens: phone.today.calendarAccess == .granted ? PhoneApps.calendar : nil) {
             switch phone.today.calendarAccess {
             case .granted:
-                if phone.today.events.isEmpty {
-                    Text(loc("Rien de prévu aujourd'hui.")).foregroundStyle(.secondary)
+                // Today's date first, then the days of the week that have something
+                Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide).locale(AppLanguage.locale)).firstCapitalized)
+                    .font(.headline)
+                if phone.today.week.isEmpty {
+                    Text(loc("Rien de prévu cette semaine.")).foregroundStyle(.secondary)
                 } else {
-                    ForEach(phone.today.events, id: \.id) { event in
-                        HStack {
-                            Text(event.isAllDay ? loc("Journée") : event.start.formatted(date: .omitted, time: .shortened))
-                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 64, alignment: .leading)
-                            Text(event.title)
-                            Spacer()
+                    if !phone.today.week.contains(where: { Calendar.current.isDateInToday($0.day) }) {
+                        Text(loc("Rien de prévu aujourd'hui.")).foregroundStyle(.secondary)
+                    }
+                    ForEach(phone.today.week, id: \.day) { day in
+                        VStack(alignment: .leading, spacing: 4) {
+                            if !Calendar.current.isDateInToday(day.day) {
+                                Text(PhoneToday.dayName(day.day).firstCapitalized)
+                                    .font(.subheadline.weight(.semibold)).foregroundStyle(PhoneTheme.rim)
+                                    .padding(.top, 6)
+                            }
+                            ForEach(day.events, id: \.id) { event in
+                                HStack {
+                                    Text(event.isAllDay ? loc("Journée") : event.start.formatted(date: .omitted, time: .shortened))
+                                        .monospacedDigit().foregroundStyle(.secondary).frame(width: 64, alignment: .leading)
+                                    Text(event.title)
+                                    Spacer()
+                                }
+                            }
                         }
                     }
                 }
@@ -511,4 +526,9 @@ struct PhoneSettingsView: View {
             .navigationTitle(loc("Réglages"))
         }
     }
+}
+
+extension String {
+    /// « vendredi 20 novembre » → « Vendredi 20 novembre »: only the first letter, as French writes it.
+    var firstCapitalized: String { prefix(1).uppercased() + dropFirst() }
 }

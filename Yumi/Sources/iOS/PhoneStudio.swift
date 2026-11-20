@@ -25,6 +25,23 @@ enum PhoneStudio {
         ]
     }
 
+    /// A week with something on three days.
+    static var week: [(day: Date, events: [AgendaEvent])] {
+        let calendar = Calendar.current
+        func on(_ offset: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+            calendar.date(byAdding: .day, value: offset, to: today(hour, minute)) ?? Date()
+        }
+        return [
+            (calendar.startOfDay(for: Date()), events),
+            (calendar.startOfDay(for: on(1, 0)), [AgendaEvent(id: "studio-3", title: "Dentiste", start: on(1, 10), end: on(1, 10, 30),
+                                                             isAllDay: false, location: "", joinURL: nil)]),
+            (calendar.startOfDay(for: on(3, 0)), [AgendaEvent(id: "studio-4", title: "Anniversaire de Léa", start: on(3, 0), end: on(3, 23, 59),
+                                                             isAllDay: true, location: "", joinURL: nil),
+                                                 AgendaEvent(id: "studio-5", title: "Dîner chez Léa", start: on(3, 20), end: on(3, 23),
+                                                             isAllDay: false, location: "", joinURL: nil)]),
+        ]
+    }
+
     static var reminders: [ReminderItem] {
         [
             ReminderItem(id: "studio-r1", title: "Acheter du pain", due: today(18), hasTime: true),
