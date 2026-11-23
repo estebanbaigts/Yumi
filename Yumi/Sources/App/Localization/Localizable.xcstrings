@@ -1,6 +1,156 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Historique": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        }
+      }
+    },
+    "maintenant": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "now"
+          }
+        }
+      }
+    },
+    "Nouvelle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New"
+          }
+        }
+      }
+    },
+    "Cette conversation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This conversation"
+          }
+        }
+      }
+    },
+    "Dis-moi ce que tu veux faire.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell me what you want to do."
+          }
+        }
+      }
+    },
+    "Réponds à Yumi…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply to Yumi…"
+          }
+        }
+      }
+    },
+    "Maintiens ⌥ droite pour parler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold right ⌥ to talk"
+          }
+        }
+      }
+    },
+    "Écoute": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening"
+          }
+        }
+      }
+    },
+    "Réponse à ta question": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answer to your question"
+          }
+        }
+      }
+    },
+    "Yumi t'écoute tant que tu maintiens ⌥ droite": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi listens while you hold right ⌥"
+          }
+        }
+      }
+    },
+    "Tu as demandé :": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You asked:"
+          }
+        }
+      }
+    },
+    "Yumi le dit à voix haute": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi says it aloud"
+          }
+        }
+      }
+    },
+    "Montre-moi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show me"
+          }
+        }
+      }
+    },
+    "Répéter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repeat"
+          }
+        }
+      }
+    },
+    "Continuer dans le chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue in the chat"
+          }
+        }
+      }
+    },
     "Aucun agent en cours.": {
       "localizations": {
         "en": {

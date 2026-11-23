@@ -14,6 +14,7 @@ struct IslandOpenLayer: View {
     let width: CGFloat
     /// A tile and the sheet it grows into share their ground.
     @Namespace private var bento
+    @Environment(\.islandAccent) private var accent
 
     /// The top row takes the height of the notch, or of a menu bar without one.
     private var topHeight: CGFloat {
@@ -27,7 +28,8 @@ struct IslandOpenLayer: View {
         case .home, .module, .working:            return .tab(.work)  // one size for the home and every module page
         case .alert, .finished, .error:           return .alert
         case .settings, .apps:                    return .settings
-        case .talk, .memory, .quickTask, .drop, .welcome: return .chat
+        case .talk:                               return .tab(.work)
+        case .memory, .quickTask, .drop, .welcome: return .chat
         }
     }
 
@@ -61,7 +63,9 @@ struct IslandOpenLayer: View {
                         .padding(.bottom, -24)
                         .transition(.opacity)
                 }
-                IslandHalo(color: IslandHalo.color(screen: screen, module: state.modules.first { $0.id == currentID }))
+                if let glow = IslandHalo.color(screen: screen, module: state.modules.first { $0.id == currentID }, accent: accent) {
+                    IslandHalo(color: glow)
+                }
             }
         }
         .foregroundStyle(IslandTheme.fg)
@@ -102,7 +106,7 @@ struct IslandOpenLayer: View {
         case .error:
             card(slot: 64, tint: IslandTheme.red) { ErrorActivity(state: state) }
         case .talk:
-            trail(loc("Parler à Yumi")) { card(slot: 44, top: true) { IslandTalkView(state: state) } }
+            ChatPage(state: state)
         case .apps:
             trail(loc("Tout voir")) { IslandCard { AllModulesGrid(state: state) }.fixedSize(horizontal: false, vertical: true) }
         case .settings:
@@ -255,7 +259,8 @@ struct IslandTalkView: View {
 
     /// The island grows with the conversation up to `IslandConst.openHeightMax`; past
     /// that, older lines scroll.
-    private let listLimit: CGFloat = 190
+    private let listLimit: CGFloat = 150
+    static let violet = Color(hex: "#8B6CFF")
     private static let bottomID = "bottom"
 
     private struct Line: Identifiable {
@@ -291,22 +296,6 @@ struct IslandTalkView: View {
     var body: some View {
         let lines = lines
         VStack(alignment: .leading, spacing: 8) {
-            // The conversations before this one, and a fresh start
-            HStack(spacing: 12) {
-                TextButton(label: model.showChatHistory ? loc("‹ La conversation")
-                           : archive.chats.isEmpty ? loc("Historique") : loc("Historique (\(archive.chats.count))")) {
-                    withAnimation(.islandSpring(0.4)) { model.showChatHistory.toggle() }
-                }
-                if !state.chatHistory.isEmpty, !model.showChatHistory {
-                    TextButton(label: loc("Nouvelle conversation")) {
-                        withAnimation(.islandSpring(0.4)) { IslandActions.newConversation() }
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            if model.showChatHistory {
-                ChatHistoryList { withAnimation(.islandSpring(0.4)) { model.showChatHistory = false } }
-            } else {
             if let contextName {
                 // A control, not a label: one click detaches what is in front, one click attaches it again.
                 Button { state.contextAttached.toggle() } label: {
@@ -320,6 +309,9 @@ struct IslandTalkView: View {
                 .riseIn(0)
             }
 
+            Spacer(minLength: 0)
+            HStack(alignment: .bottom, spacing: 8) {
+            YumiSlot(width: 34)
             if !lines.isEmpty || live != nil || state.stateOverride == .thinking {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
@@ -371,11 +363,18 @@ struct IslandTalkView: View {
                     .onAppear { proxy.scrollTo(Self.bottomID, anchor: .bottom) }
                 }
                 .riseIn(1)
+            } else {
+                Text(loc("Dis-moi ce que tu veux faire."))
+                    .font(IslandTheme.text(13))
+                    .foregroundStyle(IslandCardTheme.mute)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 8)
+            }
             }
 
             // `.ask`
             HStack(spacing: 6) {
-                TextField("", text: $text, prompt: Text("Demande-moi, ou « montre-moi où… »").foregroundStyle(IslandTheme.faint))
+                TextField("", text: $text, prompt: Text("Réponds à Yumi…").foregroundStyle(IslandTheme.faint))
                     // An unsent message keeps the island open when the person clicks elsewhere
                     .onChange(of: text) { _, value in IslandModel.shared.hasDraft = !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                     .textFieldStyle(.plain)
@@ -383,14 +382,29 @@ struct IslandTalkView: View {
                     .foregroundStyle(IslandTheme.fg)
                     .focused($focused)
                     .onSubmit(send)
-                RoundButton(style: .white, symbol: "arrow.up", label: loc("Envoyer"), small: true, action: send)
+                Image(systemName: "mic")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 30, height: 30)
+                    .help(loc("Maintiens ⌥ droite pour parler"))
+                    .accessibilityLabel(loc("Maintiens ⌥ droite pour parler"))
+                Button(action: send) {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(width: 30, height: 30)
+                        .background(Circle().fill(Self.violet))
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(loc("Envoyer"))
             }
-            .padding(.leading, 14)
-            .padding(.trailing, 4)
-            .padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: 19).fill(Color.white.opacity(0.1)))
+            .padding(.leading, 16)
+            .padding(.trailing, 5)
+            .frame(height: 40)
+            .background(Capsule().fill(Color.white.opacity(0.06)))
+            .overlay(Capsule().strokeBorder(Self.violet.opacity(0.6), lineWidth: 1.5))
+            .shadow(color: Self.violet.opacity(0.27), radius: 9)
+            .padding(.top, 4)
             .riseIn(2)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onChange(of: state.chatLive) { _, new in
@@ -411,7 +425,6 @@ struct IslandTalkView: View {
             }
             focused = true
         }
-        .onDisappear { model.showChatHistory = false }
     }
 
     private func send() {

@@ -768,6 +768,14 @@ extension IslandStudio {
                                      ChatMessage(role: .assistant, content: loc("C'est noté, je te le rappelle demain à 15 h."))]
                 controller?.expand(to: .prompt)
             }),
+            ("06b-voix-ecoute", { state.chatHistory = []; IslandVoice.shared.phase = .listening(loc("Où est le réglage du Wi-Fi")); controller?.expand(to: .prompt) }),
+            ("06c-voix-reponse", {
+                IslandVoice.shared.canPoint = true
+                IslandVoice.shared.phase = .answer(question: loc("Où est le réglage du Wi-Fi ?"),
+                                                   text: loc("Dans la barre des menus, en haut à droite : l'icône Wi-Fi."), note: nil)
+                controller?.expand(to: .prompt)
+            }),
+            ("06d-fin-voix", { IslandVoice.shared.phase = .idle }),
             ("07-reglages", { controller?.expand(to: .settings) }),
             ("08-skin-couronne", { wear(.crown, .yumi); show(sessions()); IslandActions.showTab(.work); controller?.expand(to: .overview) }),
             ("09-skin-chat", { wear(.cat, .pink); show(modules(musicPlaying: false)); IslandActions.showTab(.day); controller?.expand(to: .overview) }),

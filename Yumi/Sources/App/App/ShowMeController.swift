@@ -44,6 +44,7 @@ final class ShowMeController {
             guard let answer = ShowMe.parse(response.text) else { return Outcome(text: ChatPhrases.noAnswer, pointed: false) }
             if let point = answer.point {
                 pointer.show(at: point, label: answer.label, on: screen)
+                lastPoint = (point, answer.label, screen)
                 SoundEngine.shared.play("approve")
             }
             return Outcome(text: answer.text.isEmpty ? loc("C'est ici.") : answer.text, engine: response.engine,
@@ -71,6 +72,21 @@ final class ShowMeController {
 
     private let listener = VoiceListener()
     private let bubble = ShowMeBubbleWindow()
+    /// Where the last answer pointed, for « Montre-moi » in the island.
+    private var lastPoint: (ShowMe.Answer.Point, String?, CGRect)?
+    private var lastAnswer = ""
+    private var voicePanel: IslandVoice { IslandVoice.shared }
+
+    /// The island opens on what Yumi hears and answers.
+    private func showInIsland(_ phase: IslandVoice.Phase) {
+        voicePanel.phase = phase
+        voicePanel.repeatAnswer = { [weak self] in self.map { $0.speak($0.lastAnswer) } }
+        voicePanel.pointAgain = { [weak self] in
+            guard let self, let (point, label, screen) = self.lastPoint else { return }
+            self.pointer.show(at: point, label: label, on: screen)
+        }
+        NotificationCenter.default.post(name: .islandVoice, object: nil)
+    }
     private var hold = HoldToTalk()
     private var holdTimer: Timer?
     /// Taken when the key goes down: what was on screen when the question started.
@@ -126,12 +142,14 @@ final class ShowMeController {
             voice.stopSpeaking(at: .immediate)
             player?.stop()
             getReady()
-            bubble.show(loc("J'écoute…"), dim: true)
-            listener.onWords = { [weak self] words in self?.bubble.show(words, dim: false, keep: true) }
+            lastPoint = nil
+            voicePanel.canPoint = false
+            showInIsland(.listening(""))
+            listener.onWords = { [weak self] words in self?.voicePanel.phase = .listening(words) }
             Task {
                 if let failure = await listener.start() {
                     hold = HoldToTalk()
-                    bubble.show(Self.sentence(for: failure), dim: false)
+                    showInIsland(.answer(question: loc("…"), text: Self.sentence(for: failure), note: ""))
                 }
             }
         case .answer:
@@ -149,19 +167,21 @@ final class ShowMeController {
                 trace("capture prête")
                 earlyCapture = nil
                 guard !question.isEmpty else {
-                    bubble.hide()
+                    voicePanel.phase = .idle
                     ClaudeCodeLLMProvider.discardPrepared()
                     return
                 }
-                bubble.show(question + "\n" + loc("Je regarde…"), dim: false, keep: true)
+                showInIsland(.looking(question: question, note: loc("Je regarde…")))
                 ClaudeCodeLive.shared.onSearch = {
                     Task { @MainActor in
-                        ShowMeController.shared.bubble.show(question + "\n" + loc("Je cherche sur internet…"), dim: false, keep: true)
+                        ShowMeController.shared.voicePanel.phase = .looking(question: question, note: loc("Je cherche sur internet…"))
                     }
                 }
                 let outcome = await look(question, prepared: prepared)
                 trace("réponse (\(outcome.engine ?? "?")) « \(outcome.text) »")
-                bubble.show(outcome.text, dim: false)
+                lastAnswer = outcome.text
+                voicePanel.canPoint = outcome.pointed
+                showInIsland(.answer(question: question, text: outcome.text, note: nil))
                 // Asked aloud, answered aloud: the voice of the Mac, nothing sent anywhere.
                 speak(outcome.text)
             }
@@ -170,7 +190,7 @@ final class ShowMeController {
             earlyCapture = nil
             ClaudeCodeLLMProvider.discardPrepared()
             listener.stop()
-            bubble.hide()
+            voicePanel.phase = .idle
         }
     }
 
@@ -203,7 +223,9 @@ final class ShowMeController {
                 // Said once under the answer, so a refused key does not pass for the Mac's choice
                 let why = status == 401 ? loc("ElevenLabs refuse ta clé. Je parle avec la voix du Mac en attendant.")
                     : loc("ElevenLabs ne répond pas. Je parle avec la voix du Mac.")
-                bubble.show(text + "\n\n" + why, dim: false)
+                if case .answer(let question, let shown, _) = voicePanel.phase {
+                    voicePanel.phase = .answer(question: question, text: shown, note: why)
+                }
                 speakLocally(text)
             }
         }

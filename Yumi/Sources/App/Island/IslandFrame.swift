@@ -11,10 +11,13 @@ struct IslandFrameBar: View {
     @ObservedObject var model: IslandModel
     let screen: IslandScreen
     let height: CGFloat
+    @ObservedObject private var voice = IslandVoice.shared
 
     var body: some View {
         HStack(spacing: 6) {
-            if screen == .home {
+            if screen == .talk, voice.active {
+                VoiceTitle()
+            } else if screen == .home {
                 EarButton(symbol: "mic.fill", label: loc("Parler ⌥"), color: Color(hex: "#7FD8FF")) { IslandActions.talk() }
             } else {
                 Button { withAnimation(.islandSpring(0.5)) { IslandActions.go(.overview) } } label: {
@@ -42,7 +45,10 @@ struct IslandFrameBar: View {
                 .buttonStyle(.plain)
                 EarButton(symbol: "doc.fill", label: loc("Déposer"), color: IslandTheme.green) { IslandActions.go(.upload) }
             }
-            Button { IslandActions.fold() } label: {
+            Button {
+                IslandVoice.shared.phase = .idle
+                IslandActions.fold()
+            } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .heavy))
                     .frame(width: 24, height: 24)
@@ -99,16 +105,19 @@ struct IslandHalo: View {
         .animation(.easeInOut(duration: 0.5), value: color)
     }
 
-    @MainActor static func color(screen: IslandScreen, module: ModuleSnapshot?) -> Color {
+    /// nil: no halo (the weather fills the island with its own mood instead). `accent` is the
+    /// colour chosen for Yumi: the home glows in it.
+    @MainActor static func color(screen: IslandScreen, module: ModuleSnapshot?, accent: Color) -> Color? {
         switch screen {
+        case .home:             return accent
         case .module, .working:
             if module?.id == IslandModel.agentModuleID { return Color(hex: "#5B8CFF") }
-            if let module, module.id == "weather" { return WeatherAmbiance.pick(symbol: module.symbol, status: module.status).color }
+            if module?.id == "weather" { return nil }
             return module?.color ?? IslandTheme.violet
         case .alert:            return IslandTheme.amber
         case .finished, .drop:  return IslandTheme.green
         case .error:            return IslandTheme.red
-        case .talk:             return Color(hex: "#7FD8FF")
+        case .talk:             return IslandVoice.shared.active ? IslandVoice.cyan : Color(hex: "#8B6CFF")
         default:                return IslandTheme.violet
         }
     }

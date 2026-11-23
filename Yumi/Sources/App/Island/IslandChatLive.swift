@@ -47,17 +47,24 @@ struct ChatLine: View {
                     .font(IslandTheme.text(12.5, .medium))
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 15).fill(Color.white.opacity(0.14)))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 16, bottomTrailingRadius: 4, topTrailingRadius: 16, style: .continuous)
+                        .fill(Color(hex: "#8B6CFF")))
             }
         } else {
-            (Text(text) + Text(cursor ? (text.isEmpty ? "▍" : " ▍") : "").foregroundStyle(IslandTheme.violet))
-                .font(IslandTheme.text(13.5, .regular))
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 0) {
+                (Text(text) + Text(cursor ? (text.isEmpty ? "▍" : " ▍") : "").foregroundStyle(IslandTheme.violet))
+                    .font(IslandTheme.text(12.5, .regular))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 4, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous)
+                        .fill(Color.white.opacity(0.08)))
+                Spacer(minLength: 24)
+            }
         }
     }
 }

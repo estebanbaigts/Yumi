@@ -557,7 +557,7 @@ final class IslandWindowController: NSWindowController {
     private func clickedOutside() {
         let approval = state.pendingApproval != nil
         guard OutsideClick.folds(islandOpen: fsm.state == .home, insideIsland: wasInIsland, approvalPending: approval,
-                                 unsentDraft: model.hasDraft, pinned: state.isPinned || holdsOpen || frozen) else { return }
+                                 unsentDraft: model.hasDraft || IslandVoice.shared.active, pinned: state.isPinned || holdsOpen || frozen) else { return }
         collapse()
     }
 
@@ -723,6 +723,13 @@ final class IslandWindowController: NSWindowController {
         // Collapse requests from views (OK button, etc.)
         center.publisher(for: .islandCollapse)
             .sink { [weak self] _ in self?.collapse() }
+            .store(in: &subscriptions)
+
+        center.publisher(for: .islandVoice)
+            .sink { [weak self] _ in
+                guard let self, !self.leaving else { return }
+                if self.state.view != .prompt || self.model.stage(for: self.state.mode) != .open { self.expand(to: .prompt) }
+            }
             .store(in: &subscriptions)
 
         // The Context Engine: Yumi notices when the front application changes
@@ -1033,6 +1040,8 @@ extension Notification.Name {
     static let botMorphTo       = AppIdentity.notification("botMorphTo")
     // Requests to the island
     static let islandCollapse   = AppIdentity.notification("islandCollapse")
+    /// Yumi listens or answers aloud: the island opens on it.
+    static let islandVoice      = AppIdentity.notification("islandVoice")
     static let openFullSettings = AppIdentity.notification("openFullSettings")
     static let hookReveal       = AppIdentity.notification("hookReveal")
 }
