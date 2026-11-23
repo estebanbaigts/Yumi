@@ -51,7 +51,7 @@ struct ModulePage: View {
             case "github":  GitHubPage2(module: module)
             case "gmail":
                 VStack(alignment: .leading, spacing: 0) {
-                    ModHead(symbol: "envelope.fill", title: module.status.isEmpty ? loc("Mail") : loc("Mail · \(module.status)"), color: Color(hex: "#6FB4FF"))
+                    ModHead(symbol: "envelope.fill", title: module.status.isEmpty ? loc("Mail") : loc("Mail · \(module.status)"), color: Color(hex: "#6FB4FF")) { YumiSlot(width: 40) }
                     GmailSheet()
                 }
             default:
@@ -64,6 +64,8 @@ struct ModulePage: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.top, 4)
+        .frame(height: IslandHome.height, alignment: .top)
+        .clipped()
     }
 }
 
@@ -81,7 +83,7 @@ private struct AgendaPage: View {
     var body: some View {
         HStack(alignment: .top, spacing: 22) {
             VStack(alignment: .leading, spacing: 0) {
-                ModHead(symbol: "calendar", title: dayTitle, color: coral)
+                ModHead(symbol: "calendar", title: dayTitle, color: coral) { YumiSlot(width: 40) }
                 if module.rows.isEmpty {
                     Text(module.title).font(IslandTheme.text(14, .semibold))
                     Text(module.subtitle).font(IslandTheme.text(12)).foregroundStyle(IslandCardTheme.mute)
@@ -262,7 +264,7 @@ private struct GitHubPage2: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ModHead(symbol: "arrow.triangle.branch", title: "GitHub", color: Color(hex: "#C9D1D9")) { tabs }
+            ModHead(symbol: "arrow.triangle.branch", title: "GitHub", color: Color(hex: "#C9D1D9")) { HStack(spacing: 10) { tabs; YumiSlot(width: 40) } }
             Group {
                 switch tab {
                 case .activity:      list(activity, limit: 5, big: true)
@@ -413,7 +415,6 @@ private struct WeatherPage: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background { WeatherEffects(ambiance: mood).padding(.horizontal, -40).padding(.top, -60).padding(.bottom, -40).allowsHitTesting(false) }
     }
 }
 

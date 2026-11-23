@@ -24,7 +24,7 @@ struct IslandOpenLayer: View {
     /// The width the open island takes for a screen and a tab.
     static func widthKind(for screen: IslandScreen, category: ModuleCategory) -> IslandOpenWidth {
         switch screen {
-        case .home, .module, .working:            return .tab(category)
+        case .home, .module, .working:            return .tab(.work)  // one size for the home and every module page
         case .alert, .finished, .error:           return .alert
         case .settings, .apps:                    return .settings
         case .talk, .memory, .quickTask, .drop, .welcome: return .chat
@@ -53,7 +53,17 @@ struct IslandOpenLayer: View {
         .padding(.bottom, 12)
         .animation(.islandSpring(0.42), value: model.remark(in: state)?.id)
         .frame(width: width, alignment: .topLeading)
-        .background(IslandHalo(color: IslandHalo.color(screen: screen, module: state.modules.first { $0.id == currentID })))
+        .background {
+            ZStack {
+                // The weather's mood fills the whole island, behind the frame
+                if screen == .module, currentID == "weather", let weather = state.modules.first(where: { $0.id == "weather" }) {
+                    WeatherEffects(ambiance: WeatherAmbiance.pick(symbol: weather.symbol, status: weather.status))
+                        .padding(.bottom, -24)
+                        .transition(.opacity)
+                }
+                IslandHalo(color: IslandHalo.color(screen: screen, module: state.modules.first { $0.id == currentID }))
+            }
+        }
         .foregroundStyle(IslandTheme.fg)
         .onDrop(of: [.text], delegate: TabDrop(state: state, model: model))
         .coordinateSpace(name: islandOpenSpace)

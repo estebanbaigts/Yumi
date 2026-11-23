@@ -753,7 +753,7 @@ extension IslandStudio {
             ("10-page-weather", { show(modules(musicPlaying: true)); IslandActions.showModule("weather"); controller?.expand(to: .module) }),
             ("10-page-focus", { show(modules(musicPlaying: true)); IslandActions.showModule("focus"); controller?.expand(to: .module) }),
             ("10-page-github", { show(modules(musicPlaying: true)); IslandActions.showModule("github"); controller?.expand(to: .module) }),
-            ("10-page-notes", { show(modules(musicPlaying: true)); IslandActions.showModule("notes"); controller?.expand(to: .module) }),
+            ("10-page-gmail", { show(modules(musicPlaying: true)); IslandActions.showModule("gmail"); controller?.expand(to: .module) }),
             ("05-accord", {
                 show(sessions())
                 state.stateOverride = .approval
