@@ -64,6 +64,50 @@ enum TerminalTab {
         }
     }
 
+    /// A path as the shell reads it, in single quotes: `'/Users/me/My file.png'`.
+    static func shellQuoted(_ path: String) -> String {
+        "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    /// The script that types `text` at the prompt of the session, without pressing Return, or nil
+    /// when the terminal cannot be asked. Only iTerm2 can write into one session through AppleScript.
+    static func typeScript(_ text: String, for origin: SessionOrigin, bundleID: String) -> String? {
+        guard bundleID == iTerm else { return nil }
+        var tests: [String] = []
+        if let id = safe(origin.terminalSessionID) { tests.append("unique id of s is \"\(id)\"") }
+        if let tty = safe(origin.tty) { tests.append("tty of s is \"\(tty)\"") }
+        guard !tests.isEmpty else { return nil }
+        let quoted = text.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        return """
+        tell application id "\(iTerm)"
+            repeat with w in windows
+                repeat with t in tabs of w
+                    repeat with s in sessions of t
+                        if \(tests.joined(separator: " or ")) then
+                            tell s to write text "\(quoted)" newline no
+                            return "ok"
+                        end if
+                    end repeat
+                end repeat
+            end repeat
+        end tell
+        return "missing"
+        """
+    }
+
+    /// Types `text` at the session's prompt. False when the terminal cannot do it (or in the
+    /// App Store build), so the caller falls back to the clipboard.
+    static func type(_ text: String, into origin: SessionOrigin, bundleID: String) -> Bool {
+        #if APPSTORE
+        return false
+        #else
+        guard let source = typeScript(text, for: origin, bundleID: bundleID) else { return false }
+        var error: NSDictionary?
+        let result = NSAppleScript(source: source)?.executeAndReturnError(&error)
+        return error == nil && result?.stringValue == "ok"
+        #endif
+    }
+
     private static let queue = DispatchQueue(label: "app.yumi.terminal-tab")
 
     /// Selects the session's tab in its running terminal. The application is already in front:

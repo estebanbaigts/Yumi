@@ -35,6 +35,25 @@ import Foundation
     @Test func cursorIsAnEditorByItsRealIdentifier() {
         #expect(SessionHost.kind(of: SessionOrigin(hostBundleID: "com.todesktop.230313mzl4w4u92")) == .editor)
     }
+
+    @Test func antigravityAndKiroAreEditors() {
+        #expect(SessionHost.kind(of: SessionOrigin(hostBundleID: "com.google.antigravity", hostName: "vscode")) == .editor)
+        #expect(SessionHost.appName(for: SessionOrigin(hostBundleID: "com.google.antigravity")) == "Antigravity")
+        #expect(SessionHost.kind(of: SessionOrigin(hostBundleID: "dev.kiro.desktop")) == .editor)
+    }
+
+    @Test func aDroppedPathIsQuotedForTheShell() {
+        #expect(TerminalTab.shellQuoted("/Users/me/My file.png") == "'/Users/me/My file.png'")
+        #expect(TerminalTab.shellQuoted("/tmp/it's.txt") == "'/tmp/it'\\''s.txt'")
+    }
+
+    @Test func onlyITermCanTypeIntoASession() {
+        let iTerm = SessionOrigin(hostBundleID: TerminalTab.iTerm, tty: "/dev/ttys004")
+        let script = TerminalTab.typeScript("'/a \"b\".txt' ", for: iTerm, bundleID: TerminalTab.iTerm)
+        #expect(script?.contains(#"write text "'/a \"b\".txt' " newline no"#) == true)
+        #expect(TerminalTab.typeScript("x", for: SessionOrigin(tty: "/dev/ttys004"), bundleID: TerminalTab.terminal) == nil)
+        #expect(TerminalTab.typeScript("x", for: SessionOrigin(), bundleID: TerminalTab.iTerm) == nil)
+    }
 }
 
 @MainActor

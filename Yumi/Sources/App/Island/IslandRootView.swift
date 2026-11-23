@@ -26,6 +26,7 @@ struct IslandScene: View {
     @ObservedObject var state: AppState
     @ObservedObject var model: IslandModel
     @AppStorage(IslandPrefs.workHabitKey) private var workHabit = YumiWorkHabit.current().rawValue
+    @AppStorage(MacVitalsMonitor.defaultsKey) private var macVitals = true
     @AppStorage(IslandAccent.defaultsKey) private var accentName = IslandAccent.yumi.rawValue
     /// Counts the openings, so that the content rises again each time the island opens.
     @State private var openings = 0
@@ -76,7 +77,8 @@ struct IslandScene: View {
             music: folded.musicPlaying,
             chatActs: state.chatLive?.activity != nil,
             busy: busy,
-            remarkMood: remark?.mood)
+            remarkMood: remark?.mood,
+            strain: macVitals ? state.macStrain : nil)
         let middle = IslandConst.panelWidth / 2
         let launching = model.launchStage != nil
 

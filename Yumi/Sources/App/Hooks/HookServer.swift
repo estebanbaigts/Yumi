@@ -1001,6 +1001,12 @@ final class ClaudeTaskMirror {
         ClaudeCodeModule.bringToFront(featuredOrigin)
     }
 
+    /// The session a dropped file can be given to: the one the pill shows. Nil when none runs.
+    static var fileTarget: SessionOrigin? {
+        guard let origin = featuredOrigin, SessionHost.bundleID(for: origin) != nil else { return nil }
+        return origin
+    }
+
     /// Opens the island on the Claude Code sessions: on the pending approval if there is one.
     func show() {
         state.setFocus(Self.taskID)

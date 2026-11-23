@@ -123,6 +123,30 @@ final class ClaudeCodeModule: YumiModule {
         }
     }
 
+    /// How a file reached a session.
+    enum HandOff: Equatable, Sendable {
+        /// Its path is typed at the session's prompt: the person adds a word and presses Return.
+        case typed
+        /// Its path is in the clipboard and the session is in front: the person pastes it.
+        case copied
+    }
+
+    /// Gives a file to a session: its path, quoted for the shell, typed at the prompt where the
+    /// terminal allows it (iTerm2), otherwise copied to the clipboard. Nothing is sent: Return
+    /// stays the person's. Nil when the session's host is unknown.
+    @MainActor
+    static func hand(_ file: URL, to origin: SessionOrigin?) async -> HandOff? {
+        guard let origin, let bundleID = SessionHost.bundleID(for: origin) else { return nil }
+        let path = TerminalTab.shellQuoted(file.path) + " "
+        bringToFront(origin)
+        let typed = await Task.detached { TerminalTab.type(path, into: origin, bundleID: bundleID) }.value
+        if typed { return .typed }
+        let board = NSPasteboard.general
+        board.clearContents()
+        board.setString(path, forType: .string)
+        return .copied
+    }
+
     /// Brings the application a session runs in to the front. An editor reopens the project folder,
     /// which focuses the right window when several are open; Terminal and iTerm2 select the
     /// session's tab. Returns false when the host is unknown.

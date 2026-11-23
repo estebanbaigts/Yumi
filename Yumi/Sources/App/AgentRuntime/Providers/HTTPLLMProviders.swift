@@ -74,8 +74,14 @@ struct OpenAILLMProvider: LLMProvider {
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "content-type")
         urlRequest.setValue("Bearer \(key)", forHTTPHeaderField: "authorization")
-        let messages = [Body.Message(role: "system", content: request.system)]
-            + request.messages.map { Body.Message(role: $0.role.rawValue, content: $0.content) }
+        let messages = [Body.Message(role: "system", content: [.init(type: "text", text: request.system)])]
+            + request.messages.map { message in
+                var parts = [Body.Part(type: "text", text: message.content)]
+                if let image = message.image {
+                    parts.append(.init(type: "image_url", image_url: .init(url: "data:\(image.mediaType);base64,\(image.base64)")))
+                }
+                return Body.Message(role: message.role.rawValue, content: parts)
+            }
         urlRequest.httpBody = try JSONEncoder().encode(Body(
             model: model, messages: messages, max_completion_tokens: request.maxOutputTokens,
             response_format: request.expectsJSON ? .init(type: "json_object") : nil))
@@ -83,7 +89,9 @@ struct OpenAILLMProvider: LLMProvider {
     }
 
     private struct Body: Encodable {
-        struct Message: Encodable { var role: String; var content: String }
+        struct ImageURL: Encodable { var url: String }
+        struct Part: Encodable { var type: String; var text: String? = nil; var image_url: ImageURL? = nil }
+        struct Message: Encodable { var role: String; var content: [Part] }
         struct Format: Encodable { var type: String }
         var model: String
         var messages: [Message]
@@ -148,17 +156,27 @@ struct GeminiLLMProvider: LLMProvider {
         urlRequest.setValue(key, forHTTPHeaderField: "x-goog-api-key")
         urlRequest.httpBody = try JSONEncoder().encode(Body(
             systemInstruction: .init(parts: [.init(text: request.system)]),
-            contents: request.messages.map { .init(role: $0.role == .user ? "user" : "model", parts: [.init(text: $0.content)]) },
+            contents: request.messages.map { message in
+                var parts = [Body.Part(text: message.content)]
+                if let image = message.image {
+                    parts.insert(.init(inline_data: .init(mime_type: image.mediaType, data: image.base64)), at: 0)
+                }
+                return .init(role: message.role == .user ? "user" : "model", parts: parts)
+            },
             generationConfig: .init(maxOutputTokens: request.maxOutputTokens,
-                                    responseMimeType: request.expectsJSON ? "application/json" : nil)))
+                                    responseMimeType: request.expectsJSON ? "application/json" : nil,
+                                    // An answer awaited right now: no thinking first, it costs seconds
+                                    thinkingConfig: request.fast ? .init(thinkingBudget: 0) : nil)))
         return urlRequest
     }
 
     private struct Body: Encodable {
-        struct Part: Codable { var text: String? }
+        struct InlineData: Codable { var mime_type: String; var data: String }
+        struct Part: Codable { var text: String? = nil; var inline_data: InlineData? = nil }
         struct System: Encodable { var parts: [Part] }
         struct Content: Encodable { var role: String; var parts: [Part] }
-        struct Config: Encodable { var maxOutputTokens: Int; var responseMimeType: String? }
+        struct Thinking: Encodable { var thinkingBudget: Int }
+        struct Config: Encodable { var maxOutputTokens: Int; var responseMimeType: String?; var thinkingConfig: Thinking? = nil }
         var systemInstruction: System
         var contents: [Content]
         var generationConfig: Config
@@ -220,7 +238,7 @@ struct OllamaLLMProvider: LLMProvider {
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "content-type")
         let messages = [Body.Message(role: "system", content: request.system)]
-            + request.messages.map { Body.Message(role: $0.role.rawValue, content: $0.content) }
+            + request.messages.map { Body.Message(role: $0.role.rawValue, content: $0.content, images: $0.image.map { [$0.base64] }) }
         urlRequest.httpBody = try JSONEncoder().encode(Body(model: model, messages: messages, stream: false,
                                                             format: request.expectsJSON ? "json" : nil,
                                                             options: .init(num_predict: request.maxOutputTokens)))
@@ -239,7 +257,7 @@ struct OllamaLLMProvider: LLMProvider {
     }
 
     private struct Body: Encodable {
-        struct Message: Encodable { var role: String; var content: String }
+        struct Message: Encodable { var role: String; var content: String; var images: [String]? = nil }
         struct Options: Encodable { var num_predict: Int }
         var model: String
         var messages: [Message]

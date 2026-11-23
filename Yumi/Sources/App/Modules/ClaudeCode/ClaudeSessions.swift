@@ -143,11 +143,12 @@ enum SessionHost {
     ]
 
     /// Bundle identifiers that open a folder as a project rather than as a shell.
-    private static let editorMarkers = ["vscode", "vscodium", "cursor", "windsurf", "dev.zed", "jetbrains", "xcode"]
+    private static let editorMarkers = ["vscode", "vscodium", "cursor", "windsurf", "antigravity", "kiro", "dev.zed", "jetbrains", "xcode"]
 
     /// Code editors whose bundle identifier does not say what they are.
     static let knownEditors = ["com.microsoft.VSCode", "com.microsoft.VSCodeInsiders", "com.vscodium.codium",
-                               "com.todesktop.230313mzl4w4u92", "com.exafunction.windsurf", "dev.zed.Zed"]
+                               "com.todesktop.230313mzl4w4u92", "com.exafunction.windsurf", "dev.zed.Zed",
+                               "com.google.antigravity", "dev.kiro.desktop"]
 
     enum Kind: Equatable, Sendable {
         /// A terminal emulator: bringing it forward shows the session.
@@ -178,6 +179,7 @@ enum SessionHost {
         "com.microsoft.VSCode": "VS Code", "com.microsoft.VSCodeInsiders": "VS Code Insiders",
         "com.vscodium.codium": "VSCodium", "com.todesktop.230313mzl4w4u92": "Cursor",
         "com.exafunction.windsurf": "Windsurf", "dev.zed.Zed": "Zed",
+        "com.google.antigravity": "Antigravity", "dev.kiro.desktop": "Kiro",
         "com.anthropic.claudefordesktop": "Claude",
     ]
 

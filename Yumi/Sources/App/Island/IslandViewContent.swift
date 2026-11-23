@@ -355,7 +355,7 @@ struct IslandTalkView: View {
 
             // `.ask`
             HStack(spacing: 6) {
-                TextField("", text: $text, prompt: Text("Demande-moi quelque chose").foregroundStyle(IslandTheme.faint))
+                TextField("", text: $text, prompt: Text("Demande-moi, ou « montre-moi où… »").foregroundStyle(IslandTheme.faint))
                     // An unsent message keeps the island open when the person clicks elsewhere
                     .onChange(of: text) { _, value in IslandModel.shared.hasDraft = !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                     .textFieldStyle(.plain)

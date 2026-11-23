@@ -23,13 +23,19 @@ struct ClaudeCodeLLMProvider: LLMProvider {
     var folder: String
     var model: String?
     var runner: Runner = ClaudeCodeLLMProvider.runProcess
+    /// Picture questions go to the session kept open (`ClaudeCodeLive`). Off in the tests.
+    var live = true
     /// A planner that does not answer in this time is stopped: a request never waits forever.
     var timeout: Duration = .seconds(120)
 
     var name: String { "claude-code" }
 
-    static func arguments(system: String, model: String?) -> [String] {
-        var arguments = ["-p", "--output-format", "json", "--no-session-persistence",
+    static func arguments(system: String, model: String?, picture: Bool = false) -> [String] {
+        // A picture cannot go as plain text: the message is sent as one JSON line, and the
+        // answer comes back as JSON lines, the last of which is the result.
+        let format = picture ? ["--input-format", "stream-json", "--output-format", "stream-json", "--verbose"]
+                             : ["--output-format", "json"]
+        var arguments = ["-p"] + format + ["--no-session-persistence",
                          "--tools", "", "--strict-mcp-config", "--disable-slash-commands",
                          "--setting-sources", "", "--permission-mode", "default",
                          "--system-prompt", system]
@@ -39,14 +45,20 @@ struct ClaudeCodeLLMProvider: LLMProvider {
 
     func complete(_ request: LLMRequest) async throws -> LLMResponse {
         guard let binary = binary() else { throw LLMProviderError.unavailable }
-        // One turn: the messages become one text, as the runtime only ever sends one.
-        let text = request.messages.map(\.content).joined(separator: "\n\n")
+        let picture = request.hasImage
+        let input = picture ? try Self.pictureInput(request) : Data(Self.text(of: request).utf8)
         let output: Data
         do {
             try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
             output = try await withThrowingTaskGroup(of: Data?.self) { group in
-                group.addTask { [runner, model, folder] in
-                    try await runner(binary, Self.arguments(system: request.system, model: model), Data(text.utf8), folder)
+                group.addTask { [runner, model, folder, live] in
+                    let chosen = Self.model(model, for: request)
+                    if picture, live {
+                        return try await ClaudeCodeLive.shared.ask(input, binary: binary,
+                                                                   arguments: Self.liveArguments(system: request.system, model: chosen),
+                                                                   folder: folder)
+                    }
+                    return try await runner(binary, Self.arguments(system: request.system, model: chosen, picture: picture), input, folder)
                 }
                 group.addTask { [timeout] in
                     try await Task.sleep(for: timeout)
@@ -63,7 +75,7 @@ struct ClaudeCodeLLMProvider: LLMProvider {
         } catch {
             throw LLMProviderError.failed("Claude Code did not run")
         }
-        guard let object = try? JSONSerialization.jsonObject(with: output) as? [String: Any] else {
+        guard let object = (picture && !live) ? Self.resultLine(in: output) : try? JSONSerialization.jsonObject(with: output) as? [String: Any] else {
             throw LLMProviderError.failed("unreadable answer from Claude Code")
         }
         if object["is_error"] as? Bool == true {
@@ -78,6 +90,59 @@ struct ClaudeCodeLLMProvider: LLMProvider {
             throw LLMProviderError.failed("empty answer from Claude Code")
         }
         return LLMResponse(text: result)
+    }
+
+    /// The fastest model when an answer is awaited right now and none was chosen.
+    static let fastModel = "haiku"
+    static func model(_ chosen: String?, for request: LLMRequest) -> String? {
+        chosen ?? (request.fast ? fastModel : nil)
+    }
+
+    // MARK: Picture questions, in a session kept open (ClaudeCodeLive)
+
+    /// Opens the session ahead of a picture question that will come in a moment.
+    static func prepare(binary: String, system: String, model: String?, folder: String) {
+        ClaudeCodeLive.shared.warm(binary: binary, arguments: liveArguments(system: system, model: model ?? fastModel),
+                                   folder: folder)
+    }
+
+    /// The question did not come: the session stays open for the next one.
+    static func discardPrepared() {}
+
+    /// A session kept open answers several turns: `--no-session-persistence` keeps nothing on disk.
+    /// Its only tool is the web search, allowed without asking: a question about the world gets
+    /// an answer from the web. No file, no shell, no other tool.
+    static func liveArguments(system: String, model: String?) -> [String] {
+        var arguments = arguments(system: system, model: model, picture: true)
+        if let tools = arguments.firstIndex(of: "--tools"), tools + 1 < arguments.count {
+            arguments[tools + 1] = "WebSearch"
+        }
+        return arguments + ["--allowedTools", "WebSearch"]
+    }
+
+    /// One turn: the messages become one text, as the runtime only ever sends one.
+    static func text(of request: LLMRequest) -> String {
+        request.messages.map(\.content).joined(separator: "\n\n")
+    }
+
+    /// The turn as the one JSON line `--input-format stream-json` reads: the pictures, then the text.
+    static func pictureInput(_ request: LLMRequest) throws -> Data {
+        var content: [[String: Any]] = request.messages.compactMap(\.image).map {
+            ["type": "image", "source": ["type": "base64", "media_type": $0.mediaType, "data": $0.base64]]
+        }
+        content.append(["type": "text", "text": text(of: request)])
+        // Without `parent_tool_use_id` and `session_id`, Claude Code drops the line and answers
+        // nothing (checked with Claude Code 2.1.185).
+        let line: [String: Any] = ["type": "user", "message": ["role": "user", "content": content],
+                                   "parent_tool_use_id": NSNull(), "session_id": ""]
+        return try JSONSerialization.data(withJSONObject: line) + Data("\n".utf8)
+    }
+
+    /// The `result` object among the JSON lines of `--output-format stream-json`.
+    static func resultLine(in output: Data) -> [String: Any]? {
+        String(decoding: output, as: UTF8.self).split(whereSeparator: \.isNewline).reversed().lazy
+            .compactMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] }
+            .first { $0["type"] as? String == "result" }
     }
 
     /// Runs `claude` and waits for it, stopping it if the task is cancelled. The environment loses

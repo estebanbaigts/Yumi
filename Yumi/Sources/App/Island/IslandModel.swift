@@ -344,6 +344,18 @@ final class IslandModel: ObservableObject {
         var busy = false
         /// The face of what Yumi is saying on his own.
         var remarkMood: YumiMood?
+        /// The Mac is hot, busy or short of memory: he shows it when nothing else goes on.
+        var strain: MacStrain?
+    }
+
+    /// What he does when the Mac strains: a glass of water when it is hot, worn out when it
+    /// struggles. Nil when the Mac is fine.
+    static func habit(for strain: MacStrain?) -> YumiHabit? {
+        switch strain {
+        case .hot:            return .water
+        case .busy, .memory:  return .exhausted
+        case nil:             return nil
+        }
     }
 
     /// `STATES` of the mock-up: the face, the rim colour, the habit and the pose of each view.
@@ -401,7 +413,7 @@ final class IslandModel: ObservableObject {
             }
         default:
             cancelLateHabit()
-            setHabit(listening ? .headphones : nil)
+            setHabit(listening ? .headphones : Self.habit(for: new.strain))
         }
 
         // A habit brings its own face: it steps aside while he says something on his own
