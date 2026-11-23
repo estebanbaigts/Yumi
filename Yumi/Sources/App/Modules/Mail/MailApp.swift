@@ -4,30 +4,6 @@ import AppKit
 // person set up in Mail (Gmail, iCloud, Outlook, work), and no password given to Yumi. Read only:
 // nothing is marked, moved or sent. An answer becomes a draft opened in Mail, sent by the person.
 
-/// Where the mails come from. Mail is the default; Gmail with an app password stays an option.
-enum MailSource: String, CaseIterable, Sendable {
-    case mailApp, gmail
-
-    static let defaultsKey = "mail.source"
-
-    /// Mail needs Apple Events, which the App Store build does not have.
-    static var mailAppAvailable: Bool {
-        #if APPSTORE
-        return false
-        #else
-        return true
-        #endif
-    }
-
-    /// The person's choice. Someone who had already connected Gmail before this choice existed
-    /// keeps Gmail; everyone else starts with Mail.
-    static func current(in defaults: UserDefaults = .standard, gmailConnected: Bool) -> MailSource {
-        guard mailAppAvailable else { return .gmail }
-        if let raw = defaults.string(forKey: defaultsKey), let source = MailSource(rawValue: raw) { return source }
-        return gmailConnected ? .gmail : .mailApp
-    }
-}
-
 /// Which mails count as important, for every source: flagged, or unread with an urgent subject,
 /// and never a newsletter or an automatic mail. Gmail adds its own "important" label.
 enum MailClassify {

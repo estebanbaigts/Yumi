@@ -1,4 +1,10 @@
+import SwiftUI
+import CoreText
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import CoreText
 import SwiftUI
 
@@ -667,11 +673,21 @@ enum YumiRenderer {
 
         nonisolated(unsafe) private static var made: [String: Glyph] = [:]
 
+        /// SF Pro Rounded Heavy, from the native font of each platform.
+        private static func roundedHeavy(_ size: CGFloat) -> CTFont {
+            #if canImport(AppKit)
+            let base = NSFont.systemFont(ofSize: size, weight: .heavy)
+            return base.fontDescriptor.withDesign(.rounded).flatMap { NSFont(descriptor: $0, size: size) } ?? base
+            #else
+            let base = UIFont.systemFont(ofSize: size, weight: .heavy)
+            return base.fontDescriptor.withDesign(.rounded).map { UIFont(descriptor: $0, size: size) } ?? base
+            #endif
+        }
+
         static func of(_ string: String, size: CGFloat) -> Glyph {
             let key = "\(string) \(size)"
             if let glyph = made[key] { return glyph }
-            let base = NSFont.systemFont(ofSize: size, weight: .heavy)
-            let font = base.fontDescriptor.withDesign(.rounded).flatMap { NSFont(descriptor: $0, size: size) } ?? base
+            let font = Self.roundedHeavy(size)
             // CTLine picks a fallback font for ♪ and ♫, as Text does
             let line = CTLineCreateWithAttributedString(NSAttributedString(string: string, attributes: [.font: font]))
             var ascent: CGFloat = 0, descent: CGFloat = 0, leading: CGFloat = 0

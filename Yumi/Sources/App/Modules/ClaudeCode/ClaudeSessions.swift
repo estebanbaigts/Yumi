@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(AppKit)
 import AppKit
+#endif
 
 /// Reads the Claude Code sessions out of the store: which one to show first, and how to say what it does.
 enum ClaudeSessions {
@@ -184,8 +187,13 @@ enum SessionHost {
     static func appName(for origin: SessionOrigin?) -> String? {
         guard let id = bundleID(for: origin) else { return nil }
         if let name = names[id] { return name }
+        #if canImport(AppKit)
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) else { return nil }
         return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+        #else
+        // Another device cannot look up the Mac's applications
+        return nil
+        #endif
     }
 
     /// The button that brings the session forward, named after the application it opens:

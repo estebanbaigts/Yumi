@@ -7,7 +7,25 @@ enum StudioMode {
     static let variable = "YUMI_STUDIO"
 
     /// True for this run of the app. Read once.
-    static let isOn = isOn(in: ProcessInfo.processInfo.environment)
+    static let isOn: Bool = {
+        #if os(iOS)
+        // An app opened from the home screen has no environment: the iPhone also reads the
+        // launch argument `-YUMI_STUDIO 1` and its own setting (applied at the next launch).
+        if isOn(in: ["YUMI_STUDIO": UserDefaults.standard.string(forKey: variable) ?? ""]) { return true }
+        #endif
+        return isOn(in: ProcessInfo.processInfo.environment)
+    }()
+
+    #if os(iOS)
+    /// The iPhone's setting. Takes effect at the next launch: nothing real may start and stop.
+    static func setForNextLaunch(_ on: Bool, _ defaults: UserDefaults = .standard) {
+        defaults.set(on ? "1" : "0", forKey: variable)
+    }
+
+    static func isSetForNextLaunch(_ defaults: UserDefaults = .standard) -> Bool {
+        isOn(in: ["YUMI_STUDIO": defaults.string(forKey: variable) ?? ""])
+    }
+    #endif
 
     /// Any value turns it on, except an empty one, "0", "false" and "no".
     static func isOn(in environment: [String: String]) -> Bool {

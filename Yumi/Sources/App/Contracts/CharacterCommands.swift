@@ -33,6 +33,9 @@ enum YumiRimTone: String, CaseIterable, Sendable {
 }
 
 extension Notification.Name {
+    /// Posted by the character after three taps in a row: he is dizzy.
+    static let botDizzy = AppIdentity.notification("botDizzy")
+
     /// object: `YumiPose`
     static let yumiPose  = AppIdentity.notification("yumiPose")
     /// object: `YumiHabit`, or nil to clear the habit

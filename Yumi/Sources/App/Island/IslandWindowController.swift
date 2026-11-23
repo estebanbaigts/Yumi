@@ -1024,7 +1024,6 @@ extension Notification.Name {
     // Contracts/CharacterCommands.swift.
     static let triggerEmote     = AppIdentity.notification("triggerEmote")
     static let triggerSlap      = AppIdentity.notification("triggerSlap")
-    static let botDizzy         = AppIdentity.notification("botDizzy")
     static let botGreet         = AppIdentity.notification("botGreet")
     static let botBlink         = AppIdentity.notification("botBlink")
     static let botSetTgEs       = AppIdentity.notification("botSetTgEs")

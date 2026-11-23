@@ -1,0 +1,96 @@
+{
+  "sourceLanguage": "fr",
+  "strings": {
+    "NSCalendarsFullAccessUsageDescription": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I read your calendar to tell you about your next appointment. Nothing leaves your iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je lis ton calendrier pour t'annoncer ton prochain rendez-vous. Rien ne quitte ton iPhone."
+          }
+        }
+      }
+    },
+    "NSRemindersFullAccessUsageDescription": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I show you today's reminders, tick the ones you finish, and add some when you ask."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je te montre tes rappels du jour, je coche ceux que tu termines, et j'en ajoute quand tu me le demandes."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I look at where you are, to the nearest kilometre, to tell you about the sky here."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je regarde où tu es, au kilomètre près, pour te donner le ciel d'ici."
+          }
+        }
+      }
+    },
+    "CFBundleDisplayName": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi"
+          }
+        }
+      }
+    },
+    "CFBundleName": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

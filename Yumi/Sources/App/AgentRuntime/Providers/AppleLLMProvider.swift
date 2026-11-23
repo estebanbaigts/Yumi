@@ -57,7 +57,7 @@ enum AppleModelAvailability: Equatable, Sendable {
     /// What this Mac says now.
     static var current: AppleModelAvailability {
         #if canImport(FoundationModels)
-        if #available(macOS 26, *) { return AppleFoundationModel.availability() }
+        if #available(macOS 26, iOS 26, *) { return AppleFoundationModel.availability() }
         #endif
         return .systemTooOld
     }
@@ -73,7 +73,7 @@ struct AppleLLMProvider: LLMProvider {
         // Apple's on-device model reads text only.
         guard !request.hasImage else { throw LLMProviderError.unavailable }
         #if canImport(FoundationModels)
-        if #available(macOS 26, *) { return try await AppleFoundationModel.complete(request) }
+        if #available(macOS 26, iOS 26, *) { return try await AppleFoundationModel.complete(request) }
         #endif
         throw LLMProviderError.unavailable
     }
@@ -108,7 +108,7 @@ struct AppleLLMProvider: LLMProvider {
 }
 
 #if canImport(FoundationModels)
-@available(macOS 26, *)
+@available(macOS 26, iOS 26, *)
 enum AppleFoundationModel {
     static func availability() -> AppleModelAvailability {
         let model = SystemLanguageModel.default

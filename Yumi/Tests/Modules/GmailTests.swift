@@ -109,4 +109,12 @@ import Foundation
         #expect(MusicTitles.parse("Inbox - Gmail - Google Chrome") == nil)
         #expect(!MusicPlayer.deezer.isScriptable && MusicPlayer.spotify.isScriptable)
     }
+
+    @Test func htmlMailShowsItsTextNotItsStyles() {
+        let html = "<html><head><style>.ReadMsgBody{width:100%}</style></head><body><p>Bonjour Esteban,</p><p>Une offre pour toi.</p></body></html>"
+        let raw = "Delivered-To: a@b.fr\r\nContent-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
+            + Data(html.utf8).base64EncodedString()
+        let text = GmailParse.readableText(raw)
+        #expect(text == "Bonjour Esteban,\nUne offre pour toi.")
+    }
 }

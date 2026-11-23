@@ -39,6 +39,8 @@ final class HookServer: @unchecked Sendable {
         var isAgent = false
         /// Told when the request comes on screen: the permission system starts its time to answer then.
         var shown: (@MainActor () -> Void)?
+        /// When it reached the Mac: a hook request is answered "ask" after `approvalTimeout`.
+        var receivedAt = Date()
 
         var isChat: Bool { respond != nil && !isAgent }
     }
@@ -316,6 +318,40 @@ final class HookServer: @unchecked Sendable {
             ClaudeTaskMirror.refusals[current.sessionID] = AgentRequestReader.read(tool: current.info.tool, command: current.info.command).action
         }
         resolveApproval(current.requestID, decision: decision)
+    }
+
+    // MARK: - The link with the iPhone (Contracts/YumiLink.swift)
+
+    /// The coding agents' requests waiting here, as the iPhone may see them. Yumi's own agent and
+    /// the chat stay on the Mac: they are answered in the island only.
+    @MainActor
+    func linkWaiting() -> [LinkApproval] {
+        approvals.filter { $0.respond == nil && !$0.isAgent }.map { approval in
+            LinkApproval(id: approval.requestID, sessionID: approval.sessionID.value,
+                         summary: AgentRequestReader.read(tool: approval.info.tool, command: approval.info.command).action,
+                         fingerprint: LinkFingerprint.of(requestID: approval.requestID, tool: approval.info.tool,
+                                                         command: approval.info.command),
+                         expiresAt: approval.receivedAt.addingTimeInterval(Self.approvalTimeout))
+        }
+    }
+
+    /// An answer that came from the iPhone. Checked again here against what is really waiting
+    /// (`LinkReplyCheck`): only then does it go the way of a click. "Always" never comes this way.
+    @MainActor
+    @discardableResult
+    func answerFromLink(_ reply: LinkReply, now: Date = Date()) -> LinkReplyCheck.Verdict {
+        let verdict = LinkReplyCheck.verdict(for: reply, waiting: linkWaiting(), now: now)
+        switch verdict {
+        case .accept(let answer):
+            nbLog("Approval answered on \(reply.deviceName): \(answer.rawValue)")
+            if answer == .deny, let approval = approvals.first(where: { $0.requestID == reply.approvalID }) {
+                ClaudeTaskMirror.refusals[approval.sessionID] = AgentRequestReader.read(tool: approval.info.tool, command: approval.info.command).action
+            }
+            resolveApproval(reply.approvalID, decision: answer == .allow ? "allow" : "deny")
+        case .reject(let reason):
+            nbLog("Answer from \(reply.deviceName) refused: \(reason)")
+        }
+        return verdict
     }
 
     /// Answers one request and moves on to the next. Does nothing if the request is already answered.
