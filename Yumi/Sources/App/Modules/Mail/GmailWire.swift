@@ -42,7 +42,7 @@ final class GmailIMAP: @unchecked Sendable {
         _ = try await session.untagged()
         guard try await session.command("LOGIN \(quoted(address)) \(quoted(password))").ok else { throw Failure.refused }
         guard try await session.command("EXAMINE INBOX").ok else { throw Failure.answer }
-        let answer = try await session.command("UID FETCH \(uid) (BODY.PEEK[TEXT]<0.12000>)")
+        let answer = try await session.command("UID FETCH \(uid) (BODY.PEEK[]<0.80000>)")
         _ = try? await session.command("LOGOUT")
         guard answer.ok else { throw Failure.answer }
         let raw = String(decoding: answer.data, as: UTF8.self)

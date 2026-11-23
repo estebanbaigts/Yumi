@@ -112,6 +112,7 @@ final class Phone {
     func start() async {
         chat.character = character
         approvals.character = character
+        today.changed = { [weak self] in self?.updateRemarks() }
         today.watch()
         if studio {
             PhoneLink.shared.showStudio(PhoneStudio.mac)
@@ -140,15 +141,20 @@ final class Phone {
     func cameBack() async {
         guard !studio else { return }
         if linkOn { await PhoneLink.shared.refresh() }
+        widgetsFreshened = false
         await today.refresh()
         Task { await mail.refresh() }
         updateRemarks()
     }
 
     /// What Yumi has to say, from the day as it is now.
+    /// The widgets are rewritten at each launch and each return, whatever they held: never a day old.
+    @ObservationIgnored private var widgetsFreshened = false
+
     func updateRemarks() {
         character.update(from: today, name: memoryBook.name ?? (studio ? "Esteban" : nil), mac: linkOn ? mac : nil)
-        PhoneWidgets.publish(remark: character.remark, today: today, mac: linkOn ? mac : nil)
+        PhoneWidgets.publish(remark: character.remark, today: today, mac: linkOn ? mac : nil, force: !widgetsFreshened)
+        widgetsFreshened = true
         let today = today, mac = linkOn ? mac : nil
         Task { await PhoneDayActivity.update(today: today, mac: mac) }
     }

@@ -21,6 +21,8 @@ final class PhoneToday {
     @ObservationIgnored private let notesStore: NotesStore?
     @ObservationIgnored private let live: Bool
 
+    /// Called when the day changed (another app, a tap, the clock): the widgets and the island follow.
+    @ObservationIgnored var changed: (() -> Void)?
     @ObservationIgnored private var watching: Task<Void, Never>?
     @ObservationIgnored private var ticking: Task<Void, Never>?
 
@@ -36,6 +38,7 @@ final class PhoneToday {
         watching = Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: .EKEventStoreChanged) {
                 await self?.refresh()
+                self?.changed?()
             }
         }
         ticking = Task { [weak self] in
@@ -48,7 +51,9 @@ final class PhoneToday {
 
     /// A minute passed: events that are over leave today's list.
     private func tick() {
+        let before = events.map(\.id)
         if live, calendarAccess == .granted { loadEvents() } else { dropPast() }
+        if events.map(\.id) != before { changed?() }
     }
 
     private func dropPast(now: Date = Date()) {

@@ -35,7 +35,8 @@ enum PhoneDayActivity {
             return .init(face: "calm", title: due.title, detail: PhoneToday.dueLabel(due, now: now)?.text ?? loc("Aujourd'hui"),
                          at: due.hasTime ? due.due : nil, urgent: false, symbol: "checklist")
         }
-        return .init(face: "calm", title: loc("Rien d'autre aujourd'hui"), detail: loc("Je reste là."),
+        let hour = Calendar.current.component(.hour, from: now)
+        return .init(face: hour >= 22 || hour < 7 ? "asleep" : "calm", title: loc("Rien d'autre aujourd'hui"), detail: loc("Je reste là."),
                      at: nil, urgent: false, symbol: "sun.max")
     }
 

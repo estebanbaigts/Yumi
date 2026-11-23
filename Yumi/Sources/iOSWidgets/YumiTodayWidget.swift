@@ -30,7 +30,7 @@ struct YumiTodayWidget: Widget {
         func placeholder(in context: Context) -> Entry { Entry(date: Date(), data: .placeholder) }
 
         func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) {
-            completion(Entry(date: Date(), data: YumiWidgetData.load() ?? .placeholder))
+            completion(Entry(date: Date(), data: (YumiWidgetData.load() ?? .placeholder).at(Date())))
         }
 
         /// An hour of moments, one a minute: iOS shows each in turn with a transition, so that
@@ -43,14 +43,19 @@ struct YumiTodayWidget: Widget {
             // Just touched: a short reaction, one face every 0.9 s
             if let poke = YumiWidgetPokes.recent(now: now) {
                 for (i, face) in YumiWidgetPokes.reaction(poke.count).enumerated() {
-                    entries.append(Entry(date: now.addingTimeInterval(Double(i) * 0.9), data: data, beat: 0, reaction: face))
+                    entries.append(Entry(date: now.addingTimeInterval(Double(i) * 0.9), data: data.at(now), beat: 0, reaction: face))
                 }
             }
             // Then a face a minute, from the next whole minute
             let minute = (now.timeIntervalSince1970 / 60).rounded(.down) * 60 + 60
-            entries += (0..<60).map { Entry(date: Date(timeIntervalSince1970: minute + Double($0) * 60), data: data, beat: $0) }
-            if entries.first.map({ $0.date > now }) ?? true { entries.insert(Entry(date: now, data: data, beat: 0), at: 0) }
-            completion(Timeline(entries: entries, policy: .atEnd))
+            entries += (0..<60).map {
+                let date = Date(timeIntervalSince1970: minute + Double($0) * 60)
+                return Entry(date: date, data: data.at(date), beat: $0)
+            }
+            if entries.first.map({ $0.date > now }) ?? true { entries.insert(Entry(date: now, data: data.at(now), beat: 0), at: 0) }
+            // Asked again within the hour at the latest, and at midnight: a new day, a new agenda
+            let midnight = Calendar.current.startOfDay(for: now).addingTimeInterval(86_400)
+            completion(Timeline(entries: entries.filter { $0.date < midnight }, policy: .after(min(midnight, now.addingTimeInterval(3600)))))
         }
     }
 }
@@ -110,7 +115,7 @@ private struct YumiTodayView: View {
 
     /// « dans 2 h 15 », kept up to date by iOS itself.
     @ViewBuilder private var countdown: some View {
-        if let at = entry.data.nextEventAt, at > entry.date, let event = entry.data.nextEvent {
+        if let at = entry.data.nextEventAt, at > entry.date, at > Date(), let event = entry.data.nextEvent {
             HStack(spacing: 4) {
                 Image(systemName: "calendar")
                 Text(event).lineLimit(1)

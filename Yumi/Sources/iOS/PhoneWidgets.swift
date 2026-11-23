@@ -31,6 +31,13 @@ enum PhoneWidgets {
             if let image = renderer.uiImage, let png = image.pngData() {
                 try? png.write(to: url, options: .atomic)
             }
+            // A small one for the Dynamic Island: a Live Activity refuses a big picture
+            if let small = YumiWidgetData.imageURL("island-" + face.name) {
+                let island = ImageRenderer(content: StillYumi(mood: face.mood, state: face.state, lit: face.lit, gaze: face.gaze)
+                    .frame(width: 48, height: 48))
+                island.scale = 2
+                if let png = island.uiImage?.pngData() { try? png.write(to: small, options: .atomic) }
+            }
         }
     }
 
@@ -42,7 +49,7 @@ enum PhoneWidgets {
     }
 
     /// The day as the widgets show it. Reloads them only when something changed.
-    static func publish(remark: String, today: PhoneToday, mac: LinkSnapshot?) {
+    static func publish(remark: String, today: PhoneToday, mac: LinkSnapshot?, force: Bool = false) {
         drawFaces()
         let now = Date()
         let next = today.events.first { $0.start > now && !$0.isAllDay }
@@ -52,10 +59,13 @@ enum PhoneWidgets {
             reminders: today.reminders.prefix(3).map(\.title),
             mac: mac.map { "\($0.deviceName) · \($0.sessions.count) session\($0.sessions.count > 1 ? "s" : "")" },
             macWaiting: mac?.approvals.first(where: { $0.expiresAt > now })?.summary,
-            updatedAt: now)
+            updatedAt: now,
+            upcoming: today.week.flatMap(\.events).filter { !$0.isAllDay && $0.end > now }.prefix(12)
+                .map { .init(title: $0.title, start: $0.start, end: $0.end) },
+            dueReminders: today.reminders.prefix(3).map { .init(title: $0.title, due: $0.due) })
         var compared = data
         compared.updatedAt = YumiWidgetData.load()?.updatedAt ?? now
-        guard compared != YumiWidgetData.load() else { return }
+        guard force || compared != YumiWidgetData.load() else { return }
         data.save()
         WidgetCenter.shared.reloadAllTimelines()
     }

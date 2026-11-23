@@ -23,7 +23,7 @@ struct YumiApprovalLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    YumiPicture(name: context.state.answered == nil ? "asking" : "happy", size: 44)
+                    YumiIslandPicture(face: context.state.answered == nil ? "asking" : "happy", size: 44)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(timerInterval: Date()...max(Date(), context.state.expiresAt), countsDown: true)
@@ -40,12 +40,12 @@ struct YumiApprovalLiveActivity: Widget {
                     ApprovalButtons(state: context.state)
                 }
             } compactLeading: {
-                YumiPicture(name: context.state.answered == nil ? "asking" : "happy", size: 24)
+                YumiIslandPicture(face: context.state.answered == nil ? "asking" : "happy", size: 24)
             } compactTrailing: {
                 Image(systemName: context.state.answered == nil ? "hand.raised.fill" : "checkmark")
                     .foregroundStyle(.orange)
             } minimal: {
-                YumiPicture(name: "asking", size: 22)
+                YumiIslandPicture(face: "asking", size: 22)
             }
         }
     }
@@ -58,7 +58,7 @@ private struct ApprovalBanner: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                YumiPicture(name: state.answered == nil ? "asking" : "happy", size: 40)
+                YumiIslandPicture(face: state.answered == nil ? "asking" : "happy", size: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(state.source) · \(device)").font(.caption).foregroundStyle(.white.opacity(0.7))
                     Text(state.summary).font(.headline).foregroundStyle(.white).lineLimit(2)
@@ -107,7 +107,7 @@ struct YumiDayLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    YumiPicture(name: context.state.face, size: 48)
+                    YumiIslandPicture(face: context.state.face, size: 48)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -125,7 +125,7 @@ struct YumiDayLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                YumiPicture(name: context.state.face, size: 24)
+                YumiIslandPicture(face: context.state.face, size: 24)
             } compactTrailing: {
                 if let at = context.state.at, at > Date() {
                     Text(timerInterval: Date()...at, countsDown: true, showsHours: false)
@@ -135,7 +135,7 @@ struct YumiDayLiveActivity: Widget {
                         .foregroundStyle(context.state.urgent ? Color.orange : Color(red: 0.62, green: 0.55, blue: 1))
                 }
             } minimal: {
-                YumiPicture(name: context.state.face, size: 22)
+                YumiIslandPicture(face: context.state.face, size: 22)
             }
         }
     }
@@ -146,7 +146,7 @@ private struct DayBanner: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            YumiPicture(name: state.face, size: 46)
+            YumiIslandPicture(face: state.face, size: 46)
             VStack(alignment: .leading, spacing: 3) {
                 Text(state.title).font(.headline).foregroundStyle(.white).lineLimit(2)
                 Label(state.detail, systemImage: state.symbol).font(.subheadline)
