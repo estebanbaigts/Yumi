@@ -112,7 +112,8 @@ struct IslandHalo: View {
         case .home:             return accent
         case .module, .working:
             if module?.id == IslandModel.agentModuleID { return Color(hex: "#5B8CFF") }
-            if module?.id == "weather" { return nil }
+            // `pOpen(…, {glow: c})`: the weather glows in its mood's colour, under its scene
+            if let module, module.id == "weather" { return WeatherAmbiance.pick(symbol: module.symbol, status: module.status).color }
             return module?.color ?? IslandTheme.violet
         case .alert:            return IslandTheme.amber
         case .finished, .drop:  return IslandTheme.green

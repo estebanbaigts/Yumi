@@ -400,6 +400,9 @@ final class IslandModel: ObservableObject {
                 workPick = new.workHabit.habit(filming: IslandStudio.isOn)
             }
             setHabit(workPick)
+        case .module where open && new.moduleID == "weather":
+            cancelLateHabit()
+            setHabit(Self.weatherAmbiance()?.habit)
         case .error:
             cancelLateHabit()
             setHabit(.cloud)
@@ -416,6 +419,16 @@ final class IslandModel: ObservableObject {
             setHabit(listening ? .headphones : Self.habit(for: new.strain))
         }
 
+        // The beanie of the weather page, only over no costume: the one chosen is kept
+        let onWeather = open && new.screen == .module && new.moduleID == "weather"
+        let beanie: YumiCostume? = onWeather && Self.weatherAmbiance()?.wearsBeanie == true
+            && YumiCostume.current() == .none ? .beanie : nil
+        if YumiCostume.passing != beanie {
+            YumiCostume.passing = beanie
+            NotificationCenter.default.post(name: .yumiLook, object: nil)
+        }
+        if onWeather, let mood = Self.weatherAmbiance()?.mood { setMood(mood) }
+
         // A habit brings its own face: it steps aside while he says something on his own
         if new.remarkMood != nil, habit != nil {
             cancelLateHabit()
@@ -428,6 +441,12 @@ final class IslandModel: ObservableObject {
         } else if viewChanged {
             pose(Self.pose(for: new.screen))
         }
+    }
+
+    /// The mood of the weather on screen, from the weather module.
+    static func weatherAmbiance() -> WeatherAmbiance? {
+        guard let weather = AppState.shared.modules.first(where: { $0.id == "weather" }) else { return nil }
+        return WeatherAmbiance.pick(symbol: weather.symbol, status: weather.status)
     }
 
     private func cancelLateHabit() {

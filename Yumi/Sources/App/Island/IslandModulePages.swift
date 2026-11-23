@@ -381,8 +381,35 @@ enum WeatherAmbiance: String, CaseIterable {
         }
     }
 
+    /// What Yumi does in it (`WX` of the workshop: scene, face, costume).
+    var habit: YumiHabit? {
+        switch self {
+        case .pluie: .cloud
+        case .soleil: .sunglasses
+        case .nuit: .sleep
+        case .chaud: .exhausted
+        case .doux: .whistle
+        case .neige, .froid: nil
+        }
+    }
+
+    /// The face when no habit brings its own.
+    var mood: YumiMood? {
+        switch self {
+        case .neige: .surprised
+        case .froid: .worried
+        default: nil
+        }
+    }
+
+    var wearsBeanie: Bool { self == .neige || self == .froid }
+
     /// `symbol` is the module's SF Symbol, which follows the WMO code; `status` reads "19°".
-    static func pick(symbol: String, status: String, now: Date = .now, calendar: Calendar = .current) -> WeatherAmbiance {
+    /// The filming mode shows each mood in turn.
+    @MainActor static var forced: WeatherAmbiance?
+
+    @MainActor static func pick(symbol: String, status: String, now: Date = .now, calendar: Calendar = .current) -> WeatherAmbiance {
+        if let forced { return forced }
         let temperature = Int(status.filter { $0.isNumber || $0 == "-" || $0 == "−" }.replacingOccurrences(of: "−", with: "-"))
         let hour = calendar.component(.hour, from: now)
         let month = calendar.component(.month, from: now)
@@ -402,12 +429,18 @@ private struct WeatherPage: View {
 
     private var ambiance: WeatherAmbiance { WeatherAmbiance.pick(symbol: module.symbol, status: module.status) }
 
+    /// "Météo · Paris" when a city was typed, else "Météo".
+    static func title(_ module: ModuleSnapshot) -> String {
+        let city = (UserDefaults.standard.string(forKey: WeatherModule.cityKey) ?? "").trimmingCharacters(in: .whitespaces)
+        return city.isEmpty ? module.name : "\(module.name) · \(city)"
+    }
+
     var body: some View {
         let mood = ambiance
         HStack(spacing: 24) {
             YumiSlot(width: 96)
             VStack(alignment: .leading, spacing: 0) {
-                ModHead(symbol: module.symbol, title: module.name, color: mood.color)
+                ModHead(symbol: "sun.max", title: Self.title(module), color: mood.color)
                 Text(module.status).font(.system(size: 56, weight: .bold).monospacedDigit())
                 Text(mood.name).font(IslandTheme.text(16, .semibold)).padding(.top, 4)
                 Text(module.subtitle).font(IslandTheme.text(12.5)).foregroundStyle(Color(hex: "#B9BCC8")).lineLimit(2)
@@ -415,7 +448,7 @@ private struct WeatherPage: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .frame(maxHeight: .infinity)
     }
 }
 

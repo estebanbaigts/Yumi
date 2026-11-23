@@ -95,6 +95,15 @@ enum YumiCostume: String, CaseIterable, Sendable {
         defaults.string(forKey: defaultsKey).flatMap(YumiCostume.init(rawValue:)) ?? .none
     }
 
+    /// Worn for a moment over the person's choice (the beanie of the weather page when it
+    /// snows or freezes). nil: what the person chose. Never saved.
+    @MainActor static var passing: YumiCostume?
+
+    /// What he wears on screen right now.
+    @MainActor static func shown(in defaults: UserDefaults = .standard) -> YumiCostume {
+        passing ?? current(in: defaults)
+    }
+
     func save(in defaults: UserDefaults = .standard) {
         defaults.set(rawValue, forKey: Self.defaultsKey)
     }

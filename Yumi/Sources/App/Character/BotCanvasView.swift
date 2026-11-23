@@ -68,7 +68,7 @@ private extension View {
                 engine.setGaze(notif.object as? CGPoint)
             }
             .onReceive(NotificationCenter.default.publisher(for: .yumiLook)) { _ in
-                engine.setLook(accent: .current(), costume: .current())
+                engine.setLook(accent: .current(), costume: .shown())
             }
     }
 
