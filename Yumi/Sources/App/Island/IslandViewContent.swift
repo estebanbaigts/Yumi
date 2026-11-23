@@ -34,6 +34,7 @@ struct IslandOpenLayer: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             IslandFrameBar(state: state, model: model, screen: screen, height: topHeight)
+                .zIndex(1)
 
             content
                 .id(contentID)
@@ -130,7 +131,15 @@ struct IslandOpenLayer: View {
     }
 
     /// A tile grown into its sheet: back to the bento on top, Yumi beside what the module says.
-    private func sheet(_ id: String?) -> some View {
+    @ViewBuilder private func sheet(_ id: String?) -> some View {
+        if let module = state.modules.first(where: { $0.id == id }), module.id != IslandModel.agentModuleID {
+            ModulePage(module: module)
+        } else {
+            cardSheet(id)
+        }
+    }
+
+    private func cardSheet(_ id: String?) -> some View {
         let module = state.modules.first { $0.id == id }
         let color = module?.color ?? IslandTheme.violet
         return VStack(alignment: .leading, spacing: 10) {

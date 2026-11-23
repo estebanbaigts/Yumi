@@ -41,6 +41,35 @@ enum AgendaSummary {
         return timed.first
     }
 
+    /// The day's appointments as `rows` (past ones `.neutral` with a date before now, the next one
+    /// `.waiting`), and the next four days in `pages["week"]`, one line per day.
+    static func withDays(_ snapshot: ModuleSnapshot, events: [AgendaEvent], now: Date,
+                         calendar: Calendar = .current) -> ModuleSnapshot {
+        var out = snapshot
+        let timed = events.filter { !$0.isAllDay }.sorted { $0.start < $1.start }
+        let today = timed.filter { calendar.isDate($0.start, inSameDayAs: now) }
+        let next = today.first { $0.end > now }
+        out.rows = today.map { event in
+            ModuleRow(id: event.id, title: event.title, detail: FrenchText.clock(event.start, calendar: calendar),
+                      state: event.id == next?.id ? .waiting : (event.end <= now ? .success : .neutral),
+                      label: event.id == next?.id && event.start > now
+                          ? loc("dans \(FrenchText.spokenMinutes(event.start.timeIntervalSince(now)))") : "",
+                      date: event.start)
+        }
+        var week: [ModuleRow] = []
+        let start = calendar.startOfDay(for: now)
+        for offset in 1...4 {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: start) else { continue }
+            let those = timed.filter { calendar.isDate($0.start, inSameDayAs: day) }
+            let label = day.formatted(.dateTime.weekday(.abbreviated).day()).capitalized
+            let first = those.first.map { "\($0.title) · \(FrenchText.clock($0.start, calendar: calendar))" }
+            week.append(ModuleRow(id: "day-\(offset)", title: label, detail: first ?? loc("Rien de prévu"),
+                                  state: .neutral, label: those.isEmpty ? "" : loc("\(those.count) évén."), date: day))
+        }
+        out.pages["week"] = week
+        return out
+    }
+
     static func snapshot(events: [AgendaEvent], access: PermissionState, now: Date,
                          calendar: Calendar = .current) -> ModuleSnapshot {
         plainSnapshot(events: events, access: access, now: now, calendar: calendar).withSymbols("calendar")

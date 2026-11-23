@@ -40,6 +40,8 @@ struct IslandLayout: Equatable {
     /// The slot the open view keeps for Yumi, in points from the island's top-left corner.
     /// nil until the open view has been laid out once.
     var openSlot: CGRect?
+    /// The open view keeps no slot for Yumi: he fades out where he was.
+    var yumiAway = false
 
     /// The mock-up has a 32 pt notch. A taller one pushes the launch shapes down by the difference.
     var notchDelta: CGFloat { max(0, notchHeight - IslandConst.mockNotchHeight) }
@@ -95,7 +97,8 @@ struct IslandLayout: Equatable {
             guard let slot = openSlot else {
                 return IslandSeat(x: 60 * k - openWidth / 2, y: 80 * k + openInset, scale: 0.68 * k, opacity: 1)
             }
-            return IslandSeat(x: slot.midX - openWidth / 2, y: slot.midY, scale: slot.width / 100, opacity: 1)
+            return IslandSeat(x: slot.midX - openWidth / 2, y: slot.midY, scale: slot.width / 100 * (yumiAway ? 0.6 : 1),
+                              opacity: yumiAway ? 0 : 1)
         case .drip:
             return IslandSeat(x: 0, y: 62 * l + notchDelta, scale: 0.42 * l, opacity: 1)
         case .greet:

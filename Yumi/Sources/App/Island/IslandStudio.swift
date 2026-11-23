@@ -74,6 +74,21 @@ enum IslandStudio {
                                     primaryAction: loc("Rejoindre"), secondaryAction: nil)
         agenda.symbol = "calendar"
         agenda.primarySymbol = "video.fill"
+        let day = Calendar.current.startOfDay(for: .now)
+        func at(_ h: Int, _ m: Int) -> Date { day.addingTimeInterval(Double(h * 3600 + m * 60)) }
+        agenda.rows = [
+            ModuleRow(id: "a1", title: loc("Stand-up"), detail: "09:30", state: .success, label: "", date: at(9, 30)),
+            ModuleRow(id: "a2", title: loc("Point produit"), detail: "14:30", state: .waiting, label: loc("dans 12 min"), date: at(14, 30)),
+            ModuleRow(id: "a3", title: loc("Focus · refonte"), detail: "16:00", state: .neutral, label: "", date: at(16, 0)),
+            ModuleRow(id: "a4", title: loc("Sport"), detail: "18:30", state: .neutral, label: "", date: at(18, 30)),
+        ]
+        agenda.pages["week"] = [
+            (loc("Revue de sprint · 10:00"), 2), (loc("Dentiste · 17:30"), 1), (loc("Démo client · 15:00"), 3), (loc("Rien de prévu"), 0),
+        ].enumerated().map { i, item in
+            let date = Calendar.current.date(byAdding: .day, value: i + 1, to: day) ?? day
+            return ModuleRow(id: "d\(i)", title: date.formatted(.dateTime.weekday(.abbreviated).day()).capitalized, detail: item.0,
+                             state: .neutral, label: item.1 > 0 ? loc("\(item.1) évén.") : "", date: date)
+        }
         var notes = ModuleSnapshot(id: "notes", name: "Notes", colorHex: "#F2C744", status: "3",
                                    title: loc("Dernière note"), subtitle: loc("Idée : une page d'accueil plus calme"),
                                    primaryAction: loc("Nouvelle note"), secondaryAction: nil)
@@ -91,6 +106,16 @@ enum IslandStudio {
                                     title: loc("Une étoile de plus sur Atelier."), subtitle: loc("alex/atelier"),
                                     primaryAction: loc("Ouvrir"), secondaryAction: nil)
         github.symbol = "arrow.triangle.branch"
+        github.pages["recent"] = [
+            ModuleRow(id: "g1", title: loc("Merge de la PR #31"), detail: "alex/atelier · main", state: .success, label: loc("il y a 2 h")),
+            ModuleRow(id: "g2", title: loc("Push sur refonte-ile"), detail: "alex/atelier · 3 commits", state: .busy, label: loc("il y a 3 h")),
+            ModuleRow(id: "g3", title: loc("Revue demandée"), detail: "alex/notes · #12", state: .waiting, label: loc("hier")),
+        ]
+        github.pages["repos"] = [
+            ModuleRow(id: "r1", title: "alex/atelier", detail: loc("Swift · dernier push il y a 2 h"), state: .neutral, label: loc("2 PR ouvertes")),
+            ModuleRow(id: "r2", title: "alex/notes", detail: loc("TypeScript · hier"), state: .neutral, label: loc("1 PR ouverte")),
+            ModuleRow(id: "r3", title: "alex/site", detail: loc("HTML · il y a 4 jours"), state: .neutral, label: loc("aucune PR")),
+        ]
         return [claude, agenda, notes, focus, music, weather, github]
     }
 
@@ -724,6 +749,11 @@ extension IslandStudio {
             ("03-journee", { show(modules(musicPlaying: false)); IslandActions.showTab(.day); controller?.expand(to: .overview) }),
             ("04-detente", { show(modules(musicPlaying: true)); IslandActions.showTab(.relax); controller?.expand(to: .overview) }),
             ("04b-fiche-musique", { show(modules(musicPlaying: true)); IslandActions.showModule("music"); controller?.expand(to: .module) }),
+            ("10-page-agenda", { show(modules(musicPlaying: true)); IslandActions.showModule("agenda"); controller?.expand(to: .module) }),
+            ("10-page-weather", { show(modules(musicPlaying: true)); IslandActions.showModule("weather"); controller?.expand(to: .module) }),
+            ("10-page-focus", { show(modules(musicPlaying: true)); IslandActions.showModule("focus"); controller?.expand(to: .module) }),
+            ("10-page-github", { show(modules(musicPlaying: true)); IslandActions.showModule("github"); controller?.expand(to: .module) }),
+            ("10-page-notes", { show(modules(musicPlaying: true)); IslandActions.showModule("notes"); controller?.expand(to: .module) }),
             ("05-accord", {
                 show(sessions())
                 state.stateOverride = .approval

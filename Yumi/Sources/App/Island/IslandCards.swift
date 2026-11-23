@@ -108,7 +108,12 @@ extension IslandModel {
     /// Yumi sits in the newest slot still on screen.
     private func settle() {
         let slots = YumiSlots.shared
-        guard let owner = slots.order.last(where: { slots.rects[$0] != nil }), let rect = slots.rects[owner] else { return }
+        guard let owner = slots.order.last(where: { slots.rects[$0] != nil }), let rect = slots.rects[owner] else {
+            // A page that keeps no place for him (the agenda, GitHub): he steps out of sight
+            if slots.order.isEmpty, !layout.yumiAway { layout.yumiAway = true }
+            return
+        }
+        if layout.yumiAway { layout.yumiAway = false }
         let k = IslandConst.openScale
         let slot = CGRect(x: rect.minX * k, y: rect.minY * k, width: rect.width * k, height: rect.height * k)
         if layout.openSlot != slot { layout.openSlot = slot }

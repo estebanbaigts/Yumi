@@ -14,8 +14,11 @@ final class AgendaModule: YumiModule {
     private var ticking: Task<Void, Never>?
 
     var snapshot: ModuleSnapshot {
-        AgendaSummary.snapshot(events: events, access: access, now: Date())
+        AgendaSummary.withDays(AgendaSummary.snapshot(events: events, access: access, now: Date()),
+                               events: week, now: Date())
     }
+    /// The next seven days, for the day and week columns of the island's agenda page.
+    private var week: [AgendaEvent] = []
 
     /// Today's appointments still to come (not the all-day ones), for whoever needs more than the snapshot.
     /// nil when the calendar cannot be read.
@@ -135,8 +138,11 @@ final class AgendaModule: YumiModule {
             let start = Date()
             let end = calendar.date(byAdding: .day, value: 2, to: calendar.startOfDay(for: start)) ?? start
             events = read(from: start, to: end)
+            let dayStart = calendar.startOfDay(for: start)
+            week = read(from: dayStart, to: calendar.date(byAdding: .day, value: 7, to: dayStart) ?? end)
         } else {
             events = []
+            week = []
         }
         onChange?()
     }
