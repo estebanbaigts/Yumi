@@ -142,7 +142,7 @@ struct IslandOpenLayer: View {
 
     /// A tile grown into its sheet: back to the bento on top, Yumi beside what the module says.
     @ViewBuilder private func sheet(_ id: String?) -> some View {
-        if let module = state.modules.first(where: { $0.id == id }), module.id != IslandModel.agentModuleID {
+        if let module = state.modules.first(where: { $0.id == id }) {
             ModulePage(module: module)
         } else {
             cardSheet(id)

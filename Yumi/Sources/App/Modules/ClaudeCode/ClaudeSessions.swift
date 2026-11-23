@@ -368,6 +368,13 @@ struct SessionBoard: Equatable, Sendable {
                             state: .neutral, label: "", date: entry.since,
                             action: SessionHost.kind(of: session.origin) == nil ? nil : session.id.value)
         row.actionLabel = SessionHost.openLabel(for: session.origin)
+        row.agent = loc("Claude Code")
+        if let place = AgentPlace.place(of: session.origin?.workingDirectory ?? "") {
+            row.place = place.name
+            row.isRepository = place.isRepository
+            row.branch = place.branch
+        }
+        row.model = session.origin?.model.map(AgentPlace.modelName)
         if entry.closed {
             row.state = .success
             row.label = loc("terminée")

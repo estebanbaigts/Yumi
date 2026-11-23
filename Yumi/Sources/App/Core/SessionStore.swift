@@ -27,7 +27,10 @@ enum SessionReducer {
             sessions.removeValue(forKey: id)
 
         case .sessionLocated(let id, let origin):
-            sessions[id]?.origin = origin
+            var located = origin
+            // A hook that does not name the model keeps the one already known
+            if located.model == nil { located.model = sessions[id]?.origin?.model }
+            sessions[id]?.origin = located
 
         case .promptSubmitted(let id, _):
             sessions[id]?.activity = .thinking

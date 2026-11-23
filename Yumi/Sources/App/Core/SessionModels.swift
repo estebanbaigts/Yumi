@@ -86,6 +86,8 @@ struct SessionOrigin: Equatable, Codable, Sendable {
     var tty: String
     /// iTerm2's own identifier of the session's pane (the UUID of `ITERM_SESSION_ID`). Empty when unknown.
     var terminalSessionID: String
+    /// The model the agent runs on, as it names it ("claude-opus-4-5-20251101"). nil when unknown.
+    var model: String? = nil
 
     init(workingDirectory: String = "", hostBundleID: String = "", hostName: String = "",
          tty: String = "", terminalSessionID: String = "") {

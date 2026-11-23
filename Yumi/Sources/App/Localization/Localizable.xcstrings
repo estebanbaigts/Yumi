@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Aucun agent en cours.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No agent running."
+          }
+        }
+      }
+    },
+    "Travaillent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working"
+          }
+        }
+      }
+    },
+    "T'attendent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for you"
+          }
+        }
+      }
+    },
+    "dossier local": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "local folder"
+          }
+        }
+      }
+    },
+    "1 agent dort : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 agent asleep: %@"
+          }
+        }
+      }
+    },
+    "%lld agents dorment : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld agents asleep: %@"
+          }
+        }
+      }
+    },
     "Aujourd'hui · %@": {
       "localizations": {
         "en": {

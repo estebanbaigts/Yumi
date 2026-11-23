@@ -65,7 +65,7 @@ enum IslandStudio {
                 ModuleControl(id: "secondary", symbol: "forward.fill", label: loc("Suivant")),
             ])
         }
-        var claude = ModuleSnapshot(id: "claude-code", name: "Claude Code", colorHex: "#FFB547", status: loc("au repos"),
+        var claude = ModuleSnapshot(id: "claude-code", name: loc("Agents"), colorHex: "#FFB547", status: loc("au repos"),
                                     title: loc("Rien en cours"), subtitle: loc("Atelier, dernière session il y a une heure"),
                                     primaryAction: loc("Voir"), secondaryAction: nil)
         claude.symbol = "terminal.fill"
@@ -143,8 +143,10 @@ enum IslandStudio {
         guard let index = all.firstIndex(where: { $0.id == "claude-code" }) else { return all }
         let now = Date.now
         var claude = all[index]
-        let atelier = ModuleRow(id: "s2", title: loc("atelier"), detail: loc("Modifie Accueil.swift"), state: .busy,
+        var atelier = ModuleRow(id: "s2", title: loc("atelier"), detail: loc("Modifie Accueil.swift"), state: .busy,
                                 label: loc("travaille"), date: now.addingTimeInterval(-720), action: "s2")
+        atelier.agent = "Claude Code"; atelier.place = "atelier"; atelier.isRepository = true
+        atelier.branch = "refonte-accueil"; atelier.model = "Opus 4.5"
         switch moment {
         case .working:
             claude.status = loc("1 session")
@@ -158,13 +160,13 @@ enum IslandStudio {
             claude.needsAttention = true
             claude.live = ModuleLive(text: loc("3 sessions · accord sur api"), priority: ModuleLivePriority.attention,
                                      controls: [ModuleControl(id: "primary", symbol: "eye.fill", label: loc("Voir"))])
-            claude.rows = [
-                ModuleRow(id: "s1", title: loc("api"), detail: loc("Demande Bash : npm test"), state: .waiting,
-                          label: loc("attend un accord"), date: now.addingTimeInterval(-40), action: "s1"),
-                atelier,
-                ModuleRow(id: "s3", title: loc("site"), detail: loc("C'est passé."), state: .success,
-                          label: loc("terminée"), date: now.addingTimeInterval(-120), action: "s3"),
-            ]
+            var api = ModuleRow(id: "s1", title: loc("api"), detail: loc("Veut lancer npm test"), state: .waiting,
+                                label: loc("attend un accord"), date: now.addingTimeInterval(-40), action: "s1")
+            api.agent = "Claude Code"; api.place = "api"; api.isRepository = true; api.branch = "main"; api.model = "Sonnet 4.5"
+            var notes = ModuleRow(id: "s3", title: loc("Notes"), detail: loc("C'est passé."), state: .success,
+                                  label: loc("terminée"), date: now.addingTimeInterval(-7200), action: "s3")
+            notes.agent = "Claude Code"; notes.place = "Notes"; notes.model = "Haiku 4.5"
+            claude.rows = [api, atelier, notes]
         case .answered:
             claude.status = loc("3 sessions")
             claude.title = loc("C'est passé sur api.")
@@ -749,6 +751,7 @@ extension IslandStudio {
             ("03-journee", { show(modules(musicPlaying: false)); IslandActions.showTab(.day); controller?.expand(to: .overview) }),
             ("04-detente", { show(modules(musicPlaying: true)); IslandActions.showTab(.relax); controller?.expand(to: .overview) }),
             ("04b-fiche-musique", { show(modules(musicPlaying: true)); IslandActions.showModule("music"); controller?.expand(to: .module) }),
+            ("10-page-agents", { show(sessions()); IslandActions.showModule("claude-code"); controller?.expand(to: .module) }),
             ("10-page-agenda", { show(modules(musicPlaying: true)); IslandActions.showModule("agenda"); controller?.expand(to: .module) }),
             ("10-page-weather", { show(modules(musicPlaying: true)); IslandActions.showModule("weather"); controller?.expand(to: .module) }),
             ("10-page-focus", { show(modules(musicPlaying: true)); IslandActions.showModule("focus"); controller?.expand(to: .module) }),

@@ -76,6 +76,13 @@ struct ModuleRow: Identifiable, Equatable, Sendable {
     var details: [String] = []
     /// A box to tick before the title: sent back with `moduleRowAction` when ticked. nil: none.
     var check: String? = nil
+    /// For an agent's session: who it is ("Claude Code"), where it works (the repository's name,
+    /// or the folder's when it is not one), the branch checked out there, and the model.
+    var agent: String? = nil
+    var place: String? = nil
+    var isRepository = false
+    var branch: String? = nil
+    var model: String? = nil
 }
 
 /// How a line reads at a glance. The island picks the colour.

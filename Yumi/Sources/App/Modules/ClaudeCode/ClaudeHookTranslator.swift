@@ -82,11 +82,12 @@ enum ClaudeHookTranslator {
         // Every hook introduces its session: Yumi may have been launched after it started.
         // The store ignores a start it already knows.
         let cwd = payload["cwd"] as? String ?? ""
-        let origin = SessionOrigin(workingDirectory: cwd,
+        var origin = SessionOrigin(workingDirectory: cwd,
                                    hostBundleID: payload["bundle_id"] as? String ?? "",
                                    hostName: payload["term_program"] as? String ?? "",
                                    tty: payload["tty"] as? String ?? "",
                                    terminalSessionID: itermSession(payload["iterm_session_id"] as? String ?? ""))
+        origin.model = AgentPlace.model(in: payload)
         return [.sessionStarted(id, agent, title: projectName(forDirectory: cwd)),
                 .sessionLocated(id, origin)] + specific
     }

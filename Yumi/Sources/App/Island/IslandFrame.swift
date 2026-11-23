@@ -102,6 +102,7 @@ struct IslandHalo: View {
     @MainActor static func color(screen: IslandScreen, module: ModuleSnapshot?) -> Color {
         switch screen {
         case .module, .working:
+            if module?.id == IslandModel.agentModuleID { return Color(hex: "#5B8CFF") }
             if let module, module.id == "weather" { return WeatherAmbiance.pick(symbol: module.symbol, status: module.status).color }
             return module?.color ?? IslandTheme.violet
         case .alert:            return IslandTheme.amber

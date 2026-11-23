@@ -49,6 +49,7 @@ struct ModulePage: View {
             case "weather": WeatherPage(module: module)
             case "focus":   FocusPage(module: module)
             case "github":  GitHubPage2(module: module)
+            case IslandModel.agentModuleID: AgentsPage(module: module)
             case "gmail":
                 VStack(alignment: .leading, spacing: 0) {
                     ModHead(symbol: "envelope.fill", title: module.status.isEmpty ? loc("Mail") : loc("Mail · \(module.status)"), color: Color(hex: "#6FB4FF")) { YumiSlot(width: 40) }
@@ -569,5 +570,105 @@ struct WeatherEffects: View {
             c.rotate(by: .degrees(phase * 360))
             c.draw(Text(leaf.0).font(.system(size: 14)).foregroundStyle(Color(hex: leaf.1).opacity(0.8)), at: .zero)
         }
+    }
+}
+
+// MARK: Agents
+
+/// The agents in three groups: those working, those waiting for the person, those asleep.
+/// For each one: who, on which model, in which repository and branch (or local folder), and
+/// what it is doing.
+struct AgentsPage: View {
+    let module: ModuleSnapshot
+    private let blue = Color(hex: "#5B8CFF")
+
+    private var working: [ModuleRow] { module.rows.filter { $0.state == .busy } }
+    private var waiting: [ModuleRow] { module.rows.filter { $0.state == .waiting } }
+    private var asleep: [ModuleRow] { module.rows.filter { $0.state != .busy && $0.state != .waiting } }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ModHead(symbol: "terminal.fill", title: loc("Agents"), color: blue) { YumiSlot(width: 40) }
+            if module.rows.isEmpty {
+                Text(loc("Aucun agent en cours.")).font(IslandTheme.text(13, .semibold))
+                Text(module.subtitle).font(IslandTheme.text(12)).foregroundStyle(IslandCardTheme.mute)
+            } else {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        group(working, title: loc("Travaillent"), color: blue)
+                        group(waiting, title: loc("T'attendent"), color: IslandTheme.amber)
+                        if !asleep.isEmpty { sleepers }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func group(_ rows: [ModuleRow], title: String, color: Color) -> some View {
+        if !rows.isEmpty {
+            Text("\(title.uppercased()) · \(rows.count)")
+                .font(IslandTheme.text(10.5, .bold)).tracking(0.8)
+                .foregroundStyle(color)
+                .padding(.bottom, 6)
+                .padding(.top, rows.first?.state == .waiting && !working.isEmpty ? 10 : 0)
+            ForEach(rows) { row in line(row, color: color) }
+        }
+    }
+
+    private func line(_ row: ModuleRow, color: Color) -> some View {
+        let waits = row.state == .waiting
+        return Button {
+            if waits { IslandActions.go(.approval) } else if let action = row.action { IslandActions.row(module.id, action) }
+        } label: {
+            HStack(spacing: 12) {
+                Circle().fill(color).frame(width: 8, height: 8)
+                    .shadow(color: color.opacity(0.7), radius: 4)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 5) {
+                        Text(row.agent ?? row.title).font(IslandTheme.text(13, .bold))
+                        if let model = row.model {
+                            Text("· \(model)").font(IslandTheme.text(13)).foregroundStyle(Color(hex: "#8E8E93"))
+                        }
+                    }
+                    HStack(spacing: 6) {
+                        Text(row.place ?? row.title).font(IslandTheme.text(11.5)).foregroundStyle(Color(hex: "#B9BCC8"))
+                        if let branch = row.branch {
+                            Text("⎇ \(branch)").font(.system(size: 11, design: .monospaced)).foregroundStyle(Color(hex: "#8E8E93"))
+                        } else if row.isRepository == false, row.place != nil {
+                            Text(loc("dossier local")).font(IslandTheme.text(11)).foregroundStyle(Color(hex: "#8E8E93"))
+                        }
+                    }
+                    .lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(row.detail).font(IslandTheme.text(12)).foregroundStyle(color).lineLimit(1)
+                    if let date = row.date {
+                        Text(date, style: .relative).font(IslandTheme.text(11).monospacedDigit()).foregroundStyle(Color(hex: "#8E8E93"))
+                    }
+                }
+                .frame(maxWidth: 220, alignment: .trailing)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(waits ? IslandTheme.amber.opacity(0.1) : Color.white.opacity(0.05)))
+            .overlay { if waits { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(IslandTheme.amber.opacity(0.33)) } }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.bottom, 6)
+    }
+
+    private var sleepers: some View {
+        let names = asleep.map { row in
+            [row.agent ?? row.title, row.place].compactMap { $0 }.joined(separator: " · ")
+        }
+        return HStack(spacing: 8) {
+            Image(systemName: "moon.zzz.fill").font(.system(size: 12)).foregroundStyle(Color(hex: "#8E8E93"))
+            Text(asleep.count == 1 ? loc("1 agent dort : \(names.joined(separator: ", "))")
+                                   : loc("\(asleep.count) agents dorment : \(names.joined(separator: ", "))"))
+                .font(IslandTheme.text(12)).foregroundStyle(Color(hex: "#8E8E93")).lineLimit(2)
+        }
+        .padding(.top, 10)
     }
 }
