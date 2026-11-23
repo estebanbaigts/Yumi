@@ -84,8 +84,8 @@ struct IslandHome: View {
     @State private var target: String?
 
     static let radiusX: CGFloat = 236
-    static let radiusY: CGFloat = 100
-    static let height: CGFloat = 292
+    static let radiusY: CGFloat = 88
+    static let height: CGFloat = 250
 
     private var ids: [String] { IslandHomeOrder.ids(stored: stored, modules: state.modules) }
     private var hidden: [String] { IslandHomeOrder.known(state.modules).filter { !ids.contains($0) } }
@@ -97,7 +97,7 @@ struct IslandHome: View {
             ForEach(Array(list.enumerated()), id: \.element) { index, id in
                 let a = -Double.pi / 2 + Double(index) * 2 * .pi / Double(max(1, list.count)) + spin.angle
                 orb(id)
-                    .offset(x: cos(a) * Self.radiusX, y: sin(a) * Self.radiusY + 16)
+                    .offset(x: cos(a) * Self.radiusX, y: sin(a) * Self.radiusY + 2)
                     .riseIn(index, duration: 0.4, stagger: 0.035)
             }
             YumiSlot(width: 64)

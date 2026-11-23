@@ -84,13 +84,16 @@ struct IslandHalo: View {
     let color: Color
 
     var body: some View {
+        // `.glowBg`: left 10 %, right 10 %, bottom -90, height 170, blur 50, opacity .38.
+        // The blur is drawn as an elliptical gradient so it looks the same in every capture.
         GeometryReader { geo in
-            Ellipse()
-                .fill(RadialGradient(colors: [color.opacity(0.42), color.opacity(0.14), color.opacity(0)],
-                                     center: .center, startRadius: 0, endRadius: geo.size.width * 0.45))
-                .frame(width: geo.size.width * 1.1, height: 260)
-                .scaleEffect(x: 1, y: 0.6)
-                .position(x: geo.size.width / 2, y: geo.size.height + 20)
+            let w = geo.size.width * 0.8
+            EllipticalGradient(stops: [.init(color: color.opacity(0.38), location: 0),
+                                       .init(color: color.opacity(0.30), location: 0.32),
+                                       .init(color: color.opacity(0.10), location: 0.62),
+                                       .init(color: color.opacity(0), location: 1)])
+                .frame(width: w + 200, height: 170 + 200)
+                .position(x: geo.size.width / 2, y: geo.size.height + 90 - 85)
         }
         .allowsHitTesting(false)
         .animation(.easeInOut(duration: 0.5), value: color)

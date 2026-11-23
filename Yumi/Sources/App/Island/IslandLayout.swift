@@ -128,7 +128,7 @@ enum IslandConst {
     static let expandedWidth: CGFloat = 600
     /// Zoom of what the open island and its second square contain (text, Yumi, buttons).
     /// The island is `expandedWidth × openScale` wide; the panel below has to stay wider.
-    static let openScale: CGFloat = 1.1
+    static let openScale: CGFloat = 0.85
     /// Zoom of the launch (the drop and the greeting).
     static let launchScale: CGFloat = 1.25
     static let openHeightDefault: CGFloat = 150
