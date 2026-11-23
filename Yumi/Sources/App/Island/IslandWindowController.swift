@@ -159,6 +159,8 @@ final class IslandWindowController: NSWindowController {
                 self.state.view = self.pendingView ?? .overview
                 self.pendingView = nil
                 self.setMode(.expanded, sound: from != .greeting)
+                // Opened by the pointer resting on him: he jumps up as the island opens
+                if from == .petit { IslandModel.shared.pose(.jump) }
 
             case .greeting:
                 // Yumi only lives while the island is not hidden, and the launch draws its

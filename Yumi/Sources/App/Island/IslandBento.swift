@@ -362,8 +362,16 @@ struct SheetHeader: View {
     let name: String
     let color: Color
 
+    /// The way back lives in the frame of the island: here only the module's name, in its colour.
     var body: some View {
-        BackTrail(title: name, color: color)
+        HStack(spacing: 7) {
+            Circle().fill(color).frame(width: 7, height: 7)
+            Text(name.uppercased())
+                .font(IslandTheme.text(11, .bold))
+                .tracking(0.9)
+                .foregroundStyle(color)
+                .lineLimit(1)
+        }
     }
 }
 

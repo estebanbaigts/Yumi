@@ -68,6 +68,10 @@ final class IslandStateMachine {
 
     private var petitHideWork: DispatchWorkItem?
     private var homeCollapseWork: DispatchWorkItem?
+    /// The pointer rests on the folded island: it opens on its own, without a click.
+    private var hoverOpenWork: DispatchWorkItem?
+    /// How long the pointer rests on the folded island before it opens (seconds).
+    var hoverOpenDelay: TimeInterval = 0.3
     private var greetTimeoutWork: DispatchWorkItem?
 
     // MARK: – Inputs
@@ -86,9 +90,11 @@ final class IslandStateMachine {
         case .hidden:
             cancelTimers()
             transition(to: .petit)
+            scheduleHoverOpen()
         case .petit:
             petitHideWork?.cancel()
             petitHideWork = nil
+            scheduleHoverOpen()
         case .home:
             homeCollapseWork?.cancel()
             homeCollapseWork = nil
@@ -101,6 +107,8 @@ final class IslandStateMachine {
     /// Mouse left the island
     func mouseLeft() {
         hovered = false
+        hoverOpenWork?.cancel()
+        hoverOpenWork = nil
         switch state {
         case .hidden, .greeting:
             break
@@ -163,6 +171,16 @@ final class IslandStateMachine {
 
     // MARK: – Timers
 
+    private func scheduleHoverOpen() {
+        hoverOpenWork?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            guard let self, self.hovered, self.state == .petit else { return }
+            self.enterHome()
+        }
+        hoverOpenWork = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + hoverOpenDelay, execute: item)
+    }
+
     private func schedulePetitHide() {
         petitHideWork?.cancel()
         let item = DispatchWorkItem { [weak self] in
@@ -199,6 +217,7 @@ final class IslandStateMachine {
         petitHideWork?.cancel();    petitHideWork = nil
         homeCollapseWork?.cancel(); homeCollapseWork = nil
         greetTimeoutWork?.cancel(); greetTimeoutWork = nil
+        hoverOpenWork?.cancel();    hoverOpenWork = nil
     }
 
     private func transition(to new: State) {

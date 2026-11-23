@@ -33,7 +33,7 @@ struct IslandOpenLayer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            IslandTopBar(state: state, model: model, screen: screen, height: topHeight)
+            IslandFrameBar(state: state, model: model, screen: screen, height: topHeight)
 
             content
                 .id(contentID)
@@ -52,6 +52,7 @@ struct IslandOpenLayer: View {
         .padding(.bottom, 12)
         .animation(.islandSpring(0.42), value: model.remark(in: state)?.id)
         .frame(width: width, alignment: .topLeading)
+        .background(IslandHalo(color: IslandHalo.color(screen: screen, module: state.modules.first { $0.id == currentID })))
         .foregroundStyle(IslandTheme.fg)
         .onDrop(of: [.text], delegate: TabDrop(state: state, model: model))
         .coordinateSpace(name: islandOpenSpace)
@@ -122,7 +123,7 @@ struct IslandOpenLayer: View {
     /// The tab: its bento, or the sheet of the tile that was opened.
     @ViewBuilder private var tab: some View {
         if screen == .home {
-            IslandBento(state: state, model: model, namespace: bento)
+            IslandHome(state: state, model: model)
         } else {
             sheet(currentID)
         }

@@ -1,6 +1,56 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Accueil": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
+          }
+        }
+      }
+    },
+    "Déposer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop"
+          }
+        }
+      }
+    },
+    "Glisse un module sur un autre pour échanger leur place": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag a module onto another to swap them"
+          }
+        }
+      }
+    },
+    "Parler ⌥": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talk ⌥"
+          }
+        }
+      }
+    },
+    "Retirer %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@"
+          }
+        }
+      }
+    },
     "": {
       "localizations": {
         "en": {
