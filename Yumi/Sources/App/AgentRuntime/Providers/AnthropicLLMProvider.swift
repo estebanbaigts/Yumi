@@ -53,15 +53,32 @@ struct AnthropicLLMProvider: LLMProvider {
         urlRequest.setValue(Self.apiVersion, forHTTPHeaderField: "anthropic-version")
         let body = MessageRequest(
             model: model, max_tokens: request.maxOutputTokens, system: request.system,
-            messages: request.messages.map { .init(role: $0.role.rawValue, content: $0.content) })
+            messages: request.messages.map { message in
+                var blocks: [MessageRequest.Block] = []
+                if let image = message.image {
+                    blocks.append(.init(type: "image", source: .init(type: "base64", media_type: image.mediaType, data: image.base64)))
+                }
+                blocks.append(.init(type: "text", text: message.content))
+                return .init(role: message.role.rawValue, content: blocks)
+            })
         urlRequest.httpBody = try JSONEncoder().encode(body)
         return urlRequest
     }
 
     private struct MessageRequest: Encodable {
+        struct Source: Encodable {
+            var type: String
+            var media_type: String
+            var data: String
+        }
+        struct Block: Encodable {
+            var type: String
+            var text: String? = nil
+            var source: Source? = nil
+        }
         struct Message: Encodable {
             var role: String
-            var content: String
+            var content: [Block]
         }
         var model: String
         var max_tokens: Int

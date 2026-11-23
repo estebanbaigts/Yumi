@@ -91,6 +91,8 @@ targets:
         NSDownloadsFolderUsageDescription: "Je dépose dans Téléchargements les fichiers que tu me demandes de créer."
         NSDocumentsFolderUsageDescription: "Je crée dans Documents les fichiers que tu me demandes d'y mettre, et j'y travaille si tu y as placé mon dossier."
         NSDesktopFolderUsageDescription: "Je crée sur ton Bureau les fichiers que tu me demandes d'y mettre."
+        NSMicrophoneUsageDescription: "J'écoute ta question seulement pendant que tu maintiens la touche Option de droite. Rien n'est enregistré."
+        NSSpeechRecognitionUsageDescription: "Je transforme ta question en texte sur ton Mac, sans l'envoyer à Apple."
         NSLocationWhenInUseUsageDescription: "Je regarde où tu es, au kilomètre près, pour te donner le ciel d'ici."
         NSLocationUsageDescription: "Je regarde où tu es, au kilomètre près, pour te donner le ciel d'ici."
     settings:
@@ -138,6 +140,8 @@ targets:
         NSDownloadsFolderUsageDescription: "Je dépose dans Téléchargements les fichiers que tu me demandes de créer."
         NSDocumentsFolderUsageDescription: "Je crée dans Documents les fichiers que tu me demandes d'y mettre, et j'y travaille si tu y as placé mon dossier."
         NSDesktopFolderUsageDescription: "Je crée sur ton Bureau les fichiers que tu me demandes d'y mettre."
+        NSMicrophoneUsageDescription: "J'écoute ta question seulement pendant que tu maintiens la touche Option de droite. Rien n'est enregistré."
+        NSSpeechRecognitionUsageDescription: "Je transforme ta question en texte sur ton Mac, sans l'envoyer à Apple."
         NSLocationWhenInUseUsageDescription: "Je regarde où tu es, au kilomètre près, pour te donner le ciel d'ici."
         NSLocationUsageDescription: "Je regarde où tu es, au kilomètre près, pour te donner le ciel d'ici."
     settings:

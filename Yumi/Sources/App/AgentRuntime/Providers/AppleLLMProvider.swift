@@ -70,6 +70,8 @@ struct AppleLLMProvider: LLMProvider {
     var name: String { "apple" }
 
     func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        // Apple's on-device model reads text only.
+        guard !request.hasImage else { throw LLMProviderError.unavailable }
         #if canImport(FoundationModels)
         if #available(macOS 26, *) { return try await AppleFoundationModel.complete(request) }
         #endif

@@ -194,6 +194,11 @@ final class ClaudeService {
     func chat(query: String, context: PromptContext?, state: AppState) async {
         // While filming the chat is the island's to stage: nothing is launched, nothing is sent.
         guard LaunchPlan.current.chat else { return }
+        // "Montre-moi…", "Où est…": he looks at the screen once and points (App/ShowMeController).
+        if ShowMe.wants(query) {
+            await ShowMeController.shared.answer(query, state: state)
+            return
+        }
         if await runAsAgent(query: query, state: state) { return }
         // The engine of the settings, or the first available in their order (EngineSettings).
         // Whichever answers, the chat has no tool that changes the Mac.

@@ -10,6 +10,12 @@ struct GeneralSettings: View {
     @State private var hotkeyCode = AppState.shared.hotkeyCode
     @AppStorage(TripleShift.defaultsKey) private var tripleShift = true
     @AppStorage(MacVitalsMonitor.defaultsKey) private var macVitals = true
+    @AppStorage(HoldToTalk.defaultsKey) private var holdToTalk = true
+    @AppStorage(YumiVoice.defaultsKey) private var yumiVoice = YumiVoice.mac.rawValue
+    @AppStorage(YumiVoice.manIDKey) private var manVoiceID = YumiVoice.defaultManID
+    @AppStorage(YumiVoice.womanIDKey) private var womanVoiceID = YumiVoice.defaultWomanID
+    @State private var elevenKey = ""
+    @State private var elevenConnected = KeychainStore.shared.get(YumiVoice.keychainKey)?.nonEmptyTrimmed != nil
     @State private var language = AppLanguage.stored()
 
     /// The same choices as the island's own settings; 0 is never.
@@ -48,6 +54,8 @@ struct GeneralSettings: View {
                     }
                 }
                 Toggle("Yumi réagit quand le Mac chauffe ou rame", isOn: $macVitals)
+                Toggle("Maintenir Option droite pour demander à voix haute", isOn: $holdToTalk)
+                if holdToTalk { voiceChoice }
                 Toggle("Ouvrir l'île avec trois appuis sur Maj", isOn: $tripleShift)
                 Toggle("Ouvrir l'île avec un raccourci", isOn: $state.hotkeyEnabled)
                 if state.hotkeyEnabled {
@@ -100,6 +108,40 @@ struct GeneralSettings: View {
 }
 
 /// The quick task: its shortcut, and where the task goes.
+extension GeneralSettings {
+    /// How Yumi answers aloud: the Mac's voice, or an ElevenLabs voice with the person's key.
+    @ViewBuilder var voiceChoice: some View {
+        Picker("Voix de Yumi", selection: $yumiVoice) {
+            ForEach(YumiVoice.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
+        }
+        if yumiVoice != YumiVoice.mac.rawValue {
+            if elevenConnected {
+                LabeledContent(loc("Clé ElevenLabs")) {
+                    Button(loc("Retirer la clé")) {
+                        KeychainStore.shared.remove(YumiVoice.keychainKey)
+                        elevenConnected = false
+                    }
+                }
+            } else {
+                LabeledContent(loc("Clé ElevenLabs")) {
+                    HStack {
+                        SecureField("", text: $elevenKey, prompt: Text("sk_…")).labelsHidden()
+                            .textFieldStyle(.roundedBorder).frame(maxWidth: 240)
+                        Button(loc("Brancher")) {
+                            KeychainStore.shared.set(YumiVoice.keychainKey, value: elevenKey.trimmingCharacters(in: .whitespacesAndNewlines))
+                            elevenKey = ""
+                            elevenConnected = true
+                        }
+                        .disabled(elevenKey.nonEmptyTrimmed == nil)
+                    }
+                }
+            }
+            TextField(loc("Identifiant de la voix"), text: yumiVoice == YumiVoice.man.rawValue ? $manVoiceID : $womanVoiceID)
+            SettingsHelp(loc("Seule la réponse de Yumi part chez ElevenLabs, jamais ta question ni ton écran. Sans clé, ou si ElevenLabs ne répond pas, Yumi parle avec la voix du Mac."))
+        }
+    }
+}
+
 private struct QuickTaskSettingsSection: View {
     @AppStorage(QuickTaskShortcut.enabledKey) private var enabled = true
     @AppStorage(QuickTaskDestination.defaultsKey) private var destination = QuickTaskDestination.reminders.rawValue

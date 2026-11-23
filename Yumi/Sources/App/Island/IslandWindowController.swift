@@ -379,11 +379,13 @@ final class IslandWindowController: NSWindowController {
             let keyCode = event.keyCode
             let flags = event.modifierFlags.intersection([.command, .control, .option, .shift]).rawValue
             MainActor.assumeIsolated {
+                ShowMeController.shared.keyTyped()
                 self?.tripleShift.keyTyped()
                 self?.keyDown(keyCode: keyCode, flags: flags)
             }
         })
         keep(NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            ShowMeController.shared.keyTyped()
             guard let self else { return event }
             let keyCode = event.keyCode
             let command = event.modifierFlags.intersection([.command, .control, .option, .shift]) == .command
@@ -418,7 +420,13 @@ final class IslandWindowController: NSWindowController {
         let flags: (NSEvent) -> Void = { [weak self] event in
             let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
             let time = event.timestamp
-            MainActor.assumeIsolated { self?.flagsChanged(modifiers, at: time) }
+            let keyCode = event.keyCode
+            let raw = event.modifierFlags.rawValue
+            MainActor.assumeIsolated {
+                self?.flagsChanged(modifiers, at: time)
+                // The right Option key held: Yumi listens, then looks (App/ShowMeController)
+                ShowMeController.shared.flagsChanged(keyCode: keyCode, rawFlags: raw, at: time)
+            }
         }
         keep(NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: flags))
         keep(NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in flags(event); return event })

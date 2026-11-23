@@ -14064,6 +14064,226 @@
           }
         }
       }
+    },
+    "Demande-moi, ou « montre-moi où… »": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask me, or “show me where…”"
+          }
+        }
+      }
+    },
+    "Je n'arrive pas à voir l'écran pour l'instant. Réessaie dans un instant.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't see the screen right now. Try again in a moment."
+          }
+        }
+      }
+    },
+    "C'est ici.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's here."
+          }
+        }
+      }
+    },
+    "Le moteur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The engine"
+          }
+        }
+      }
+    },
+    "Pour voir l'écran, il me faut un moteur qui voit : Claude Code, une clé Anthropic, OpenAI ou Gemini, ou un modèle Ollama qui lit les images.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To see the screen I need an engine that can see: Claude Code, an Anthropic, OpenAI or Gemini key, or an Ollama model that reads images."
+          }
+        }
+      }
+    },
+    "J'écoute…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening…"
+          }
+        }
+      }
+    },
+    "Je regarde…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking…"
+          }
+        }
+      }
+    },
+    "Pour t'écouter, autorise le micro pour Yumi dans Réglages Système › Confidentialité.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To hear you, allow the microphone for Yumi in System Settings › Privacy."
+          }
+        }
+      }
+    },
+    "Pour t'écouter, autorise la reconnaissance vocale pour Yumi dans Réglages Système › Confidentialité.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To hear you, allow speech recognition for Yumi in System Settings › Privacy."
+          }
+        }
+      }
+    },
+    "La reconnaissance vocale sur le Mac n'est pas prête. Ajoute la dictée dans Réglages Système › Clavier.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On-device speech recognition isn't ready. Turn on Dictation in System Settings › Keyboard."
+          }
+        }
+      }
+    },
+    "Maintenir Option droite pour demander à voix haute": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold right Option to ask out loud"
+          }
+        }
+      }
+    },
+    "Pour voir ton écran, autorise Yumi dans Réglages Système › Confidentialité › Enregistrement de l'écran, puis quitte-moi et rouvre-moi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To see your screen, allow Yumi in System Settings › Privacy › Screen Recording, then quit and reopen me."
+          }
+        }
+      }
+    },
+    "Voix du Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac voice"
+          }
+        }
+      }
+    },
+    "Voix d'homme (ElevenLabs)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Man's voice (ElevenLabs)"
+          }
+        }
+      }
+    },
+    "Voix de femme (ElevenLabs)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Woman's voice (ElevenLabs)"
+          }
+        }
+      }
+    },
+    "Voix de Yumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi's voice"
+          }
+        }
+      }
+    },
+    "Clé ElevenLabs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs key"
+          }
+        }
+      }
+    },
+    "Identifiant de la voix": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice ID"
+          }
+        }
+      }
+    },
+    "Seule la réponse de Yumi part chez ElevenLabs, jamais ta question ni ton écran. Sans clé, ou si ElevenLabs ne répond pas, Yumi parle avec la voix du Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only Yumi's answer goes to ElevenLabs, never your question or your screen. Without a key, or if ElevenLabs doesn't answer, Yumi uses the Mac's voice."
+          }
+        }
+      }
+    },
+    "ElevenLabs refuse ta clé. Je parle avec la voix du Mac en attendant.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs refuses your key. I'm using the Mac's voice for now."
+          }
+        }
+      }
+    },
+    "ElevenLabs ne répond pas. Je parle avec la voix du Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs isn't answering. I'm using the Mac's voice."
+          }
+        }
+      }
+    },
+    "Je cherche sur internet…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching the web…"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

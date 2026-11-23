@@ -21,12 +21,30 @@ struct LLMRequest: Equatable, Sendable {
     /// guided generation) can do so. The prompt already lists them for the others.
     var tools: [ToolDescriptor] = []
     var maxSteps = 12
+    /// An answer is awaited right now (a question asked aloud): the engines that can choose
+    /// take their fastest model.
+    var fast = false
 }
 
 struct LLMMessage: Equatable, Sendable {
     enum Role: String, Sendable { case user, assistant }
     var role: Role
     var content: String
+    /// A picture that goes with the text (a capture of the screen for "Montre-moi"). The engines
+    /// that cannot see answer `unavailable`, so the next one that can is asked.
+    var image: LLMImage? = nil
+}
+
+/// A picture sent to a model, already encoded (JPEG or PNG).
+struct LLMImage: Equatable, Sendable {
+    var data: Data
+    var mediaType: String = "image/jpeg"
+    var base64: String { data.base64EncodedString() }
+}
+
+extension LLMRequest {
+    /// True when one of the messages carries a picture.
+    var hasImage: Bool { messages.contains { $0.image != nil } }
 }
 
 struct LLMResponse: Equatable, Sendable {
