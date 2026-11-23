@@ -402,6 +402,8 @@ final class YumiCore {
         modules.share(with: .shared)
         modules.start()
         initiative.start()
+        // The iPhone, through the person's iCloud, when this build can and they turned it on
+        MacLink.shared.start()
         #if DEBUG
         if let seconds = ProcessInfo.processInfo.environment["YUMI_TRACE_INITIATIVE"].flatMap(Double.init) {
             // Development: after that many seconds, says how often the initiative was woken.

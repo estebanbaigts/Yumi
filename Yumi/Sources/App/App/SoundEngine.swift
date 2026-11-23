@@ -1,5 +1,4 @@
 import AVFoundation
-import AppKit
 
 /// Preloaded WAV players with near-zero latency.
 /// Volume default 0.12 (matches prototype: gain ×6 then vol=0.12).
@@ -16,7 +15,20 @@ final class SoundEngine {
     private var players: [String: [AVAudioPlayer]] = [:]
 
     private init() {
+        #if os(iOS)
+        // Ambient: mixes with the person's music and stays quiet with the silent switch
+        try? AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
+        #endif
         preload()
+    }
+
+    /// The person's choice: the Mac's settings, or the iPhone's (same key).
+    private var allowed: Bool {
+        #if os(macOS)
+        AppState.shared.soundEnabled
+        #else
+        UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true
+        #endif
     }
 
     private func preload() {
@@ -39,7 +51,7 @@ final class SoundEngine {
     }
 
     func play(_ name: String) {
-        guard enabled && AppState.shared.soundEnabled else { return }
+        guard enabled && allowed else { return }
         guard let pool = players[name] else { return }
         // Find a player that is not currently playing
         let player = pool.first { !$0.isPlaying } ?? pool[0]

@@ -43,6 +43,11 @@ struct MailAppPlace: Equatable, Sendable {
 }
 
 /// Reading what Gmail's IMAP server answers. Pure: no network here.
+private extension String {
+    /// A base64 text cut at a length the decoder accepts (the fetch may stop mid-way).
+    var base64Trimmed: String { String(prefix(count - count % 4)) }
+}
+
 enum GmailParse {
 
     /// The number of mails in the mailbox, from the `* 123 EXISTS` line of SELECT or EXAMINE.
@@ -243,21 +248,53 @@ enum GmailParse {
 
     /// The readable text of a mail body as the server sends it: the plain part when the mail has
     /// one, HTML tags removed otherwise, quoted-printable decoded, the quoted history dropped.
+    /// One part of a multipart mail: its headers and its body, up to the next boundary.
+    static func part(_ type: String, in raw: String) -> (headers: String, body: String)? {
+        guard let found = raw.range(of: "Content-Type: \(type)", options: .caseInsensitive) else { return nil }
+        // The part's headers start after the boundary line before it
+        let before = raw[..<found.lowerBound]
+        let headerStart = before.range(of: "\r\n--", options: .backwards)?.upperBound ?? raw.startIndex
+        let rest = raw[found.lowerBound...]
+        guard let blank = rest.range(of: "\r\n\r\n") else { return nil }
+        let headers = String(raw[headerStart..<blank.lowerBound])
+        let body = rest[blank.upperBound...]
+        return (headers, String(body.components(separatedBy: "\r\n--").first ?? String(body)))
+    }
+
     static func readableText(_ raw: String) -> String {
         var text = raw
-        // A multipart mail: keep the first text/plain part
-        if let plain = text.range(of: "Content-Type: text/plain", options: .caseInsensitive) {
-            let rest = text[plain.upperBound...]
-            if let start = rest.range(of: "\r\n\r\n") {
-                let body = rest[start.upperBound...]
-                text = String(body.components(separatedBy: "\r\n--").first ?? String(body))
-            }
+        var encoding = raw
+        // A multipart mail: the first text/plain part, else the first text/html one
+        if let part = part("text/plain", in: raw) ?? part("text/html", in: raw) {
+            text = part.body
+            encoding = part.headers
+        } else if raw.hasPrefix("Received:") || raw.hasPrefix("Delivered-To:") || raw.hasPrefix("Return-Path:"),
+                  let blank = raw.range(of: "\r\n\r\n") {
+            // A whole message without a type: its headers go
+            encoding = String(raw[..<blank.lowerBound])
+            text = String(raw[blank.upperBound...])
         }
-        if raw.range(of: "quoted-printable", options: .caseInsensitive) != nil || text.contains("=\r\n") {
+        if encoding.range(of: "base64", options: .caseInsensitive) != nil,
+           let data = Data(base64Encoded: String(text.replacingOccurrences(of: "\\s", with: "", options: .regularExpression)
+                .prefix { $0 != "-" }.dropLast(0)).base64Trimmed) {
+            text = String(decoding: data, as: UTF8.self)
+        } else if encoding.range(of: "quoted-printable", options: .caseInsensitive) != nil || text.contains("=\r\n") {
             text = String(decoding: quotedPrintable(text.replacingOccurrences(of: "=\r\n", with: "")), as: UTF8.self)
         }
-        text = text.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
-            .replacingOccurrences(of: "&nbsp;", with: " ").replacingOccurrences(of: "&amp;", with: "&")
+        // HTML: what is never read (styles, scripts, the head) goes before the tags
+        for block in ["style", "script", "head", "title"] {
+            text = text.replacingOccurrences(of: "<\(block)[^>]*>[\\s\\S]*?</\(block)>", with: " ",
+                                             options: [.regularExpression, .caseInsensitive])
+        }
+        text = text.replacingOccurrences(of: "<!--[\\s\\S]*?-->", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: "<(br|/p|/div|/tr|/h[1-6]|/li)[^>]*>", with: "\n", options: [.regularExpression, .caseInsensitive])
+            .replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
+        for (entity, char) in [("&nbsp;", " "), ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""),
+                               ("&#39;", "'"), ("&rsquo;", "’"), ("&eacute;", "é"), ("&egrave;", "è"), ("&agrave;", "à"),
+                               ("&ccedil;", "ç"), ("&ecirc;", "ê"), ("&zwnj;", ""), ("&#8203;", "")] {
+            text = text.replacingOccurrences(of: entity, with: char, options: .caseInsensitive)
+        }
+        text = text.replacingOccurrences(of: "[ \t]{2,}", with: " ", options: .regularExpression)
         var lines: [String] = []
         for line in text.components(separatedBy: .newlines) {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
@@ -275,5 +312,29 @@ enum GmailParse {
         guard let range = text.range(of: "FLAGS (") else { return [] }
         let rest = text[range.upperBound...]
         return rest.prefix { $0 != ")" }.split(separator: " ").map(String.init)
+    }
+}
+
+/// Where the mails come from. Mail is the default; Gmail with an app password stays an option.
+enum MailSource: String, CaseIterable, Sendable {
+    case mailApp, gmail
+
+    static let defaultsKey = "mail.source"
+
+    /// Mail needs Apple Events, which the App Store build does not have.
+    static var mailAppAvailable: Bool {
+        #if APPSTORE
+        return false
+        #else
+        return true
+        #endif
+    }
+
+    /// The person's choice. Someone who had already connected Gmail before this choice existed
+    /// keeps Gmail; everyone else starts with Mail.
+    static func current(in defaults: UserDefaults = .standard, gmailConnected: Bool) -> MailSource {
+        guard mailAppAvailable else { return .gmail }
+        if let raw = defaults.string(forKey: defaultsKey), let source = MailSource(rawValue: raw) { return source }
+        return gmailConnected ? .gmail : .mailApp
     }
 }

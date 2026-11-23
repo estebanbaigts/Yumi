@@ -10,6 +10,7 @@ struct GeneralSettings: View {
     @State private var hotkeyCode = AppState.shared.hotkeyCode
     @AppStorage(TripleShift.defaultsKey) private var tripleShift = true
     @State private var language = AppLanguage.stored()
+    @State private var linkOn = LinkSetting.isOn()
 
     /// The same choices as the island's own settings; 0 is never.
     static let foldDelays: [(seconds: TimeInterval, label: String)] =
@@ -65,6 +66,16 @@ struct GeneralSettings: View {
                 Text("Contexte")
             } footer: {
                 SettingsHelp(loc("Je vois quelle app et quelle fenêtre tu utilises, pour parler à propos. Ça reste sur ce Mac, en mémoire : pas de capture d'écran, pas de frappe."))
+            }
+
+            if YumiLinks.isBuiltIn {
+                Section {
+                    Toggle(loc("Retrouver mon iPhone"), isOn: Binding(get: { linkOn }, set: { linkOn = $0; LinkSetting.set($0) }))
+                } header: {
+                    Text(loc("iPhone"))
+                } footer: {
+                    SettingsHelp(loc("Par ton iCloud uniquement, jamais par un serveur de Yumi. Ton iPhone voit tes sessions et peut répondre aux demandes des agents ; chaque réponse est vérifiée ici avant d'agir."))
+                }
             }
         }
     }
