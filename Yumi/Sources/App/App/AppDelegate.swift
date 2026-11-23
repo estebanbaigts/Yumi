@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         setupMenuBarItem()
         setupIsland()
+        MacVitalsMonitor.shared.start()
     }
 
     // MARK: - Quitting (Contracts/AppLifecycle.swift)

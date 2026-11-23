@@ -9,6 +9,7 @@ struct GeneralSettings: View {
     @State private var hotkeyFlags = AppState.shared.hotkeyFlags
     @State private var hotkeyCode = AppState.shared.hotkeyCode
     @AppStorage(TripleShift.defaultsKey) private var tripleShift = true
+    @AppStorage(MacVitalsMonitor.defaultsKey) private var macVitals = true
     @State private var language = AppLanguage.stored()
 
     /// The same choices as the island's own settings; 0 is never.
@@ -46,6 +47,7 @@ struct GeneralSettings: View {
                         Text("\(Int(absenceMinutes.wrappedValue)) min").monospacedDigit()
                     }
                 }
+                Toggle("Yumi réagit quand le Mac chauffe ou rame", isOn: $macVitals)
                 Toggle("Ouvrir l'île avec trois appuis sur Maj", isOn: $tripleShift)
                 Toggle("Ouvrir l'île avec un raccourci", isOn: $state.hotkeyEnabled)
                 if state.hotkeyEnabled {

@@ -22,6 +22,8 @@ final class AppState: ObservableObject {
 
     // Tasks
     @Published var tasks: [AgentTask] = []
+    /// How the Mac is doing (hot, busy, short of memory), read by `MacVitalsMonitor`. Nil when fine.
+    @Published var macStrain: MacStrain? = nil
     @Published var focusId: String? = nil
 
     // Bot state override
