@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import LocalAuthentication
 import Observation
 import UIKit
 import UserNotifications
@@ -20,6 +21,8 @@ final class PhoneLink: NSObject {
 
     private(set) var mac: LinkSnapshot?
     private(set) var lastError: String?
+    /// Requests answered from this iPhone, until the Mac's picture drops them: id → allowed.
+    private(set) var answered: [String: Bool] = [:]
     @ObservationIgnored private var notified: Set<String> = []
 
     static let categoryID = "yumi.approval"
@@ -64,9 +67,22 @@ final class PhoneLink: NSObject {
         startActivity(approval, source: "Claude Code · Yumi", device: mac.deviceName)
     }
 
+    /// A tap in the app. « Autoriser » asks for Face ID (or the code) first, as from a
+    /// notification; nothing is sent if that fails. The Mac still checks the answer.
     func answer(_ approval: LinkApproval, allow: Bool) async {
+        if allow {
+            let context = LAContext()
+            let ok = (try? await context.evaluatePolicy(.deviceOwnerAuthentication,
+                                                        localizedReason: loc("Autoriser la demande de ton Mac"))) ?? false
+            guard ok else { return }
+        }
+        answered[approval.id] = allow
+        guard !StudioMode.isOn else { return }
         await LinkAnswers.send(approvalID: approval.id, fingerprint: approval.fingerprint, allow: allow)
     }
+
+    /// When the Mac's picture was sent: tells whether the Mac is there.
+    var lastSeen: Date? { mac?.sentAt }
 
     // MARK: - Showing the requests
 
@@ -83,6 +99,7 @@ final class PhoneLink: NSObject {
         }
         // Answered or expired on the Mac: off the Lock Screen and out of the notifications
         let ids = Set(live.map(\.id))
+        answered = answered.filter { ids.contains($0.key) }
         let gone = notified.subtracting(ids)
         if !gone.isEmpty {
             UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: Array(gone))

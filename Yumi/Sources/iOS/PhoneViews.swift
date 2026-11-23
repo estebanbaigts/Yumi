@@ -106,6 +106,8 @@ struct PhoneMiniYumi: View {
 
 struct PhoneHomeView: View {
     let phone: Phone
+    @State private var adding: PhoneAddKind?
+    @State private var deleting: PhoneDeletion?
 
     var body: some View {
         NavigationStack {
@@ -115,19 +117,37 @@ struct PhoneHomeView: View {
                         .padding(.top, 16)
                     Text(greeting).font(.title2.weight(.bold)).multilineTextAlignment(.center)
                         .phoneReveal(phone.revealed, step: 0)
+                    // A request of the Mac comes before everything else: it is the one thing waiting on the person
+                    if phone.linkOn, let mac = phone.mac, !PhoneMacRequests.live(mac).isEmpty {
+                        PhoneMacRequests(mac: mac).phoneReveal(phone.revealed, step: 1)
+                    }
                     agenda.phoneReveal(phone.revealed, step: 1)
                     reminders.phoneReveal(phone.revealed, step: 2)
-                    weather.phoneReveal(phone.revealed, step: 3)
-                    if phone.linkOn, let mac = phone.mac { PhoneMacCard(mac: mac).phoneReveal(phone.revealed, step: 4) }
+                    PhoneMailCard(phone: phone).phoneReveal(phone.revealed, step: 3)
+                    weather.phoneReveal(phone.revealed, step: 4)
+                    if phone.linkOn, let mac = phone.mac { PhoneSessionsCard(mac: mac).phoneReveal(phone.revealed, step: 4) }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
             }
             .phoneScreen()
-            .refreshable { await phone.today.refresh(); phone.updateRemarks() }
+            .refreshable { await phone.today.refresh(); await phone.mail.refresh(); phone.updateRemarks() }
             .onAppear { phone.updateRemarks() }
             .navigationTitle(loc("Aujourd'hui"))
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(item: $adding) { kind in PhoneAddSheet(kind: kind, today: phone.today) { phone.updateRemarks() } }
+            .confirmationDialog(deleting?.question ?? "", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                                titleVisibility: .visible, presenting: deleting) { item in
+                Button(loc("Supprimer"), role: .destructive) {
+                    withAnimation {
+                        switch item {
+                        case .event(let event): phone.today.delete(event)
+                        case .reminder(let reminder): phone.today.delete(reminder)
+                        }
+                    }
+                    phone.updateRemarks()
+                }
+            }
         }
     }
 
@@ -140,7 +160,8 @@ struct PhoneHomeView: View {
 
     @ViewBuilder private var agenda: some View {
         PhoneCard(title: loc("Agenda"), symbol: "calendar",
-                  opens: phone.today.calendarAccess == .granted ? PhoneApps.calendar : nil) {
+                  opens: phone.today.calendarAccess == .granted ? PhoneApps.calendar : nil,
+                  add: phone.today.calendarAccess == .granted ? { adding = .event } : nil) {
             switch phone.today.calendarAccess {
             case .granted:
                 // Today's date first, then the days of the week that have something
@@ -166,6 +187,10 @@ struct PhoneHomeView: View {
                                     Text(event.title)
                                     Spacer()
                                 }
+                                .contentShape(Rectangle())
+                                .contextMenu {
+                                    Button(loc("Supprimer"), systemImage: "trash", role: .destructive) { deleting = .event(event) }
+                                }
                             }
                         }
                     }
@@ -180,19 +205,33 @@ struct PhoneHomeView: View {
 
     @ViewBuilder private var reminders: some View {
         PhoneCard(title: loc("Rappels et notes"), symbol: "checklist",
-                  opens: phone.today.remindersAccess == .granted ? PhoneApps.reminders : nil) {
+                  opens: phone.today.remindersAccess == .granted ? PhoneApps.reminders : nil,
+                  add: phone.today.remindersAccess == .granted ? { adding = .reminder } : nil) {
             switch phone.today.remindersAccess {
             case .granted:
                 if phone.today.reminders.isEmpty { Text(loc("Aucun rappel en cours.")).foregroundStyle(.secondary) }
                 ForEach(phone.today.reminders.prefix(5), id: \.id) { reminder in
                     HStack(alignment: .firstTextBaseline) {
-                        Label(reminder.title, systemImage: "circle")
+                        // A tap on the circle ticks it off: it leaves the list
+                        Button {
+                            withAnimation(.spring(duration: 0.35)) { phone.today.complete(reminder) }
+                            phone.updateRemarks()
+                        } label: {
+                            Image(systemName: "circle").foregroundStyle(PhoneTheme.violet)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(loc("Terminer « \(reminder.title) »")))
+                        Text(reminder.title)
                         Spacer(minLength: 8)
                         if let due = PhoneToday.dueLabel(reminder) {
                             Text(due.text)
                                 .font(.caption.monospacedDigit())
                                 .foregroundStyle(due.late ? Color.red : Color.secondary)
                         }
+                    }
+                    .contentShape(Rectangle())
+                    .contextMenu {
+                        Button(loc("Supprimer"), systemImage: "trash", role: .destructive) { deleting = .reminder(reminder) }
                     }
                 }
             case .notDetermined:
@@ -226,36 +265,84 @@ struct PhoneHomeView: View {
     }
 }
 
-/// What the Mac follows, when the link is on and a Mac answered.
-struct PhoneMacCard: View {
+/// The Mac's requests waiting for an answer, at the top of the home screen. « Autoriser » asks
+/// for Face ID first; the answer then shows a big ✓ while the Mac checks it.
+struct PhoneMacRequests: View {
+    let mac: LinkSnapshot
+
+    static func live(_ mac: LinkSnapshot) -> [LinkApproval] { mac.approvals.filter { $0.expiresAt > Date() } }
+
+    var body: some View {
+        PhoneCard(title: loc("Ton accord"), symbol: "hand.raised.fill") {
+            ForEach(Self.live(mac)) { approval in
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(source(approval)).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Text(approval.summary).font(.headline)
+                    if let allowed = PhoneLink.shared.answered[approval.id] {
+                        HStack(spacing: 10) {
+                            Image(systemName: allowed ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                .font(.system(size: 34)).foregroundStyle(allowed ? .green : .secondary)
+                                .transition(.scale.combined(with: .opacity))
+                            Text(allowed ? loc("Envoyé. Le Mac vérifie avant d'agir.") : loc("Refusé."))
+                                .font(.subheadline)
+                        }
+                    } else {
+                        HStack {
+                            Button(loc("Refuser"), role: .destructive) { Task { await PhoneLink.shared.answer(approval, allow: false) } }
+                                .buttonStyle(.bordered)
+                            Button { Task { await PhoneLink.shared.answer(approval, allow: true) } } label: {
+                                Label(loc("Autoriser"), systemImage: "faceid")
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        Text(loc("Expire à \(approval.expiresAt.formatted(date: .omitted, time: .shortened)).")).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+                .animation(.spring(duration: 0.35), value: PhoneLink.shared.answered[approval.id])
+            }
+        }
+    }
+
+    private func source(_ approval: LinkApproval) -> String {
+        guard let session = mac.sessions.first(where: { $0.id == approval.sessionID }) else { return mac.deviceName }
+        return "\(session.agent) · \(session.project)"
+    }
+}
+
+/// What the Mac follows: its sessions, then GitHub. Says when the Mac was last heard from.
+struct PhoneSessionsCard: View {
     let mac: LinkSnapshot
 
     var body: some View {
         PhoneCard(title: mac.deviceName, symbol: "laptopcomputer") {
-            ForEach(mac.approvals.filter { $0.expiresAt > Date() }) { approval in
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(approval.summary, systemImage: "hand.raised.fill").font(.headline)
-                    HStack {
-                        Button(loc("Refuser"), role: .destructive) { Task { await PhoneLink.shared.answer(approval, allow: false) } }
-                            .buttonStyle(.bordered)
-                        Button(loc("Autoriser")) { Task { await PhoneLink.shared.answer(approval, allow: true) } }
-                            .buttonStyle(.borderedProminent)
-                    }
-                    Text(loc("Le Mac vérifie ta réponse avant d'agir.")).font(.caption).foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
+            Text(PhoneSessionsCard.presence(mac)).font(.caption).foregroundStyle(.secondary)
+            if mac.sessions.isEmpty {
+                Text(loc("Aucune session en cours.")).foregroundStyle(.secondary)
             }
             ForEach(mac.sessions) { session in
-                HStack {
-                    Text("\(session.agent) · \(session.project)")
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(session.project).font(.body.weight(.semibold))
+                        Text(session.agent).font(.caption).foregroundStyle(.secondary)
+                    }
                     Spacer()
-                    Text(session.status).foregroundStyle(.secondary)
+                    Text(session.status).font(.subheadline).foregroundStyle(.secondary)
                 }
             }
-            ForEach(mac.github, id: \.self) { line in
-                Label(line, systemImage: "arrow.triangle.branch").foregroundStyle(.secondary)
+            if !mac.github.isEmpty {
+                Divider().opacity(0.4)
+                ForEach(mac.github, id: \.self) { line in
+                    Label(line, systemImage: "arrow.triangle.branch").font(.subheadline).foregroundStyle(.secondary)
+                }
             }
         }
+    }
+
+    /// The Mac sends its picture at least once a minute while it runs.
+    static func presence(_ mac: LinkSnapshot, now: Date = Date()) -> String {
+        if now.timeIntervalSince(mac.sentAt) < 180 { return loc("En ligne") }
+        return loc("Vu \(mac.sentAt.formatted(.relative(presentation: .named)))")
     }
 }
 
@@ -264,6 +351,8 @@ struct PhoneCard<Content: View>: View {
     let symbol: String
     /// The app a tap on the card opens (Calendar, Reminders, Weather), when there is one.
     var opens: URL? = nil
+    /// The « + » of the card (add an event, a reminder), when there is one.
+    var add: (() -> Void)? = nil
     @ViewBuilder var content: Content
     @Environment(\.openURL) private var openURL
 
@@ -273,7 +362,13 @@ struct PhoneCard<Content: View>: View {
                 Label(title, systemImage: symbol).font(.subheadline.weight(.semibold))
                     .foregroundStyle(PhoneTheme.rim)
                 Spacer()
-                if opens != nil {
+                if let add {
+                    Button(action: add) {
+                        Image(systemName: "plus.circle.fill").font(.title3).foregroundStyle(PhoneTheme.violet)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(loc("Ajouter")))
+                } else if opens != nil {
                     Image(systemName: "arrow.up.forward.app").font(.footnote).foregroundStyle(.secondary)
                 }
             }
@@ -483,6 +578,10 @@ struct PhoneSettingsView: View {
                 Section {
                     if Phone.linkReady || phone.studio {
                         Toggle(loc("Retrouver mon Mac"), isOn: $phone.linkOn)
+                        if phone.linkOn {
+                            LabeledContent(loc("État"), value: phone.mac.map { PhoneSessionsCard.presence($0) }
+                                           ?? loc("En attente du Mac"))
+                        }
                         if let error = PhoneLink.shared.lastError { Text(error).font(.footnote).foregroundStyle(.secondary) }
                     } else {
                         // The Mac's side is not switched on yet: said plainly rather than a switch that does nothing
@@ -499,15 +598,30 @@ struct PhoneSettingsView: View {
                     Text(loc("Mac"))
                 } footer: {
                     if Phone.linkReady || phone.studio {
-                        Text(loc("Par ton iCloud uniquement, jamais par un serveur de Yumi. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir."))
+                        Text(loc("Allume aussi le lien dans les réglages de Yumi sur ton Mac, avec le même compte iCloud. Par ton iCloud uniquement, jamais par un serveur de Yumi. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir."))
                     } else {
                         Text(loc("La connexion avec ton Mac arrive bientôt : tes sessions Claude Code et les demandes d'accord, sur ton iPhone, par ton iCloud."))
                     }
                 }
+                Section {
+                    if phone.mail.isConnected {
+                        LabeledContent(loc("Gmail"), value: phone.mail.address)
+                        Button(loc("Déconnecter Gmail"), role: .destructive) { phone.mail.disconnect() }
+                    } else {
+                        Text(loc("Aucun compte. Connecte Gmail depuis la carte Mails de l'accueil.")).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text(loc("Mails"))
+                } footer: {
+                    Text(loc("Yumi lit tes mails sans les marquer comme lus, et n'envoie une réponse que quand tu touches « Envoyer »."))
+                }
                 Section(loc("Yumi")) {
                     NavigationLink(loc("Son apparence")) { PhoneLookView(phone: phone) }
+                    Toggle(loc("Dans la Dynamic Island"), isOn: $phone.islandOn)
                     Toggle(loc("Sons"), isOn: $phone.soundOn)
+                    #if DEBUG
                     Toggle(loc("Mode tournage au prochain lancement"), isOn: $phone.studioNextLaunch)
+                    #endif
                 }
                 Section(loc("Ce que je sais de toi")) {
                     if phone.memoryBook.entries.isEmpty {

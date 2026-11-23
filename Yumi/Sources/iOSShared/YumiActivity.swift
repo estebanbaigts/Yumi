@@ -91,3 +91,23 @@ struct YumiBadge: View {
             .overlay(Circle().fill(.black).frame(width: size * 0.1).offset(x: size * 0.015, y: size * 0.02))
     }
 }
+
+/// Yumi living in the Dynamic Island: his face and the next thing of the day. Started by the app
+/// when the person keeps it on (Réglages), updated each time the day changes while the app runs.
+/// Without a server of ours, it cannot change on its own: its texts count down by themselves.
+struct YumiDayActivity: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        /// His picture (`happy`, `asking`, `asleep`…), drawn by the app.
+        var face: String
+        /// « Point avec Camille », « Acheter du pain », « Rien d'autre aujourd'hui »
+        var title: String
+        /// « 14:00 · Salle B », « Rappel en retard »
+        var detail: String
+        /// When it starts: the island counts down to it.
+        var at: Date?
+        /// A reminder past due, or a request of the Mac: shown in Yumi's warm colour.
+        var urgent: Bool
+        /// The SF Symbol of the kind: calendar, checklist, hand.raised.
+        var symbol: String
+    }
+}

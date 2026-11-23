@@ -67,4 +67,17 @@ enum PhoneStudio {
                                               fingerprint: "studio", expiresAt: Date().addingTimeInterval(110))],
                      github: ["PR #30 ouverte : refonte de l'île", "main : 3 commits poussés"])
     }
+
+    static var mails: [GmailMail] {
+        [
+            GmailMail(uid: 3, from: "Camille Martin", subject: "Point de cet après-midi", date: today(8, 47), unread: true,
+                      replyAddress: "camille@example.com", messageID: "<studio-3@example.com>"),
+            GmailMail(uid: 2, from: "Léa", subject: "Dîner jeudi ?", date: today(7, 30), unread: true,
+                      replyAddress: "lea@example.com", messageID: "<studio-2@example.com>"),
+            GmailMail(uid: 1, from: "La Poste", subject: "Votre colis arrive demain", date: today(6, 5), unread: false,
+                      bulk: true, replyAddress: "", messageID: ""),
+        ]
+    }
+
+    static let mailText = "Salut Esteban,\n\nOn garde 14 h pour le point ? Je voudrais qu'on regarde la maquette de l'écran d'accueil ensemble.\n\nÀ tout à l'heure,\nCamille"
 }

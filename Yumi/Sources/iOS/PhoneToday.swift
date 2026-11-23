@@ -21,9 +21,122 @@ final class PhoneToday {
     @ObservationIgnored private let notesStore: NotesStore?
     @ObservationIgnored private let live: Bool
 
+    @ObservationIgnored private var watching: Task<Void, Never>?
+    @ObservationIgnored private var ticking: Task<Void, Never>?
+
     init(live: Bool, notesURL: URL?) {
         self.live = live
         notesStore = notesURL.map { NotesStore(fileURL: $0) }
+    }
+
+    /// Keeps the day current: read again when the calendar or the reminders change (here or in
+    /// another app), and each minute so that what is over leaves the list.
+    func watch() {
+        guard watching == nil else { return }
+        watching = Task { [weak self] in
+            for await _ in NotificationCenter.default.notifications(named: .EKEventStoreChanged) {
+                await self?.refresh()
+            }
+        }
+        ticking = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                self?.tick()
+            }
+        }
+    }
+
+    /// A minute passed: events that are over leave today's list.
+    private func tick() {
+        if live, calendarAccess == .granted { loadEvents() } else { dropPast() }
+    }
+
+    private func dropPast(now: Date = Date()) {
+        events = events.filter { $0.isAllDay || $0.end > now }
+        week = week.compactMap { day in
+            let list = day.events.filter { $0.isAllDay || $0.end > now }
+            return list.isEmpty ? nil : (day.day, list)
+        }
+    }
+
+    // MARK: - Changes, from a tap of the person
+
+    /// Ticks a reminder off: it leaves the list.
+    func complete(_ reminder: ReminderItem) {
+        reminders.removeAll { $0.id == reminder.id }
+        guard live, let item = store.calendarItem(withIdentifier: reminder.id) as? EKReminder else { return }
+        item.isCompleted = true
+        try? store.save(item, commit: true)
+    }
+
+    /// Deletes a reminder (after the person confirmed it).
+    func delete(_ reminder: ReminderItem) {
+        reminders.removeAll { $0.id == reminder.id }
+        guard live, let item = store.calendarItem(withIdentifier: reminder.id) as? EKReminder else { return }
+        try? store.remove(item, commit: true)
+    }
+
+    /// Deletes an event (after the person confirmed it). Only this occurrence of a repeating one.
+    func delete(_ event: AgendaEvent) {
+        events.removeAll { $0.id == event.id }
+        week = week.compactMap { day in
+            let list = day.events.filter { $0.id != event.id }
+            return list.isEmpty ? nil : (day.day, list)
+        }
+        guard live, let item = store.event(withIdentifier: event.id) else { return }
+        try? store.remove(item, span: .thisEvent, commit: true)
+        loadEvents()
+    }
+
+    /// Adds a reminder, with a due date when one was chosen.
+    func addReminder(title: String, due: Date?, hasTime: Bool) {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return }
+        guard live else {
+            reminders = NotesSummary.ordered(reminders + [ReminderItem(id: UUID().uuidString, title: title, due: due, hasTime: hasTime)])
+            return
+        }
+        guard remindersAccess == .granted, let list = store.defaultCalendarForNewReminders() else { return }
+        let item = EKReminder(eventStore: store)
+        item.title = title
+        item.calendar = list
+        if let due {
+            let parts: Set<Calendar.Component> = hasTime ? [.year, .month, .day, .hour, .minute] : [.year, .month, .day]
+            item.dueDateComponents = Calendar.current.dateComponents(parts, from: due)
+            if hasTime { item.addAlarm(EKAlarm(absoluteDate: due)) }
+        }
+        try? store.save(item, commit: true)
+        Task { await loadReminders() }
+    }
+
+    /// Adds an event to the default calendar. Never with guests.
+    func addEvent(title: String, start: Date, minutes: Int, allDay: Bool) {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return }
+        let end = allDay ? start : start.addingTimeInterval(Double(minutes) * 60)
+        guard live else {
+            let event = AgendaEvent(id: UUID().uuidString, title: title, start: start, end: end, isAllDay: allDay,
+                                    location: "", joinURL: nil)
+            if Calendar.current.isDateInToday(start) { events = (events + [event]).sorted { $0.start < $1.start } }
+            var days = week
+            if let index = days.firstIndex(where: { Calendar.current.isDate($0.day, inSameDayAs: start) }) {
+                days[index].events = (days[index].events + [event]).sorted { $0.start < $1.start }
+            } else {
+                days.append((Calendar.current.startOfDay(for: start), [event]))
+                days.sort { $0.day < $1.day }
+            }
+            week = days
+            return
+        }
+        guard calendarAccess == .granted, let calendar = store.defaultCalendarForNewEvents else { return }
+        let item = EKEvent(eventStore: store)
+        item.title = title
+        item.calendar = calendar
+        item.isAllDay = allDay
+        item.startDate = allDay ? Calendar.current.startOfDay(for: start) : start
+        item.endDate = allDay ? Calendar.current.startOfDay(for: start) : end
+        try? store.save(item, span: .thisEvent, commit: true)
+        loadEvents()
     }
 
     static func studio() -> PhoneToday {
@@ -103,7 +216,9 @@ final class PhoneToday {
     // MARK: - Reading
 
     private func loadEvents() {
-        events = events(on: Date())
+        let now = Date()
+        // What is over leaves today's list (a day-long event stays the whole day)
+        events = events(on: now).filter { $0.isAllDay || $0.end > now }
         week = Self.days(from: Date()).compactMap { day in
             let list = Calendar.current.isDateInToday(day) ? events : events(on: day)
             return list.isEmpty ? nil : (day, list)

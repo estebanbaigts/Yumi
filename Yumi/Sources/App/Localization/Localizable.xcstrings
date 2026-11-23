@@ -14854,6 +14854,466 @@
           }
         }
       }
+    },
+    "Allume aussi le lien dans les réglages de Yumi sur ton Mac, avec le même compte iCloud. Par ton iCloud uniquement, jamais par un serveur de Yumi. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also turn the link on in Yumi's settings on your Mac, with the same iCloud account. Through your iCloud only, never a Yumi server. An answer given here is always checked by the Mac before it acts."
+          }
+        }
+      }
+    },
+    "Aucune session en cours.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No session running."
+          }
+        }
+      }
+    },
+    "Autoriser la demande de ton Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow your Mac's request"
+          }
+        }
+      }
+    },
+    "En attente du Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for your Mac"
+          }
+        }
+      }
+    },
+    "En ligne": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online"
+          }
+        }
+      }
+    },
+    "Envoyé. Le Mac vérifie avant d'agir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent. Your Mac checks before acting."
+          }
+        }
+      }
+    },
+    "Expire à %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires at %@."
+          }
+        }
+      }
+    },
+    "Refusé.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refused."
+          }
+        }
+      }
+    },
+    "Ton accord": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your OK"
+          }
+        }
+      }
+    },
+    "Vu %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seen %@"
+          }
+        }
+      }
+    },
+    "Adresse Gmail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gmail address"
+          }
+        }
+      }
+    },
+    "Aucun compte. Connecte Gmail depuis la carte Mails de l'accueil.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No account. Connect Gmail from the Mail card on the home screen."
+          }
+        }
+      }
+    },
+    "Aucun mail.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No mail."
+          }
+        }
+      }
+    },
+    "Ce qu'il faut faire": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What to do"
+          }
+        }
+      }
+    },
+    "Connecter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        }
+      }
+    },
+    "Connecter Gmail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Gmail"
+          }
+        }
+      }
+    },
+    "Créer un mot de passe d'application": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create an app password"
+          }
+        }
+      }
+    },
+    "Dans la Dynamic Island": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the Dynamic Island"
+          }
+        }
+      }
+    },
+    "Durée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
+          }
+        }
+      }
+    },
+    "Déconnecter Gmail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect Gmail"
+          }
+        }
+      }
+    },
+    "En cours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now"
+          }
+        }
+      }
+    },
+    "Gmail refuse l'adresse ou le mot de passe d'application.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gmail refuses the address or the app password."
+          }
+        }
+      }
+    },
+    "Google demande un mot de passe d'application, pas ton mot de passe habituel. Crée-le sur la page de ton compte Google (validation en deux étapes activée), puis colle-le ici. Il reste dans le trousseau de cet iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google asks for an app password, not your usual password. Create it on your Google account page (2-Step Verification on), then paste it here. It stays in this iPhone's Keychain."
+          }
+        }
+      }
+    },
+    "Je n'arrive pas à joindre Gmail.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't reach Gmail."
+          }
+        }
+      }
+    },
+    "Je peux lire tes derniers mails, te les résumer et t'aider à répondre.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can read your latest mail, sum it up and help you answer."
+          }
+        }
+      }
+    },
+    "Je reste là.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm here."
+          }
+        }
+      }
+    },
+    "L'envoi a échoué. Rien n'est parti.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending failed. Nothing was sent."
+          }
+        }
+      }
+    },
+    "La réponse partira à %@, pas à l'expéditeur.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The answer will go to %@, not to the sender."
+          }
+        }
+      }
+    },
+    "Nouveau rappel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New reminder"
+          }
+        }
+      }
+    },
+    "Nouvel événement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New event"
+          }
+        }
+      }
+    },
+    "Pour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due"
+          }
+        }
+      }
+    },
+    "Quand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When"
+          }
+        }
+      }
+    },
+    "Rappel en retard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overdue reminder"
+          }
+        }
+      }
+    },
+    "Rien d'autre aujourd'hui": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing else today"
+          }
+        }
+      }
+    },
+    "Répondre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply"
+          }
+        }
+      }
+    },
+    "Réponse envoyée.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply sent."
+          }
+        }
+      }
+    },
+    "Supprimer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Supprimer le rappel « %@ » ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the reminder “%@”?"
+          }
+        }
+      }
+    },
+    "Supprimer « %@ » de ton agenda ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete “%@” from your calendar?"
+          }
+        }
+      }
+    },
+    "Terminer « %@ »": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete “%@”"
+          }
+        }
+      }
+    },
+    "Titre de l'événement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event title"
+          }
+        }
+      }
+    },
+    "Ton Mac attend ton accord": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Mac is waiting for your OK"
+          }
+        }
+      }
+    },
+    "Toute la journée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All day"
+          }
+        }
+      }
+    },
+    "Une échéance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A due date"
+          }
+        }
+      }
+    },
+    "Yumi lit tes mails sans les marquer comme lus, et n'envoie une réponse que quand tu touches « Envoyer ».": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi reads your mail without marking it read, and only sends an answer when you tap “Send”."
+          }
+        }
+      }
+    },
+    "À une heure précise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At a set time"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

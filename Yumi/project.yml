@@ -104,7 +104,6 @@ targets:
           - Weather/WeatherModule.swift
           - Music/AudioActivity.swift
           - AgentBridges.swift
-          - Mail/GmailMail.swift
           - Notion/NotionAgentStore.swift
       - path: Sources/App/Context
         excludes:
@@ -149,6 +148,7 @@ targets:
         UIBackgroundModes: [remote-notification]
         NSSupportsLiveActivities: YES
         NSCalendarsFullAccessUsageDescription: "Je lis ton calendrier pour t'annoncer ton prochain rendez-vous. Rien ne quitte ton iPhone."
+        NSFaceIDUsageDescription: "Face ID confirme que c'est bien toi qui autorises une demande de ton Mac."
         NSRemindersFullAccessUsageDescription: "Je te montre tes rappels du jour, je coche ceux que tu termines, et j'en ajoute quand tu me le demandes."
         NSLocationWhenInUseUsageDescription: "Je regarde où tu es, au kilomètre près, pour te donner le ciel d'ici."
     settings:

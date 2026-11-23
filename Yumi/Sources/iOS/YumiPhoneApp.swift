@@ -38,11 +38,12 @@ struct YumiPhoneApp: App {
 @Observable
 final class Phone {
     let studio = StudioMode.isOn
-    /// The link with the Mac is ready on both sides. False until the signed Mac build carries
-    /// the iCloud container: the iPhone then says « bientôt » instead of a switch that does nothing.
-    static let linkReady = false
+    /// The link with the Mac can be turned on. The iPhone says « En attente du Mac » until a Mac
+    /// with the link on publishes its picture.
+    static let linkReady = true
     let chat: PhoneChat
     let today: PhoneToday
+    let mail: PhoneMail
     let approvals = PhoneApprovals()
     let character = PhoneCharacter()
     /// The home screen's content shows once the opening is over.
@@ -65,6 +66,13 @@ final class Phone {
     var soundOn: Bool = UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true {
         didSet { UserDefaults.standard.set(soundOn, forKey: "soundEnabled") }
     }
+    /// Yumi in the Dynamic Island (on by default).
+    var islandOn: Bool = PhoneDayActivity.isOn {
+        didSet {
+            PhoneDayActivity.isOn = islandOn
+            if islandOn { updateRemarks() }
+        }
+    }
     /// Filming mode for the next launch (the iPhone has no environment variables).
     var studioNextLaunch: Bool = StudioMode.isSetForNextLaunch() {
         didSet { StudioMode.setForNextLaunch(studioNextLaunch) }
@@ -74,6 +82,7 @@ final class Phone {
         if studio {
             chat = .studio()
             today = .studio()
+            mail = PhoneMail(studio: true)
             memory = nil
             permissions = nil
             linkOn = true
@@ -91,6 +100,7 @@ final class Phone {
         chat = PhoneChat(agent: Self.makeAgent(permissions: permissions), memory: memory,
                          fileURL: folder.appendingPathComponent("conversation.json"))
         today = PhoneToday(live: true, notesURL: folder.appendingPathComponent("notes.md"))
+        mail = PhoneMail(studio: false)
         let today = today
         chat.day = { tomorrow in today.told(tomorrow: tomorrow) }
         // Off until the Mac's side is switched on (Phone.linkReady), whatever was chosen before
@@ -102,6 +112,7 @@ final class Phone {
     func start() async {
         chat.character = character
         approvals.character = character
+        today.watch()
         if studio {
             PhoneLink.shared.showStudio(PhoneStudio.mac)
             updateRemarks()
@@ -110,6 +121,7 @@ final class Phone {
         permissions?.presenter = approvals
         memory?.start()
         await today.refresh()
+        Task { await mail.refresh() }
         if linkOn, !studio { await PhoneLink.shared.refresh() }
         updateRemarks()
         #if DEBUG
@@ -129,6 +141,7 @@ final class Phone {
         guard !studio else { return }
         if linkOn { await PhoneLink.shared.refresh() }
         await today.refresh()
+        Task { await mail.refresh() }
         updateRemarks()
     }
 
@@ -136,6 +149,8 @@ final class Phone {
     func updateRemarks() {
         character.update(from: today, name: memoryBook.name ?? (studio ? "Esteban" : nil), mac: linkOn ? mac : nil)
         PhoneWidgets.publish(remark: character.remark, today: today, mac: linkOn ? mac : nil)
+        let today = today, mac = linkOn ? mac : nil
+        Task { await PhoneDayActivity.update(today: today, mac: mac) }
     }
 
     /// The first launch: Yumi asks the person's first name, once (never while filming).
