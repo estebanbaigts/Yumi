@@ -14024,6 +14024,46 @@
           }
         }
       }
+    },
+    "Donner à %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give to %@"
+          }
+        }
+      }
+    },
+    "C'est dans la session. Ajoute ta consigne et valide.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's in the session. Add your instruction and press Return."
+          }
+        }
+      }
+    },
+    "Chemin copié. Colle-le dans la session avec ⌘V.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Path copied. Paste it into the session with ⌘V."
+          }
+        }
+      }
+    },
+    "Yumi réagit quand le Mac chauffe ou rame": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi reacts when the Mac runs hot or slow"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

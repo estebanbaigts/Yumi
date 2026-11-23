@@ -641,18 +641,46 @@ struct DropActivity: View {
     @ObservedObject var state: AppState
 
     private var file: DroppedFile? { state.view == .upload ? nil : state.droppedFile }
+    @State private var handed: ClaudeCodeModule.HandOff?
+
+    /// "Claude", "Codex": the agent of the session the pill shows.
+    private var agentSpeaker: String {
+        state.tasks.first(where: { $0.id == ClaudeTaskMirror.taskID })?.speaker ?? "Claude"
+    }
+
+    private var handedLine: String? {
+        switch handed {
+        case .typed:  return loc("C'est dans la session. Ajoute ta consigne et valide.")
+        case .copied: return loc("Chemin copié. Colle-le dans la session avec ⌘V.")
+        case nil:     return nil
+        }
+    }
 
     var body: some View {
         if let file {
             ActRow(trailGap: 8) {
                 ActMeta(color: IslandTheme.blue, text: loc("Bien reçu")).riseIn(0)
                 ActTitle(text: file.name).riseIn(1)
-                ActSub(text: loc("J'en fais quoi ? Je résume, j'envoie ou je range.")).riseIn(2)
+                ActSub(text: handedLine ?? loc("J'en fais quoi ? Je résume, j'envoie ou je range.")).riseIn(2)
             } trail: {
-                RoundButton(style: .tint, symbol: "text.alignleft", label: loc("Résumer"), color: IslandTheme.blue) { IslandActions.summarize() }
+                if let target = ClaudeTaskMirror.fileTarget {
+                    RoundButton(style: .tint, symbol: "arrow.right.doc.on.clipboard", label: loc("Donner à \(agentSpeaker)"),
+                                color: IslandTheme.red) {
+                        Task {
+                            handed = await ClaudeCodeModule.hand(file.url, to: target)
+                            if handed != nil {
+                                SoundEngine.shared.play("send")
+                                IslandModel.shared.pose(.pop)
+                            }
+                        }
+                    }
+                }
+                RoundButton(style: ClaudeTaskMirror.fileTarget == nil ? .tint : .plain, symbol: "text.alignleft", label: loc("Résumer"),
+                            color: IslandTheme.blue) { IslandActions.summarize() }
                 RoundButton(symbol: "paperplane.fill", label: loc("Envoyer")) { IslandActions.sendByMail() }
                 RoundButton(symbol: "tray.and.arrow.down.fill", label: loc("Ranger")) { IslandActions.putAway() }
             }
+            .onChange(of: file.name) { handed = nil }
         } else {
             VStack(alignment: .leading, spacing: 3) {
                 ActTitle(text: loc("Donne, je m'en occupe."))
