@@ -16,9 +16,9 @@ struct YumiPhoneApp: App {
                 // screen; its cover then goes, and the cards come in under him
                 if opening {
                     PhoneSplash(character: phone.character,
-                                name: { phone.memoryBook.name ?? (phone.studio ? "Esteban" : nil) }) {
+                                name: { phone.memoryBook.name ?? (phone.studio ? "Esteban" : nil) },
+                                reveal: { phone.revealed = true }) {
                         opening = false
-                        phone.revealed = true
                     }
                     // Removed at once: by then it draws nothing
                     .transition(.identity)

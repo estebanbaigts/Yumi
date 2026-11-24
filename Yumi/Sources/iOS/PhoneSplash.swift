@@ -1,94 +1,93 @@
 import SwiftUI
 
-/// The opening, as on the Mac (Island/IslandLaunch.swift): on black, the Dynamic Island itself
-/// stretches, two sleeping eyes open inside it, the light comes on and he says hello by name.
-/// Then the drop goes back up into the Dynamic Island taking him with it, the black warms into
-/// his night, and he pops up again at his place in the app. About 3.5 s; a tap skips it.
+/// The opening (« Le réveil + la chute », p6 of the workshop): on black, the Dynamic Island
+/// swells into a drop, two sleeping eyes open inside it, look left and right; it opens, the
+/// light comes on and he says hello by name. Then the island closes again and he falls straight
+/// into the circle at the bottom, at its centre and its size, while the app appears. About 5 s;
+/// a tap skips to the fall.
 ///
 /// iOS draws nothing of an app before it opens: the opening starts once the app is in front.
 struct PhoneSplash: View {
     let character: PhoneCharacter
     /// His first name, read when he says hello (the memory may load during the opening).
     var name: () -> String?
-    /// Told when it is over (or skipped): the cover is gone, the home screen shows its cards.
+    /// The black goes: the home screen shows its cards under him.
+    var reveal: () -> Void
+    /// He landed in the circle: the cover is removed, the circle draws him from now on.
     var done: () -> Void
 
-    private enum Stage: Int { case hidden, drip, hello, leaving, gone }
+    private enum Stage: Int { case hidden, drip, hello, falling, landed }
 
     @State private var stage = Stage.hidden
     @State private var hello: String?
-    @State private var finished = false
-    @State private var yumiInDrop = true
+    @State private var black = true
+    @State private var falling = false
+    @State private var skipped = false
 
     private var engine: BotEngine { character.engine }
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let top = geo.safeAreaInsets.top
+            let height = geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom
+            let bottom = geo.safeAreaInsets.bottom
             ZStack(alignment: .topLeading) {
-                // Black, then his night: the home screen's own background, so the hand-over is invisible
-                PhoneTheme.background
-                Color.black.ignoresSafeArea().opacity(stage.rawValue >= Stage.leaving.rawValue ? 0 : 1)
-                island(width: width)
-                    .position(x: width / 2, y: 11 + islandSize(width).height / 2)
+                Color.black.opacity(black ? 1 : 0)
+                island
+                    .position(x: width / 2, y: 11 + islandSize.height / 2)
                 if let hello, stage == .hello {
                     Text(hello)
-                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        .font(.system(size: u(24), weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                        .frame(width: islandSize(width).width - 175, alignment: .leading)
-                        .position(x: width / 2 + 72, y: 11 + islandSize(width).height / 2 + 6)
-                        .transition(.opacity.combined(with: .offset(x: 16)))
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                        .frame(width: width - 40)
+                        .position(x: width / 2, y: 11 + islandSize.height + u(20))
+                        .transition(.opacity.combined(with: .offset(y: u(10))))
                 }
-                // Him, above the island, so that he can leave it. Not drawn before he appears
-                // nor after the home screen took him: a Canvas at opacity 0 stalls the renderer.
-                if yumiInDrop, stage == .drip || stage == .hello || stage == .leaving {
-                    let place = yumiPlace(width: width, top: top)
+                if stage != .hidden {
+                    let place = yumiPlace(height: height, bottom: bottom)
                     YumiStage(engine: engine, followsPointer: false)
                         .frame(width: place.size, height: place.size)
-                        .position(place.center)
+                        .position(x: width / 2, y: place.y)
                 }
             }
             .ignoresSafeArea()
         }
+        .allowsHitTesting(black)
         .contentShape(Rectangle())
-        .onTapGesture { Task { await land() } }
+        .onTapGesture { skipped = true }
         .accessibilityLabel(Text(hello ?? AppIdentity.characterName))
         .task { await play() }
     }
 
-    private func islandSize(_ width: CGFloat) -> CGSize {
+    /// The workshop's 92×27 is the real Dynamic Island (126×37); its other sizes go through `u`.
+    private var islandSize: CGSize {
         switch stage {
-        case .hidden, .leaving, .gone: CGSize(width: 126, height: 37)
-        case .drip: CGSize(width: 170, height: 96)
-        case .hello: CGSize(width: min(width - 24, 370), height: 190)
+        case .drip: CGSize(width: u(140), height: u(120))
+        case .hello: CGSize(width: u(230), height: u(210))
+        default: CGSize(width: 126, height: 37)
         }
     }
 
-    private func island(width: CGFloat) -> some View {
-        let size = islandSize(width)
-        let radius: CGFloat = stage == .drip ? 42 : (stage == .hello ? 44 : 18.5)
-        return ZStack {
-            RoundedRectangle(cornerRadius: radius, style: .continuous).fill(.black)
-            // On black, his rim draws the island's edge
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .strokeBorder(PhoneTheme.rim, lineWidth: 1.2)
-                .opacity(stage == .hello ? 0.8 : 0)
+    private var island: some View {
+        let shape: AnyShape = switch stage {
+        case .drip: AnyShape(UnevenRoundedRectangle(topLeadingRadius: u(20), bottomLeadingRadius: u(70),
+                                                    bottomTrailingRadius: u(70), topTrailingRadius: u(20), style: .continuous))
+        case .hello: AnyShape(RoundedRectangle(cornerRadius: u(44), style: .continuous))
+        default: AnyShape(RoundedRectangle(cornerRadius: 18.5, style: .continuous))
         }
-        .frame(width: size.width, height: size.height)
+        return shape.fill(.black)
+            .overlay(shape.stroke(PhoneTheme.rim, lineWidth: 1.2).opacity(stage == .hello ? 0.8 : 0))
+            .frame(width: islandSize.width, height: islandSize.height)
     }
 
-    /// Where he is drawn, in screen points (the view ignores the safe area).
-    private func yumiPlace(width: CGFloat, top: CGFloat) -> (center: CGPoint, size: CGFloat) {
-        let islandMid = 11 + islandSize(width).height / 2
+    /// Where he is drawn: in the middle of the island, then in the circle at the bottom
+    /// (`PhoneOrb`: 68 of the workshop, him 46, on the bottom of the safe area).
+    private func yumiPlace(height: CGFloat, bottom: CGFloat) -> (y: CGFloat, size: CGFloat) {
         switch stage {
-        case .hidden, .drip: return (CGPoint(x: width / 2, y: islandMid + 4), 80)
-        case .hello: return (CGPoint(x: width / 2 - 95, y: islandMid + 6), 120)
-        case .leaving, .gone:
-            // Back up into the Dynamic Island, small, with the drop
-            return (CGPoint(x: width / 2, y: 11 + 18.5), 26)
+        case .hidden, .drip: return (11 + u(120) / 2, u(48))
+        case .hello: return (11 + u(105), u(80))
+        case .falling, .landed: return (height - bottom - u(34), u(46))
         }
     }
 
@@ -97,67 +96,75 @@ struct PhoneSplash: View {
         engine.setMood(.asleep)
         engine.setRim(.calm)
         var clock = 0
-        func wait(until ms: Int) async {
-            try? await Task.sleep(for: .milliseconds(max(ms - clock, 0)))
-            clock = ms
+        /// Waits until `ms` of the opening; a tap jumps straight to the fall.
+        func wait(until ms: Int) async -> Bool {
+            while clock < ms {
+                if skipped { return false }
+                try? await Task.sleep(for: .milliseconds(min(50, ms - clock)))
+                clock += min(50, ms - clock)
+            }
+            return !skipped
         }
-        let spring = Animation.spring(response: 0.5, dampingFraction: 0.74)
+        let spring = Animation.spring(response: 0.6, dampingFraction: 0.72)
 
-        // 1. the Dynamic Island swells, two sleeping eyes inside it
-        await wait(until: 150)
-        withAnimation(spring) { stage = .drip }
-        SoundEngine.shared.play("pop")
-        // 2. the eyes open and check left, then right
-        await wait(until: 600)
-        engine.setMood(.surprised)
-        engine.play(.pop)
-        SoundEngine.shared.play("blip")
-        await wait(until: 820)
-        engine.setGaze(CGPoint(x: -1, y: 0))
-        await wait(until: 1040)
-        engine.setGaze(CGPoint(x: 1, y: 0))
-        // 3. it opens, the light comes on, he waves: hello, by name
-        await wait(until: 1250)
-        withAnimation(spring) {
-            stage = .hello
-            hello = name().map { loc("Hello \($0) !") } ?? loc("Hello !")
+        intro: do {
+            // 1. the Dynamic Island swells into a drop, two sleeping eyes inside it
+            guard await wait(until: 150) else { break intro }
+            withAnimation(spring) { stage = .drip }
+            SoundEngine.shared.play("pop")
+            // 2. the eyes open and look left, then right
+            guard await wait(until: 800) else { break intro }
+            engine.setMood(.surprised)
+            engine.play(.pop)
+            SoundEngine.shared.play("blip")
+            guard await wait(until: 1100) else { break intro }
+            engine.setGaze(CGPoint(x: -1, y: 0))
+            guard await wait(until: 1400) else { break intro }
+            engine.setGaze(CGPoint(x: 1, y: 0))
+            // 3. it opens, curious
+            guard await wait(until: 1750) else { break intro }
+            engine.setGaze(nil)
+            engine.setMood(.curious)
+            withAnimation(spring) { stage = .hello }
+            // 4. the light comes on, he bounces: hello, by name
+            guard await wait(until: 2200) else { break intro }
+            withAnimation(.easeOut(duration: 0.5)) {
+                hello = name().map { loc("Bonjour \($0)") } ?? loc("Bonjour")
+            }
+            engine.setLit(true)
+            engine.setMood(.happy)
+            engine.setRim(.joy)
+            engine.play(.boing)
+            SoundEngine.shared.play("greet")
+            guard await wait(until: 2750) else { break intro }
+            engine.play(.wave)
+            guard await wait(until: 3450) else { break intro }
+            engine.setMood(.wink)
+            guard await wait(until: 3800) else { break intro }
         }
-        engine.setLit(true)
-        engine.setMood(.happy)
-        engine.setRim(.joy)
-        engine.play(.wave)
-        SoundEngine.shared.play("greet")
-        // 4. a wink, then he lands on the home screen
-        await wait(until: 2350)
-        engine.setMood(.wink)
-        await wait(until: 2700)
-        await land()
+        await fall()
     }
 
-    /// The drop goes back up into the Dynamic Island and takes him with it, the black warms into
-    /// his night; then he pops up again at his place on the home screen (same engine), and the
-    /// cards come in under him.
-    private func land() async {
-        guard !finished else { return }
-        finished = true
-        engine.setRim(.calm)
+    /// He leaves the island, which closes again, and falls straight into the circle; the app
+    /// appears around him, he lands with a squash, and the circle takes him.
+    private func fall() async {
         engine.setGaze(nil)
-        // His light goes out and his eyes close: black on the black drop, as on the Mac
-        engine.setLit(false)
-        engine.setMood(.asleep)
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) { stage = .leaving }
-        SoundEngine.shared.play("close")
-        // No longer drawn well before the drop reaches the notch: nothing of him shows in it
-        try? await Task.sleep(for: .milliseconds(180))
-        yumiInDrop = false
-        try? await Task.sleep(for: .milliseconds(300))
-        // Gone into the notch; he comes back on the home screen, lit
-        engine.setMood(nil)
         engine.setLit(true)
-        stage = .gone
-        character.onScreen = true
-        engine.play(.arrive)
+        engine.setRim(.calm)
+        engine.setMood(.surprised)
+        hello = nil
+        withAnimation(.timingCurve(0.55, 0, 0.85, 0.4, duration: 0.62)) { stage = .falling }
+        try? await Task.sleep(for: .milliseconds(250))
+        withAnimation(.easeInOut(duration: 0.5)) { black = false }
+        reveal()
+        try? await Task.sleep(for: .milliseconds(370))
+        engine.setMood(.happy)
+        engine.play(.squash)
         SoundEngine.shared.play("pop")
+        try? await Task.sleep(for: .milliseconds(500))
+        engine.setMood(nil)
+        stage = .landed
+        character.onScreen = true
         done()
     }
 }

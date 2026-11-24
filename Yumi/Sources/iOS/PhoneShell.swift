@@ -148,7 +148,7 @@ struct PhoneOrb: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
             Button { phone.talk() } label: {
-                PhoneFace(character: phone.character, size: u(46), ring: u(68))
+                PhoneFace(character: phone.character, size: u(46), ring: u(68), hidesYumi: !phone.character.onScreen)
                     .shadow(color: PhoneTheme.violet.opacity(0.33), radius: u(13))
             }
             .buttonStyle(.plain)
@@ -164,10 +164,13 @@ struct PhoneFace: View {
     var size: CGFloat
     var ring: CGFloat
     var listening = false
+    /// During the opening the falling Yumi is the opening's: the circle waits for him empty.
+    var hidesYumi = false
 
     var body: some View {
         YumiStage(engine: character.engine, paused: !character.onScreen, followsPointer: false)
             .frame(width: size, height: size)
+            .opacity(hidesYumi ? 0 : 1)
             .allowsHitTesting(false)
             .frame(width: ring, height: ring)
             .background(.black, in: Circle())
