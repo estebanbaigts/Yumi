@@ -201,6 +201,60 @@ final class PhoneChat {
         save()
     }
 
+    // MARK: - History
+
+    /// A finished conversation, kept on the iPhone (file `conversations.json`, next to the current one).
+    struct Past: Codable, Identifiable, Equatable {
+        var id = UUID()
+        var messages: [PhoneMessage]
+        var title: String { messages.first { $0.role == .person }?.text ?? "…" }
+        var date: Date { messages.last?.date ?? .distantPast }
+    }
+
+    private(set) var history: [Past] = []
+    @ObservationIgnored private var historyLoaded = false
+
+    private var historyURL: URL? { fileURL?.deletingLastPathComponent().appendingPathComponent("conversations.json") }
+
+    func loadHistory() {
+        guard !historyLoaded else { return }
+        historyLoaded = true
+        if let url = historyURL, let data = try? Data(contentsOf: url), let saved = try? JSONDecoder().decode([Past].self, from: data) {
+            history = saved
+        } else if fileURL == nil {
+            history = [Past(messages: PhoneStudio.conversation)]
+        }
+    }
+
+    /// « Nouvelle discussion »: the current one goes to the history, the page starts empty.
+    func startNew() {
+        loadHistory()
+        if !messages.isEmpty { history.insert(Past(messages: messages), at: 0) }
+        clear()
+        saveHistory()
+    }
+
+    /// Back to a past conversation: it becomes the current one, the current one goes to the history.
+    func reopen(_ past: Past) {
+        loadHistory()
+        history.removeAll { $0.id == past.id }
+        if !messages.isEmpty { history.insert(Past(messages: messages), at: 0) }
+        messages = past.messages
+        apple = nil
+        save()
+        saveHistory()
+    }
+
+    func forget(_ past: Past) {
+        history.removeAll { $0.id == past.id }
+        saveHistory()
+    }
+
+    private func saveHistory() {
+        guard let url = historyURL, let data = try? JSONEncoder().encode(history) else { return }
+        try? data.write(to: url, options: [.atomic, .completeFileProtection])
+    }
+
     // MARK: - Conversation
 
     private var conversation: [ConversationTurn] {

@@ -33,6 +33,7 @@ struct PhoneRootView: View {
     @State private var menuOpen = false
     /// The connection already celebrated (once per connection).
     @State private var celebrated: Date?
+    @State private var showingHistory = false
 
     var body: some View {
         NavigationStack {
@@ -64,6 +65,7 @@ struct PhoneRootView: View {
             .navigationDestination(for: PhonePage.self) { _ in EmptyView() }
         }
         .tint(PhoneTheme.violet)
+        .sheet(isPresented: $showingHistory) { PhoneHistoryView(chat: phone.chat) }
         .sheet(isPresented: Binding(get: { phone.asksName && !phone.nameAsked }, set: { if !$0 { phone.answerName(nil) } })) {
             PhoneNameSheet(phone: phone)
         }
@@ -99,6 +101,23 @@ struct PhoneRootView: View {
             .buttonStyle(.plain)
             .accessibilityHint(Text(loc("Ouvre le menu")))
             Spacer()
+            if phone.page == .talk {
+                Button { showingHistory = true } label: {
+                    Image(systemName: "clock.arrow.circlepath").font(.system(size: u(15), weight: .semibold))
+                        .foregroundStyle(.white).frame(width: u(34), height: u(28))
+                        .background(.white.opacity(0.1), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(loc("Historique")))
+                Button { withAnimation { phone.chat.startNew() } } label: {
+                    Image(systemName: "square.and.pencil").font(.system(size: u(15), weight: .semibold))
+                        .foregroundStyle(.white).frame(width: u(34), height: u(28))
+                        .background(.white.opacity(0.1), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(phone.chat.messages.isEmpty)
+                .accessibilityLabel(Text(loc("Nouvelle discussion")))
+            }
             if phone.page == .today {
                 Button { withAnimation(.spring(duration: 0.3)) { phone.editingToday.toggle() } } label: {
                     Text(phone.editingToday ? loc("OK") : loc("Modifier"))

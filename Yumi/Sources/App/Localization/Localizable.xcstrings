@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Nouvelle discussion": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New conversation"
+          }
+        }
+      }
+    },
+    "Aucune discussion passée. « Nouvelle discussion » range celle en cours ici.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No past conversations. “New conversation” files the current one here."
+          }
+        }
+      }
+    },
     "Claude Code n'a pas pu répondre sur ton Mac.": {
       "localizations": {
         "en": {
