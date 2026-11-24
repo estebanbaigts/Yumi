@@ -2,9 +2,9 @@ import SwiftUI
 
 /// The screens of the app. The menu of the title opens five of them; the others are reached from
 /// a card or a row.
-enum PhonePage: Hashable {
+enum PhonePage: String, Hashable {
     case today, modules, yumi, settings, mac
-    case talk, agents, agenda, weather
+    case talk, agents, agenda, weather, mail
 
     static let menu: [PhonePage] = [.today, .modules, .yumi, .settings, .mac]
 
@@ -19,6 +19,7 @@ enum PhonePage: Hashable {
         case .agents: loc("Agents")
         case .agenda: loc("Agenda")
         case .weather: loc("Météo")
+        case .mail: loc("Mail")
         }
     }
 }
@@ -33,7 +34,7 @@ struct PhoneRootView: View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 PhoneTheme.ground.ignoresSafeArea()
-                if phone.page == .weather { PhoneWeatherBackdrop(phone: phone) }
+                if phone.page == .weather { PhoneWeatherBackdrop(phone: phone).id(phone.weatherChanged) }
                 VStack(spacing: u(0)) {
                     header
                     page.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -95,6 +96,7 @@ struct PhoneRootView: View {
         case .agents: PhoneAgentsView(phone: phone)
         case .agenda: PhoneAgendaView(phone: phone)
         case .weather: PhoneWeatherView(phone: phone)
+        case .mail: PhoneMailPage(phone: phone)
         }
     }
 

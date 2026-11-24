@@ -112,6 +112,7 @@ targets:
           - Providers/WindowContextProvider.swift
       - path: Sources/App/Island/IslandTypes.swift
       - path: Sources/App/Island/WeatherAmbiance.swift
+      - path: Sources/App/Island/SpokenAnswer.swift
       - path: Sources/App/App/AppIdentity.swift
       - path: Sources/App/App/SoundEngine.swift
       - path: Resources/sounds

@@ -70,6 +70,7 @@ extension View {
 /// A Yumi of his own for a sheet: no greeting, no sound, only the state he shows.
 struct PhoneMiniYumi: View {
     var state: BotState
+    var mood: YumiMood? = nil
     @State private var engine = BotEngine()
 
     var body: some View {
@@ -77,6 +78,7 @@ struct PhoneMiniYumi: View {
             .onAppear {
                 engine.setLook(accent: .current(), costume: .current())
                 engine.setState(state, force: true)
+                if let mood { engine.setMood(mood) }
             }
             .accessibilityHidden(true)
     }
@@ -207,96 +209,6 @@ enum PhoneApps {
     static let weather = URL(string: "weather://")
 }
 
-// MARK: - Chat
-
-struct PhoneChatView: View {
-    let phone: Phone
-    @State private var draft = ""
-    @FocusState private var typing: Bool
-
-    var body: some View {
-        Group {
-            VStack(spacing: 0) {
-                // He stays at the top of the conversation: he listens, thinks, rejoices
-                PhoneYumi(character: phone.character, size: 80)
-                    .padding(.vertical, 4)
-                Divider()
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: 10) {
-                            if phone.chat.messages.isEmpty {
-                                Text(loc("Dis-moi ce dont tu as besoin.")).foregroundStyle(.secondary).padding(.top, 24)
-                            }
-                            ForEach(phone.chat.messages) { message in
-                                PhoneBubble(message: message).id(message.id)
-                            }
-                            if phone.chat.isThinking {
-                                HStack { ProgressView(); Spacer() }.padding(.horizontal, 4)
-                            }
-                        }
-                        .padding(16)
-                    }
-                    // The keyboard goes away by dragging the conversation down or tapping it,
-                    // so the tabs come back
-                    .scrollDismissesKeyboard(.interactively)
-                    .onTapGesture { typing = false }
-                    .onChange(of: phone.chat.messages.count) {
-                        if let last = phone.chat.messages.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
-                    }
-                }
-                HStack(spacing: 8) {
-                    TextField(loc("Écris à Yumi"), text: $draft, axis: .vertical)
-                        .lineLimit(1...4)
-                        .focused($typing)
-                        .padding(.horizontal, 14).padding(.vertical, 10)
-                        .background(.white.opacity(0.08), in: Capsule())
-                        .overlay(Capsule().strokeBorder(PhoneTheme.rim.opacity(0.4), lineWidth: 0.8))
-                        .onSubmit(send)
-                    Button(action: send) {
-                        Image(systemName: "arrow.up.circle.fill").font(.title)
-                            .foregroundStyle(PhoneTheme.rim)
-                    }
-                        .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty || phone.chat.isThinking)
-                        .accessibilityLabel(Text(loc("Envoyer")))
-                }
-                .padding(.horizontal, 16).padding(.vertical, 8)
-            }
-            .phoneScreen()
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button(loc("OK")) { typing = false }
-                }
-            }
-        }
-    }
-
-    private func send() {
-        let text = draft
-        draft = ""
-        Task { await phone.chat.send(text) }
-    }
-}
-
-struct PhoneBubble: View {
-    let message: PhoneMessage
-
-    var body: some View {
-        HStack {
-            if message.role == .person { Spacer(minLength: 48) }
-            Text(message.text)
-                .padding(.horizontal, 14).padding(.vertical, 10)
-                .foregroundStyle(.white)
-                .background(message.role == .person ? AnyShapeStyle(PhoneTheme.rim) : AnyShapeStyle(.white.opacity(0.08)),
-                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            if message.role == .yumi { Spacer(minLength: 48) }
-        }
-    }
-}
-
-// MARK: - First launch
-
-/// Yumi asks the person's first name the first time, the way he does on the Mac.
 struct PhoneNameSheet: View {
     let phone: Phone
     @State private var name = ""
@@ -358,123 +270,6 @@ struct PhoneApprovalSheet: View {
         }
         .padding(24)
         .presentationDetents([.medium])
-    }
-}
-
-// MARK: - Settings
-
-struct PhoneSettingsView: View {
-    @Bindable var phone: Phone
-    @State private var confirmClear = false
-    @State private var language = AppLanguage.stored()
-    @State private var cleared = false
-
-    var body: some View {
-        Group {
-            Form {
-                Section {
-                    Picker(loc("Langue"), selection: Binding(get: { language }, set: { language = $0; AppLanguage.choose($0) })) {
-                        Text(loc("Automatique")).tag(AppLanguage.automatic)
-                        Text(verbatim: "Français").tag(AppLanguage.french)
-                        Text(verbatim: "English").tag(AppLanguage.english)
-                    }
-                } footer: {
-                    if language.code.map({ $0 != AppLanguage.current }) ?? (AppLanguage.resolve(Locale.preferredLanguages.first) != AppLanguage.current) {
-                        Text(loc("La nouvelle langue s'applique au prochain lancement de Yumi."))
-                    }
-                }
-                Section(loc("Intelligence")) {
-                    LabeledContent(loc("Modèle d'Apple"),
-                                   value: PhoneChat.whyNoModel(AppleModelAvailability.current) == nil ? loc("Prêt, sur cet iPhone.") : loc("Indisponible"))
-                    if let why = PhoneChat.whyNoModel(AppleModelAvailability.current) {
-                        Text(why).font(.footnote).foregroundStyle(.secondary)
-                    }
-                }
-                Section {
-                    if Phone.linkReady || phone.studio {
-                        Toggle(loc("Retrouver mon Mac"), isOn: $phone.linkOn)
-                        if phone.linkOn {
-                            LabeledContent(loc("État"), value: phone.mac.map { PhoneSessionsCard.presence($0) }
-                                           ?? loc("En attente du Mac"))
-                        }
-                        if let error = PhoneLink.shared.lastError { Text(error).font(.footnote).foregroundStyle(.secondary) }
-                    } else {
-                        // The Mac's side is not switched on yet: said plainly rather than a switch that does nothing
-                        HStack {
-                            Text(loc("Retrouver mon Mac")).foregroundStyle(.secondary)
-                            Spacer()
-                            Text(loc("Bientôt"))
-                                .font(.caption.weight(.semibold))
-                                .padding(.horizontal, 10).padding(.vertical, 4)
-                                .background(PhoneTheme.rim.opacity(0.35), in: Capsule())
-                        }
-                    }
-                } header: {
-                    Text(loc("Mac"))
-                } footer: {
-                    if Phone.linkReady || phone.studio {
-                        Text(loc("Allume aussi le lien dans les réglages de Yumi sur ton Mac, avec le même compte iCloud. Par ton iCloud uniquement, jamais par un serveur de Yumi. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir."))
-                    } else {
-                        Text(loc("La connexion avec ton Mac arrive bientôt : tes sessions Claude Code et les demandes d'accord, sur ton iPhone, par ton iCloud."))
-                    }
-                }
-                Section {
-                    if phone.mail.isConnected {
-                        LabeledContent(loc("Gmail"), value: phone.mail.address)
-                        Button(loc("Déconnecter Gmail"), role: .destructive) { phone.mail.disconnect() }
-                    } else {
-                        Text(loc("Aucun compte. Connecte Gmail depuis la carte Mails de l'accueil.")).foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text(loc("Mails"))
-                } footer: {
-                    Text(loc("Yumi lit tes mails sans les marquer comme lus, et n'envoie une réponse que quand tu touches « Envoyer »."))
-                }
-                Section(loc("Yumi")) {
-                    NavigationLink(loc("Son apparence")) { PhoneLookView(phone: phone) }
-                    Toggle(loc("Dans la Dynamic Island"), isOn: $phone.islandOn)
-                    Toggle(loc("Sons"), isOn: $phone.soundOn)
-                    #if DEBUG
-                    Toggle(loc("Mode tournage au prochain lancement"), isOn: $phone.studioNextLaunch)
-                    #endif
-                }
-                Section(loc("Ce que je sais de toi")) {
-                    if phone.memoryBook.entries.isEmpty {
-                        Text(loc("Rien pour l'instant.")).foregroundStyle(.secondary)
-                    }
-                    ForEach(phone.memoryBook.entries) { entry in
-                        Text(entry.text)
-                            .swipeActions { Button(loc("Oublier"), role: .destructive) { phone.forget(entry) } }
-                    }
-                }
-                Section {
-                    if cleared {
-                        Label(loc("Conversation effacée"), systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .transition(.opacity)
-                    } else {
-                        Button(loc("Effacer la conversation"), role: .destructive) { confirmClear = true }
-                            .disabled(phone.chat.messages.isEmpty)
-                    }
-                } footer: {
-                    if !cleared, !phone.chat.messages.isEmpty {
-                        Text(loc("\(phone.chat.messages.count) messages gardés sur cet iPhone."))
-                    }
-                }
-                .confirmationDialog(loc("Effacer toute la conversation avec Yumi ?"), isPresented: $confirmClear,
-                                    titleVisibility: .visible) {
-                    Button(loc("Effacer"), role: .destructive) {
-                        phone.chat.clear()
-                        withAnimation { cleared = true }
-                        Task {
-                            try? await Task.sleep(for: .seconds(2.5))
-                            withAnimation { cleared = false }
-                        }
-                    }
-                }
-            }
-            .phoneScreen()
-        }
     }
 }
 

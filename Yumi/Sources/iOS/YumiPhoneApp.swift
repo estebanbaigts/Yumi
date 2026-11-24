@@ -53,6 +53,8 @@ final class Phone {
     var page: PhonePage = .today
     /// Today's cards are being arranged.
     var editingToday = false
+    /// An ambiance was chosen by hand on the weather screen: its ground follows.
+    var weatherChanged = false
     let listener = PhoneListener()
     @ObservationIgnored let memory: MemoryStore?
     @ObservationIgnored private let permissions: LocalPermissionManager?
@@ -79,6 +81,15 @@ final class Phone {
             if islandOn { updateRemarks() }
         }
     }
+    /// « Yumi te regarde »: his eyes follow the tilt of the iPhone (on by default)…
+    var watchesOn: Bool = UserDefaults.standard.object(forKey: "phoneWatches") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(watchesOn, forKey: "phoneWatches"); watcher.update(phone: self) }
+    }
+    /// …or the face, with the camera (off by default; nothing is recorded).
+    var watchesFace: Bool = UserDefaults.standard.bool(forKey: "phoneWatchesFace") {
+        didSet { UserDefaults.standard.set(watchesFace, forKey: "phoneWatchesFace"); watcher.update(phone: self) }
+    }
+    @ObservationIgnored let watcher = PhoneWatcher()
     /// Filming mode for the next launch (the iPhone has no environment variables).
     var studioNextLaunch: Bool = StudioMode.isSetForNextLaunch() {
         didSet { StudioMode.setForNextLaunch(studioNextLaunch) }
@@ -120,6 +131,10 @@ final class Phone {
         approvals.character = character
         today.changed = { [weak self] in self?.updateRemarks() }
         today.watch()
+        #if DEBUG
+        // `-YumiPage agents` opens a screen at launch, to check it
+        if let raw = UserDefaults.standard.string(forKey: "YumiPage"), let page = PhonePage(rawValue: raw) { self.page = page }
+        #endif
         if studio {
             PhoneLink.shared.showStudio(PhoneStudio.mac)
             updateRemarks()
@@ -197,9 +212,16 @@ final class Phone {
         if page != .talk { go(.talk) }
         if listener.listening {
             let text = listener.stop()
-            if !text.isEmpty { Task { await chat.send(text) } }
+            // Asked aloud, answered aloud
+            if !text.isEmpty {
+                Task {
+                    await chat.send(text)
+                    if let answer = chat.messages.last, answer.role == .yumi { await PhoneSpeaker.shared.say(answer.text) }
+                }
+            }
             character.engine.setState(.idle)
         } else {
+            PhoneSpeaker.shared.stop()
             character.engine.setState(.question)
             Task { await listener.start(); if !listener.listening { character.engine.setState(.idle) } }
         }

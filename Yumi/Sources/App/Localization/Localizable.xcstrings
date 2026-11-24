@@ -1,6 +1,516 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    " (météo, heure et saison)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " (weather, hour and season)"
+          }
+        }
+      }
+    },
+    "%lld messages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld messages"
+          }
+        }
+      }
+    },
+    "%lld souvenirs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld memories"
+          }
+        }
+      }
+    },
+    "%lld travaillent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld working"
+          }
+        }
+      }
+    },
+    "%lld travaillent · %lld attend ta réponse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld working · %lld waiting for your answer"
+          }
+        }
+      }
+    },
+    "+ Rappel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Reminder"
+          }
+        }
+      }
+    },
+    "+ Événement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Event"
+          }
+        }
+      }
+    },
+    "Accès": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access"
+          }
+        }
+      }
+    },
+    "Activité · %lld actifs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activity · %lld active"
+          }
+        }
+      }
+    },
+    "Agenda et rappels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar and reminders"
+          }
+        }
+      }
+    },
+    "Ambiance choisie toute seule : ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mood picked by itself: "
+          }
+        }
+      }
+    },
+    "App": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
+          }
+        }
+      }
+    },
+    "Aucune note.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No notes."
+          }
+        }
+      }
+    },
+    "Autorisé, le Mac vérifie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allowed, the Mac is checking"
+          }
+        }
+      }
+    },
+    "Autorisée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allowed"
+          }
+        }
+      }
+    },
+    "Comptes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accounts"
+          }
+        }
+      }
+    },
+    "Coucou, c'est moi !": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hi, it's me!"
+          }
+        }
+      }
+    },
+    "De l'iPhone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The iPhone's"
+          }
+        }
+      }
+    },
+    "Demandes · %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requests · %lld"
+          }
+        }
+      }
+    },
+    "Le micro est refusé. Tu peux le rendre dans Réglages.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The microphone is denied. You can give it back in Settings."
+          }
+        }
+      }
+    },
+    "Localisation (météo)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location (weather)"
+          }
+        }
+      }
+    },
+    "Ma semaine": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My week"
+          }
+        }
+      }
+    },
+    "Maint.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now"
+          }
+        }
+      }
+    },
+    "Maintenir pour délier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold to unlink"
+          }
+        }
+      }
+    },
+    "Maintenir pour relier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold to link"
+          }
+        }
+      }
+    },
+    "Micro et voix": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone and voice"
+          }
+        }
+      }
+    },
+    "Notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
+          }
+        }
+      }
+    },
+    "Notifications": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        }
+      }
+    },
+    "Pas encore": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not yet"
+          }
+        }
+      }
+    },
+    "Pour parler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To talk"
+          }
+        }
+      }
+    },
+    "Qu'est-ce que j'ai cette semaine ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What do I have this week?"
+          }
+        }
+      }
+    },
+    "Qu'est-ce que j'ai demain ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What do I have tomorrow?"
+          }
+        }
+      }
+    },
+    "Quand un agent travaille": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When an agent works"
+          }
+        }
+      }
+    },
+    "Relie ton Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link your Mac"
+          }
+        }
+      }
+    },
+    "Relier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link"
+          }
+        }
+      }
+    },
+    "Relier mon Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link my Mac"
+          }
+        }
+      }
+    },
+    "Relié": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linked"
+          }
+        }
+      }
+    },
+    "Relié par ton iCloud. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linked through your iCloud. An answer given here is always checked by the Mac before it acts."
+          }
+        }
+      }
+    },
+    "Rien de prévu ce jour-là.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing planned that day."
+          }
+        }
+      }
+    },
+    "Sans clé, il parle avec la voix de l'iPhone. Seule sa réponse est envoyée à ElevenLabs.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without a key, he speaks with the iPhone's voice. Only his answer is sent to ElevenLabs."
+          }
+        }
+      }
+    },
+    "Suivre mon visage (caméra)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow my face (camera)"
+          }
+        }
+      }
+    },
+    "Sur le Mac : clic droit sur l'île › Réglages › iPhone, et allume le lien avec le même compte iCloud.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the Mac: right-click the island › Settings › iPhone, and turn the link on with the same iCloud account."
+          }
+        }
+      }
+    },
+    "Un rappel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A reminder"
+          }
+        }
+      }
+    },
+    "Un événement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An event"
+          }
+        }
+      }
+    },
+    "Voix": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice"
+          }
+        }
+      }
+    },
+    "Yumi t'écoute. Touche-le encore pour envoyer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi is listening. Touch him again to send."
+          }
+        }
+      }
+    },
+    "Yumi te regarde": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi watches you"
+          }
+        }
+      }
+    },
+    "dort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sleeping"
+          }
+        }
+      }
+    },
+    "expire": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "expires"
+          }
+        }
+      }
+    },
+    "Écris dans le champ, ou touche Yumi pour lui parler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type in the field, or touch Yumi to talk to him"
+          }
+        }
+      }
+    },
+    "Écris à Yumi…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write to Yumi…"
+          }
+        }
+      }
+    },
     "%lld attend ta réponse": {
       "localizations": {
         "en": {
