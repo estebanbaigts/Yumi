@@ -147,7 +147,7 @@ final class PhoneSpeaker {
         guard !text.isEmpty else { return }
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
         try? AVAudioSession.sharedInstance().setActive(true)
-        let voice = YumiVoice.stored()
+        let voice = PhoneVoiceChoice.current
         if let id = voice.voiceID(), let key = PhoneKeychain.get(Self.keyName),
            let request = try? YumiVoice.speechRequest(text: text, voiceID: id, key: key),
            let (data, response) = try? await URLSession.shared.data(for: request),
@@ -158,9 +158,22 @@ final class PhoneSpeaker {
             return
         }
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: AppLanguage.isEnglish ? "en-US" : "fr-FR")
-        utterance.pitchMultiplier = voice == .man ? 0.9 : 1.1
+        utterance.voice = Self.bestVoice(man: voice == .man)
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 1.02
         synthesizer.speak(utterance)
+    }
+
+    /// Without ElevenLabs: the most natural voice installed (premium, then enhanced), of the
+    /// chosen kind when the system tells it.
+    private static func bestVoice(man: Bool) -> AVSpeechSynthesisVoice? {
+        let language = AppLanguage.isEnglish ? "en" : "fr"
+        let voices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix(language) }
+        let wanted: AVSpeechSynthesisVoiceGender = man ? .male : .female
+        func rank(_ v: AVSpeechSynthesisVoice) -> Int {
+            (v.quality == .premium ? 20 : v.quality == .enhanced ? 10 : 0) + (v.gender == wanted ? 5 : 0)
+                + (v.language == (AppLanguage.isEnglish ? "en-US" : "fr-FR") ? 1 : 0)
+        }
+        return voices.max { rank($0) < rank($1) } ?? AVSpeechSynthesisVoice(language: AppLanguage.isEnglish ? "en-US" : "fr-FR")
     }
 
     func stop() {

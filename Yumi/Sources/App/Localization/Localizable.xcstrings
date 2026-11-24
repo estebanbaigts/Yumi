@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Colle ta clé ElevenLabs, la même que sur le Mac (elevenlabs.io › Profile › API Keys). Sans elle, il prend la plus belle voix de l'iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste your ElevenLabs key, the same as on the Mac (elevenlabs.io › Profile › API Keys). Without it, he uses the iPhone's best voice."
+          }
+        }
+      }
+    },
+    "La même voix que sur le Mac. Seule sa réponse est envoyée à ElevenLabs.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The same voice as on the Mac. Only his answer is sent to ElevenLabs."
+          }
+        }
+      }
+    },
     "Ta journée": {
       "localizations": {
         "en": {

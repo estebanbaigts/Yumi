@@ -38,10 +38,19 @@ struct PhoneRootView: View {
                 VStack(spacing: u(0)) {
                     header
                     page.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .id(phone.page)
+                        .transition(.asymmetric(insertion: .move(edge: phone.arrival).combined(with: .opacity),
+                                                removal: .opacity))
                 }
                 if phone.page != .talk { PhoneOrb(phone: phone).opacity(phone.orbShown ? 1 : 0) }
                 if menuOpen { menu }
             }
+            // Swipe right: the screen before; swipe left: back where one was
+            .simultaneousGesture(DragGesture(minimumDistance: 24).onEnded { drag in
+                guard !menuOpen, !phone.editingToday,
+                      abs(drag.translation.width) > 80, abs(drag.translation.height) < abs(drag.translation.width) * 0.6 else { return }
+                if drag.translation.width > 0 { phone.back() } else { phone.forward() }
+            })
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: PhonePage.self) { _ in EmptyView() }
         }
@@ -56,7 +65,18 @@ struct PhoneRootView: View {
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: u(4)) {
+            if !phone.behind.isEmpty {
+                Button { phone.back() } label: {
+                    Image(systemName: "chevron.left").font(.system(size: u(20), weight: .semibold))
+                        .foregroundStyle(PhoneTheme.gray)
+                        .frame(width: u(26), height: u(34), alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(loc("Retour")))
+                .transition(.opacity.combined(with: .move(edge: .leading)))
+            }
             Button {
                 withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) { menuOpen = true }
             } label: {

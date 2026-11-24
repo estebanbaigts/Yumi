@@ -210,10 +210,40 @@ final class Phone {
     /// Seen by the screens when the question has been answered.
     private(set) var nameAsked = false
 
+    /// The screens left, for « back », and the ones left by going back, for « forward ».
+    private(set) var behind: [PhonePage] = []
+    private(set) var ahead: [PhonePage] = []
+
     func go(_ page: PhonePage) {
+        guard page != self.page else { return }
+        behind.append(self.page)
+        if behind.count > 30 { behind.removeFirst() }
+        ahead.removeAll()
+        show(page, from: .trailing)
+    }
+
+    /// A swipe to the right, or the ‹ next to the title: the screen before.
+    func back() {
+        guard let page = behind.popLast() else { return }
+        ahead.append(self.page)
+        show(page, from: .leading)
+    }
+
+    /// A swipe to the left: the screen one went back from.
+    func forward() {
+        guard let page = ahead.popLast() else { return }
+        behind.append(self.page)
+        show(page, from: .trailing)
+    }
+
+    /// Where the new screen comes from, for its slide.
+    private(set) var arrival: Edge = .trailing
+
+    private func show(_ page: PhonePage, from edge: Edge) {
         if page != .talk, listener.listening { listener.stop() }
         editingToday = false
-        withAnimation(.easeInOut(duration: 0.22)) { self.page = page }
+        arrival = edge
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) { self.page = page }
     }
 
     /// A touch on Yumi: to the conversation and he listens; a second touch sends what he heard.

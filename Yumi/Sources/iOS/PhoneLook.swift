@@ -7,7 +7,7 @@ struct PhoneLookView: View {
     @State private var accent = IslandAccent.current()
     @State private var costume = YumiCostume.current()
     @State private var habit = YumiWorkHabit.current()
-    @State private var voice = YumiVoice.stored()
+    @State private var voice = PhoneVoiceChoice.current
     @State private var key = PhoneKeychain.get(PhoneSpeaker.keyName) ?? ""
     @State private var preview = BotEngine()
 
@@ -70,7 +70,8 @@ struct PhoneLookView: View {
                         .padding(.top, u(8))
                         .onSubmit { PhoneKeychain.set(PhoneSpeaker.keyName, key.trimmingCharacters(in: .whitespaces).nonEmpty) }
                         .onChange(of: key) { PhoneKeychain.set(PhoneSpeaker.keyName, key.trimmingCharacters(in: .whitespaces).nonEmpty) }
-                    Text(loc("Sans clé, il parle avec la voix de l'iPhone. Seule sa réponse est envoyée à ElevenLabs."))
+                    Text(key.isEmpty ? loc("Colle ta clé ElevenLabs, la même que sur le Mac (elevenlabs.io › Profile › API Keys). Sans elle, il prend la plus belle voix de l'iPhone.")
+                         : loc("La même voix que sur le Mac. Seule sa réponse est envoyée à ElevenLabs."))
                         .font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray).padding(.top, u(6))
                 }
             }

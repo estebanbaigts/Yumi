@@ -163,7 +163,10 @@ struct PhoneMemoryView: View {
 
 /// The voices of the iPhone: its own, or ElevenLabs' woman and man (with the person's key).
 enum PhoneVoiceChoice {
-    static var current: YumiVoice { YumiVoice.stored() }
+    /// On the iPhone, a woman's voice unless another was chosen: the system's own sounds robotic.
+    static var current: YumiVoice {
+        UserDefaults.standard.string(forKey: YumiVoice.defaultsKey).flatMap(YumiVoice.init) ?? .woman
+    }
 
     static func label(_ voice: YumiVoice) -> String {
         switch voice {
