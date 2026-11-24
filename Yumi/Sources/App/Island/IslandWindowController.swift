@@ -141,6 +141,8 @@ final class IslandWindowController: NSWindowController {
 
     private func wireFSM() {
         launch.onComplete = { [weak self] in
+            // Someone who gave a name before this version: the permissions are asked once now
+            if let name = AppState.shared.userName, !name.isEmpty { FirstPermissions.askAll() }
             guard let self else { return }
             self.fsm.greetComplete()
             if self.holdForMeasure() { return }

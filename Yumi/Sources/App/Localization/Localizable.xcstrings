@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "hier, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yesterday, %@"
+          }
+        }
+      }
+    },
+    "Voir sur GitHub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See on GitHub"
+          }
+        }
+      }
+    },
     "Je lis le mail…": {
       "localizations": {
         "en": {

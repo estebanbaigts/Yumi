@@ -113,7 +113,9 @@ enum IslandActions {
         #if !APPSTORE
         if view == .prompt, state.promptContext == nil {
             state.promptContext = WindowContextCapture.captureActive(from: state.lastExternalApp, askingFirst: false)
-            state.contextAttached = true
+            // Offered, not sent: a plain « ça va ? » must not be read as a question about the
+            // window in front. One click on « Sans … » above the field joins it.
+            state.contextAttached = false
             state.contextExplicit = false
         }
         #endif
@@ -215,6 +217,8 @@ enum IslandActions {
         SoundEngine.shared.play("approve")
         IslandModel.shared.pose(.wave)
         if leave { go(.overview) }
+        // Right after the name, every permission once, instead of one module at a time later
+        FirstPermissions.askAll()
     }
 
     /// What the person mostly does, chosen at the first launch: the modules follow it (only

@@ -167,7 +167,10 @@ final class GmailModule: YumiModule {
 
     func perform(_ action: ModuleAction) {
         switch connection {
-        case .notSet, .refused, .mailDenied, .mailNoAccount:
+        case .mailDenied:
+            // macOS never asks twice: the switch for Mail is in Automation, opened right there
+            NSWorkspace.shared.open(PrivacySettings.automation)
+        case .notSet, .refused, .mailNoAccount:
             onConnect()
         case .mailClosed:
             MailAppScript.openMail()

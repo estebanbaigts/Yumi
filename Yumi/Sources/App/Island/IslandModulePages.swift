@@ -88,6 +88,20 @@ private struct AgendaPage: View {
                 if module.rows.isEmpty {
                     Text(module.title).font(IslandTheme.text(14, .semibold))
                     Text(module.subtitle).font(IslandTheme.text(12)).foregroundStyle(IslandCardTheme.mute)
+                    // No access yet: the button that asks for it, right here
+                    if [loc("Autoriser"), loc("Ouvrir les réglages")].contains(module.primaryAction) {
+                        Button { IslandActions.module(module.id, "primary") } label: {
+                            Text(module.primaryAction)
+                                .font(IslandTheme.text(12.5, .semibold))
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 14)
+                                .frame(height: 32)
+                                .background(Capsule().fill(coral))
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 12)
+                    }
                 } else {
                     ForEach(Array(module.rows.prefix(5).enumerated()), id: \.element.id) { index, row in
                         line(row, color: Color(hex: Self.palette[index % Self.palette.count]))
@@ -274,15 +288,19 @@ private struct GitHubPage2: View {
                 case .repos:         scrolling(module.pages["repos"] ?? [])
                 case .contributions: IslandContributions(cell: 9, gap: 2.5).padding(.top, 14)
                 case .compact:
-                    VStack(alignment: .leading, spacing: 10) {
-                        IslandContributions(cell: 7, gap: 2)
-                        HStack(alignment: .top, spacing: 20) {
-                            list(activity, limit: 3, big: false).frame(maxWidth: .infinity)
-                            list(module.pages["repos"] ?? [], limit: 3, big: false)
-                                .frame(width: 170)
-                                .padding(.leading, 18)
-                                .overlay(alignment: .leading) { Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1) }
+                    // Everything at once, scrolling: the grid, then the activity and the repositories
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            IslandContributions(cell: 7, gap: 2)
+                            HStack(alignment: .top, spacing: 20) {
+                                list(activity, limit: activity.count, big: false).frame(maxWidth: .infinity)
+                                list(module.pages["repos"] ?? [], limit: (module.pages["repos"] ?? []).count, big: false)
+                                    .frame(width: 170)
+                                    .padding(.leading, 18)
+                                    .overlay(alignment: .leading) { Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1) }
+                            }
                         }
+                        .padding(.bottom, 8)
                     }
                 }
             }
@@ -334,33 +352,103 @@ private struct GitHubPage2: View {
     }
 
     private func line(_ row: ModuleRow, big: Bool) -> some View {
-        let color: Color = switch row.state {
+        GitHubLine(row: row, big: big, open: { action in IslandActions.row(module.id, action) })
+    }
+
+}
+
+/// A line of GitHub: what happened, where, when. A click unfolds its details (the commits,
+/// the files, the checks) when it has some, and opens it on GitHub otherwise or from there.
+private struct GitHubLine: View {
+    let row: ModuleRow
+    let big: Bool
+    let open: (String) -> Void
+    @State private var unfolded = false
+
+    private var color: Color {
+        switch row.state {
         case .success: Color(hex: "#3FB950")
         case .failure: IslandTheme.red
         case .waiting: IslandTheme.amber
         case .busy:    Color(hex: "#5B8CFF")
         case .neutral: Color(hex: "#A371F7")
         }
-        return Button { if let action = row.action { IslandActions.row(module.id, action) } } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: big ? 13 : 11, weight: .semibold))
-                    .foregroundStyle(color)
-                    .frame(width: big ? 30 : 24, height: big ? 30 : 24)
-                    .background(Circle().fill(color.opacity(0.13)))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(row.title).font(IslandTheme.text(big ? 13 : 12, .semibold)).lineLimit(1)
-                    Text(row.detail).font(.system(size: big ? 11 : 10.5, design: .monospaced)).foregroundStyle(Color(hex: "#8E8E93")).lineLimit(1)
-                }
-                Spacer(minLength: 6)
-                Text(row.label).font(IslandTheme.text(11)).foregroundStyle(Color(hex: "#8E8E93")).lineLimit(1)
-            }
-            .padding(big ? 10 : 0)
-            .padding(.vertical, big ? 0 : 6)
-            .background { if big { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white.opacity(0.04)) } }
-            .contentShape(Rectangle())
+    }
+
+    /// "il y a 12 min", "hier, 18:40", "lun. 21, 09:12".
+    private var when: String? {
+        guard let date = row.date else { return nil }
+        let calendar = Calendar.current
+        if Date.now.timeIntervalSince(date) < 3600 * 6 {
+            return date.formatted(.relative(presentation: .named, unitsStyle: .abbreviated))
         }
-        .buttonStyle(.plain)
+        let time = date.formatted(.dateTime.hour().minute())
+        if calendar.isDateInToday(date) { return time }
+        if calendar.isDateInYesterday(date) { return loc("hier, \(time)") }
+        return date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)) + ", " + time
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                if !row.details.isEmpty {
+                    withAnimation(.islandSpring(0.35)) { unfolded.toggle() }
+                } else if let action = row.action {
+                    open(action)
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.triangle.branch")
+                        .font(.system(size: big ? 13 : 11, weight: .semibold))
+                        .foregroundStyle(color)
+                        .frame(width: big ? 30 : 24, height: big ? 30 : 24)
+                        .background(Circle().fill(color.opacity(0.13)))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(row.title).font(IslandTheme.text(big ? 13 : 12, .semibold)).lineLimit(1)
+                        Text(row.detail).font(.system(size: big ? 11 : 10.5, design: .monospaced)).foregroundStyle(Color(hex: "#8E8E93")).lineLimit(1)
+                    }
+                    Spacer(minLength: 6)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        if !row.label.isEmpty {
+                            Text(row.label).font(IslandTheme.text(11)).foregroundStyle(color).lineLimit(1)
+                        }
+                        if let when {
+                            Text(when).font(IslandTheme.text(10.5).monospacedDigit()).foregroundStyle(Color(hex: "#8E8E93")).lineLimit(1)
+                        }
+                    }
+                    if !row.details.isEmpty {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color(hex: "#8E8E93"))
+                            .rotationEffect(.degrees(unfolded ? 180 : 0))
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if unfolded {
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(Array(row.details.enumerated()), id: \.offset) { _, line in
+                        Text(line)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#B9BCC8"))
+                            .lineLimit(2)
+                    }
+                    if let action = row.action {
+                        Button { open(action) } label: {
+                            Text(loc("Voir sur GitHub")).font(IslandTheme.text(11.5, .semibold)).foregroundStyle(color)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 2)
+                    }
+                }
+                .padding(.leading, big ? 42 : 36)
+                .transition(.opacity)
+            }
+        }
+        .padding(big ? 10 : 0)
+        .padding(.vertical, big ? 0 : 6)
+        .background { if big { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white.opacity(0.04)) } }
     }
 }
 

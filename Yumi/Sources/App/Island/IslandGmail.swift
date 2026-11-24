@@ -48,6 +48,7 @@ struct GmailSheet: View {
             IslandModel.shared.hasDraft = [.thinking, .editing, .sending].contains(step)
         }
         .onDisappear { IslandModel.shared.hasDraft = false }
+        .onAppear(perform: readAhead)
         // The filming mode plays the sheet's steps with example mails, without reading or sending
         .onReceive(NotificationCenter.default.publisher(for: .yumiStudioGmail)) { note in
             guard IslandStudio.isOn, let step = note.object as? StudioGmail else { return }
@@ -68,6 +69,21 @@ struct GmailSheet: View {
             VStack(alignment: .leading, spacing: 8) {
                 if inbox.mails.isEmpty {
                     ActSub(text: emptyText)
+                    // Access missing: the button that gives it, here rather than in the settings
+                    if let module = AppState.shared.modules.first(where: { $0.id == "gmail" }), module.status.isEmpty || module.needsAttention,
+                       !module.primaryAction.isEmpty {
+                        Button { IslandActions.module("gmail", "primary") } label: {
+                            Text(module.primaryAction)
+                                .font(IslandTheme.text(12.5, .semibold))
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 14)
+                                .frame(height: 32)
+                                .background(Capsule().fill(Color(hex: "#6FB4FF")))
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 4)
+                    }
                 }
                 // Every mail of the inbox, scrolling: the important ones first
                 if !important.isEmpty {
@@ -205,19 +221,28 @@ struct GmailSheet: View {
         read(mail)
     }
 
-    /// Reads the mail's text from where it lives: Apple's Mail or Gmail.
+    /// Reads the mail's text from where it lives: Apple's Mail or Gmail. Asking Mail takes a
+    /// few seconds, so what was read is kept, and the first mails are read ahead.
     private func read(_ mail: GmailMail) {
+        if let kept = MailTexts.kept[mail.uid] {
+            text = kept
+            return
+        }
+        Task {
+            let clean = await MailTexts.load(mail, credentials: credentials)
+            guard chosen?.uid == mail.uid else { return }
+            text = clean.isEmpty ? loc("Je n'arrive pas à lire ce mail. Ouvre-le dans ta boîte.") : clean
+        }
+    }
+
+    /// The first mails of the list, read while the person looks at it.
+    private func readAhead() {
+        let first = Array((inbox.mails.filter(\.important) + inbox.mails.filter { !$0.important }).prefix(4))
         let credentials = credentials
         Task {
-            var body = ""
-            if mail.source == .mailApp {
-                body = (try? await MailAppScript.text(of: mail)) ?? ""
-            } else if let credentials {
-                body = (try? await GmailIMAP.text(of: mail.uid, address: credentials.address, password: credentials.password)) ?? ""
+            for mail in first where MailTexts.kept[mail.uid] == nil {
+                _ = await MailTexts.load(mail, credentials: credentials)
             }
-            guard chosen?.uid == mail.uid else { return }
-            let clean = body.trimmingCharacters(in: .whitespacesAndNewlines)
-            text = clean.isEmpty ? loc("Je n'arrive pas à lire ce mail. Ouvre-le dans ta boîte.") : clean
         }
     }
 
@@ -321,6 +346,25 @@ struct GmailSheet: View {
 }
 
 /// One mail in the list: unread dot, sender, subject, account when there are several, time.
+/// The texts of the mails already read, for this run of the app only (never written anywhere).
+@MainActor
+enum MailTexts {
+    static var kept: [Int: String] = [:]
+
+    static func load(_ mail: GmailMail, credentials: (address: String, password: String)?) async -> String {
+        if let text = kept[mail.uid] { return text }
+        var body = ""
+        if mail.source == .mailApp {
+            body = (try? await MailAppScript.text(of: mail)) ?? ""
+        } else if let credentials {
+            body = (try? await GmailIMAP.text(of: mail.uid, address: credentials.address, password: credentials.password)) ?? ""
+        }
+        let clean = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !clean.isEmpty { kept[mail.uid] = clean }
+        return clean
+    }
+}
+
 private struct MailLine: View {
     let mail: GmailMail
     var showsAccount = false
