@@ -49,6 +49,7 @@ final class Phone {
     let today: PhoneToday
     let mail: PhoneMail
     let approvals = PhoneApprovals()
+    let github = PhoneGitHub()
     let character = PhoneCharacter()
     /// The home screen's content shows once the opening is over.
     var revealed = false
@@ -149,6 +150,7 @@ final class Phone {
         memory?.start()
         // All at once: the Mac's agents do not wait for the calendar, nor the mails
         Task { await mail.refresh() }
+        Task { await github.refresh() }
         let link = linkOn ? Task { await PhoneLink.shared.refresh() } : nil
         await today.refresh()
         updateRemarks()

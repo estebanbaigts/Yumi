@@ -9,6 +9,16 @@ struct PhoneMessage: Identifiable, Codable, Equatable, Sendable {
     var role: Role
     var text: String
     var date = Date()
+    /// The name of a file the person gave with this message.
+    var attachment: String? = nil
+}
+
+/// A file the person chose to give Yumi: he never reaches the files himself. A picture goes to
+/// the model as a picture; a PDF or a text as its text.
+struct PhoneAttachment: Sendable {
+    var name: String
+    var image: LLMImage?
+    var text: String?
 }
 
 /// The conversation with Yumi on the iPhone, on its own.
@@ -96,6 +106,46 @@ final class PhoneChat {
         case .agendaKeptFromChat, .chat:
             succeeded = PhoneBrain.remote != nil || AppleModelAvailability.current.isAvailable
             append(.init(role: .yumi, text: await converse(text)))
+        }
+    }
+
+    /// A file given by the person, with what they ask about it (or « what is it, what do I do »).
+    func send(_ raw: String, attachment: PhoneAttachment) async {
+        guard !isThinking else { return }
+        let asked = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        append(.init(role: .person, text: asked.isEmpty ? attachment.name : asked, attachment: attachment.name))
+        isThinking = true
+        character?.thinking(true)
+        var succeeded = true
+        defer {
+            isThinking = false
+            character?.finished(success: succeeded)
+        }
+        let question = asked.isEmpty
+            ? (AppLanguage.isEnglish ? "What is this, and what should I do with it? If it is an invoice or a letter, tell me how to answer."
+                                     : "C'est quoi, et qu'est-ce que je dois en faire ? Si c'est une facture ou un courrier, dis-moi comment y répondre.")
+            : asked
+        let content = attachment.text.map { question + "\n\n« \(attachment.name) » :\n" + String($0.prefix(30_000)) } ?? question
+        if let remote = PhoneBrain.remote {
+            let system = AppLanguage.isEnglish
+                ? "You are Yumi, a small friendly character on the person's iPhone. They gave you a file. Say briefly what it is, the useful details (amounts, dates, who), and what to do. Plain sentences, no markdown."
+                : "Tu es Yumi, un petit personnage bienveillant sur l'iPhone de la personne. Elle te donne un fichier. Dis brièvement ce que c'est, les détails utiles (montants, dates, qui), et quoi faire. Phrases simples, sans markdown, en la tutoyant."
+            do {
+                let answer = try await remote.complete(LLMRequest(system: system,
+                                                                  messages: [LLMMessage(role: .user, content: content, image: attachment.image)],
+                                                                  expectsJSON: false, maxOutputTokens: 900))
+                append(.init(role: .yumi, text: VoiceRules.withoutLongDashes(answer.text)))
+            } catch {
+                succeeded = false
+                append(.init(role: .yumi, text: attachment.image != nil && PhoneBrain.current == .apple
+                    ? loc("Pour regarder une image, choisis Claude, ChatGPT ou Gemini dans Réglages › Cerveau.")
+                    : loc("Je n'arrive pas à joindre \(PhoneBrain.current.label). Vérifie ta clé dans Réglages › Cerveau, ou ta connexion.")))
+            }
+        } else if attachment.text != nil {
+            append(.init(role: .yumi, text: await converse(content)))
+        } else {
+            succeeded = false
+            append(.init(role: .yumi, text: loc("Pour regarder une image, choisis Claude, ChatGPT ou Gemini dans Réglages › Cerveau.")))
         }
     }
 

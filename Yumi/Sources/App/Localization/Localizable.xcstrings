@@ -1,6 +1,136 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Colle un jeton GitHub pour suivre tes pushs, tes PR et tes étoiles, sans Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste a GitHub token to follow your pushes, PRs and stars, without a Mac."
+          }
+        }
+      }
+    },
+    "Connecte GitHub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect GitHub"
+          }
+        }
+      }
+    },
+    "Crée-le sur github.com › Settings › Developer settings › Personal access tokens (lecture seule suffit). Il reste dans le trousseau de cet iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create it at github.com › Settings › Developer settings › Personal access tokens (read-only is enough). It stays in this iPhone's keychain."
+          }
+        }
+      }
+    },
+    "Déconnecter GitHub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect GitHub"
+          }
+        }
+      }
+    },
+    "GitHub refuse ce jeton. Vérifie-le, ou crée-en un nouveau.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub refuses this token. Check it, or create a new one."
+          }
+        }
+      }
+    },
+    "GitHub · par ton Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub · through your Mac"
+          }
+        }
+      }
+    },
+    "Maintenir pour connecter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold to connect"
+          }
+        }
+      }
+    },
+    "Ou relie ton Mac : il partage ce qu'il voit de GitHub.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Or link your Mac: it shares what it sees of GitHub."
+          }
+        }
+      }
+    },
+    "Photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        }
+      }
+    },
+    "Pour regarder une image, choisis Claude, ChatGPT ou Gemini dans Réglages › Cerveau.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To look at a picture, choose Claude, ChatGPT or Gemini in Settings › Brain."
+          }
+        }
+      }
+    },
+    "Sur le Mac : clic droit sur l'île › Réglages › Général › iPhone, et allume « Retrouver mon iPhone » avec le même compte iCloud.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the Mac: right-click the island › Settings › General › iPhone, and turn on “Find my iPhone” with the same iCloud account."
+          }
+        }
+      }
+    },
+    "Un fichier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A file"
+          }
+        }
+      }
+    },
+    "Une photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A photo"
+          }
+        }
+      }
+    },
     "Aucun mail aujourd'hui.": {
       "localizations": {
         "en": {

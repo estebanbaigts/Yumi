@@ -105,8 +105,21 @@ final class CloudKitLink: YumiLink, @unchecked Sendable {
 enum YumiLinks {
     static var containerID: String? {
         guard let id = (Bundle.main.object(forInfoDictionaryKey: "YumiCloudKitContainer") as? String)?
-            .trimmingCharacters(in: .whitespaces), !id.isEmpty else { return nil }
+            .trimmingCharacters(in: .whitespaces), !id.isEmpty, signed(for: id) else { return nil }
         return id
+    }
+
+    /// CloudKit stops an app that asks for a container its signature does not carry: the link is
+    /// offered only when this build really is signed for it (an unsigned Debug build is not).
+    private static func signed(for container: String) -> Bool {
+        #if os(macOS)
+        guard let task = SecTaskCreateFromSelf(nil),
+              let value = SecTaskCopyValueForEntitlement(task, "com.apple.developer.icloud-container-identifiers" as CFString, nil)
+        else { return false }
+        return (value as? [String])?.contains(container) == true
+        #else
+        return true
+        #endif
     }
 
     /// True when this build can use iCloud at all (the setting is shown only then).

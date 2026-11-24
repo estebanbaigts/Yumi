@@ -169,8 +169,8 @@ struct PhoneModulesView: View {
                         detail: phone.mail.isConnected ? unread.first?.subject ?? loc("Aucun mail.") : loc("Connecte Gmail dans Réglages."),
                         value: phone.mail.isConnected ? "\(unread.count)" : "", page: .mail))
         rows.append(Row(id: "github", name: loc("GitHub"), symbol: "arrow.triangle.branch", color: YumiRGB(hex: 0xC9D1D9).color,
-                        detail: mac?.github.first ?? loc("Rien de neuf sur GitHub."),
-                        value: mac.map { "\($0.github.count)" } ?? "", page: .github))
+                        detail: phone.github.lines.first ?? mac?.github.first ?? (phone.github.isConnected || mac != nil ? loc("Rien de neuf sur GitHub.") : loc("Connecte GitHub")),
+                        value: phone.github.isConnected ? "\(phone.github.lines.count)" : mac.map { "\($0.github.count)" } ?? "", page: .github))
         rows.append(Row(id: "notes", name: loc("Notes"), symbol: "note.text", color: YumiRGB(hex: 0xFFD36B).color,
                         detail: phone.today.notes.first ?? loc("Aucune note."), value: "\(phone.today.notes.count)", page: .notes))
         var weather = loc("Je ne sais pas encore où tu es.")
@@ -297,28 +297,51 @@ struct PhoneNotesPage: View {
     }
 }
 
-/// What happened on GitHub, as the Mac tells it.
+/// What happened on GitHub: from the iPhone's own token, or as the Mac tells it.
 struct PhoneGitHubPage: View {
     let phone: Phone
+    @State private var token = ""
 
     var body: some View {
-        let lines = phone.linkOn ? phone.mac?.github ?? [] : []
+        let github = phone.github
+        let lines = github.isConnected ? github.lines : (phone.linkOn ? phone.mac?.github ?? [] : [])
         ScrollView {
             VStack(alignment: .leading, spacing: u(8)) {
-                if !phone.linkOn || phone.mac == nil {
-                    PhoneEmpty(state: .idle, text: loc("GitHub passe par ton Mac : relie-le pour voir tes pushs et tes PR."),
-                               action: loc("Relier mon Mac")) { phone.go(.mac) }
-                } else if lines.isEmpty {
-                    PhoneEmpty(state: .idle, text: loc("Rien de neuf sur GitHub."))
-                }
-                ForEach(lines, id: \.self) { line in
-                    Label(line, systemImage: "arrow.triangle.branch").font(.system(size: u(14))).phoneTile()
+                if github.isConnected || (phone.linkOn && phone.mac != nil) {
+                    Text(github.login.map { "GitHub · \($0)" } ?? loc("GitHub · par ton Mac")).phoneEyebrow(YumiRGB(hex: 0xC9D1D9).color)
+                        .padding(.bottom, u(4))
+                    if let failed = github.failed { Text(failed).font(.system(size: u(13))).foregroundStyle(PhoneTheme.amber) }
+                    if lines.isEmpty, !github.loading { PhoneEmpty(state: .idle, text: loc("Rien de neuf sur GitHub.")) }
+                    if github.loading, lines.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(.top, u(30)) }
+                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                        Label(line, systemImage: "arrow.triangle.branch").font(.system(size: u(14))).phoneTile()
+                    }
+                    if github.isConnected {
+                        Button(loc("Déconnecter GitHub"), role: .destructive) { github.disconnect() }
+                            .font(.system(size: u(13))).padding(.top, u(12))
+                    }
+                } else {
+                    PhoneEmpty(state: .idle, text: loc("Colle un jeton GitHub pour suivre tes pushs, tes PR et tes étoiles, sans Mac."))
+                    SecureField("ghp_… / github_pat_…", text: $token)
+                        .font(.system(size: u(14)))
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .padding(.horizontal, u(14)).frame(height: u(44))
+                        .background(PhoneTheme.ink, in: Capsule())
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 1))
+                        .padding(.top, u(12))
+                    PhoneHoldButton(label: loc("Maintenir pour connecter")) { Task { await github.connect(token: token) } }
+                        .padding(.top, u(8))
+                    Text(loc("Crée-le sur github.com › Settings › Developer settings › Personal access tokens (lecture seule suffit). Il reste dans le trousseau de cet iPhone."))
+                        .font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray)
+                    Text(loc("Ou relie ton Mac : il partage ce qu'il voit de GitHub.")).font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray)
+                        .padding(.top, u(6))
                 }
             }
             .padding(.horizontal, u(14))
             .padding(.bottom, u(110))
         }
         .scrollIndicators(.hidden)
+        .refreshable { await github.refresh() }
     }
 }
 
@@ -651,7 +674,7 @@ struct PhoneLinkView: View {
                 } else {
                     Text(phone.linkOn ? loc("En attente du Mac") : loc("Relie ton Mac"))
                         .font(.system(size: u(21), weight: .semibold)).padding(.top, u(14)).padding(.bottom, u(6))
-                    Text(loc("Sur le Mac : clic droit sur l'île › Réglages › iPhone, et allume le lien avec le même compte iCloud."))
+                    Text(loc("Sur le Mac : clic droit sur l'île › Réglages › Général › iPhone, et allume « Retrouver mon iPhone » avec le même compte iCloud."))
                         .font(.system(size: u(14))).foregroundStyle(PhoneTheme.gray).multilineTextAlignment(.center)
                         .padding(.horizontal, u(10)).padding(.bottom, u(22))
                     if !phone.linkOn {

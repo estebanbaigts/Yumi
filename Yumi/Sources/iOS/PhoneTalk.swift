@@ -1,5 +1,8 @@
 import AVFoundation
+import PDFKit
+import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// « Parler »: the last questions in grey, Yumi's answers large, and at the bottom the field, the
 /// « + » and Yumi, whom one touches to talk. While he listens, the waves and what he hears.
@@ -7,6 +10,9 @@ struct PhoneChatView: View {
     @Bindable var phone: Phone
     @State private var draft = ""
     @State private var adding: PhoneAddKind?
+    @State private var choosingFile = false
+    @State private var choosingPhoto = false
+    @State private var photo: PhotosPickerItem?
     @FocusState private var typing: Bool
 
     var body: some View {
@@ -19,6 +25,56 @@ struct PhoneChatView: View {
             composer
         }
         .sheet(item: $adding) { kind in PhoneAddSheet(kind: kind, today: phone.today) { phone.updateRemarks() } }
+        // Only what the person picks reaches him, one file at a time
+        .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.pdf, .image, .plainText, .text, .rtf, .commaSeparatedText, .json]) { result in
+            guard case .success(let url) = result else { return }
+            Task { if let file = await Self.read(url) { give(file) } }
+        }
+        .photosPicker(isPresented: $choosingPhoto, selection: $photo, matching: .images)
+        .onChange(of: photo) {
+            guard let item = photo else { return }
+            photo = nil
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self), let image = Self.picture(data) {
+                    give(PhoneAttachment(name: loc("Photo"), image: image))
+                }
+            }
+        }
+    }
+
+    private func give(_ file: PhoneAttachment) {
+        let text = draft
+        draft = ""
+        Task { await phone.chat.send(text, attachment: file) }
+    }
+
+    /// A file the person chose: read once, nothing kept.
+    static func read(_ url: URL) async -> PhoneAttachment? {
+        let open = url.startAccessingSecurityScopedResource()
+        defer { if open { url.stopAccessingSecurityScopedResource() } }
+        let name = url.lastPathComponent
+        let type = UTType(filenameExtension: url.pathExtension)
+        if type?.conforms(to: .pdf) == true, let pdf = PDFDocument(url: url) {
+            let text = pdf.string ?? ""
+            // A scanned PDF has no text: its first page goes as a picture
+            if text.trimmingCharacters(in: .whitespacesAndNewlines).count < 20, let page = pdf.page(at: 0) {
+                let thumb = page.thumbnail(of: CGSize(width: 1400, height: 1800), for: .mediaBox)
+                return PhoneAttachment(name: name, image: thumb.jpegData(compressionQuality: 0.8).map { LLMImage(data: $0) })
+            }
+            return PhoneAttachment(name: name, text: text)
+        }
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        if type?.conforms(to: .image) == true { return picture(data).map { PhoneAttachment(name: name, image: $0) } }
+        return String(data: data, encoding: .utf8).map { PhoneAttachment(name: name, text: $0) }
+    }
+
+    /// A picture made small enough for a model (1600 px at most), as JPEG.
+    static func picture(_ data: Data) -> LLMImage? {
+        guard let image = UIImage(data: data) else { return nil }
+        let scale = min(1, 1600 / max(image.size.width, image.size.height))
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let small = UIGraphicsImageRenderer(size: size).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+        return small.jpegData(compressionQuality: 0.8).map { LLMImage(data: $0) }
     }
 
     private var conversation: some View {
@@ -31,7 +87,18 @@ struct PhoneChatView: View {
                     }
                     ForEach(phone.chat.messages) { message in
                         Group {
-                            if message.role == .person {
+                            if message.role == .person, let file = message.attachment {
+                                VStack(spacing: u(4)) {
+                                    Label(file, systemImage: "doc.fill").font(.system(size: u(13), weight: .semibold))
+                                        .padding(.horizontal, u(12)).frame(height: u(30))
+                                        .background(PhoneTheme.ink, in: Capsule())
+                                        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 1))
+                                    if message.text != file {
+                                        Text("« \(message.text) »").font(.system(size: u(13))).foregroundStyle(PhoneTheme.gray)
+                                    }
+                                }
+                                .padding(.top, u(12))
+                            } else if message.role == .person {
                                 Text("« \(message.text) »").font(.system(size: u(13))).foregroundStyle(PhoneTheme.gray)
                                     .padding(.top, u(12))
                             } else {
@@ -89,6 +156,9 @@ struct PhoneChatView: View {
                 .font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray)
             HStack(spacing: u(8)) {
                 Menu {
+                    Button(loc("Un fichier"), systemImage: "doc") { choosingFile = true }
+                    Button(loc("Une photo"), systemImage: "photo") { choosingPhoto = true }
+                    Divider()
                     Button(loc("Un rappel"), systemImage: "checklist") { adding = .reminder }
                     Button(loc("Un événement"), systemImage: "calendar") { adding = .event }
                 } label: {
