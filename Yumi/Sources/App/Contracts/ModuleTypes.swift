@@ -44,6 +44,8 @@ struct ModuleSnapshot: Identifiable, Equatable, Sendable {
     /// The tab of the open island it belongs to. nil: the one its identifier gives
     /// (`ModuleCategory.of(moduleID:)`). The registry fills it from the module.
     var category: ModuleCategory? = nil
+    /// The app it comes from, when it says so: "Spotify", "Musique".
+    var source: String? = nil
 
     /// Where the island puts it.
     var tab: ModuleCategory { ModuleSpaces.chosen(id) ?? category ?? ModuleCategory.of(moduleID: id) }

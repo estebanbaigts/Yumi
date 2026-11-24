@@ -162,9 +162,10 @@ private struct MusicPage: View {
                 .frame(width: 120, height: 120)
                 .shadow(color: pink.opacity(0.33), radius: 15, y: 10)
             VStack(alignment: .leading, spacing: 0) {
-                ModHead(symbol: "music.note", title: loc("Musique"), color: pink)
+                ModHead(symbol: "music.note", title: module.source.map { "\(loc("Musique")) · \($0)" } ?? loc("Musique"), color: pink)
                 Text(module.title).font(.system(size: 30, weight: .bold)).lineLimit(1)
-                Text(module.subtitle).font(IslandTheme.text(13)).foregroundStyle(Color(hex: "#B9BCC8")).lineLimit(1)
+                Text(module.subtitle.replacingOccurrences(of: ", ", with: " · "))
+                    .font(IslandTheme.text(13)).foregroundStyle(Color(hex: "#B9BCC8")).lineLimit(1)
                 if let progress = module.progress {
                     HStack(spacing: 8) {
                         Text(progress.leading)
@@ -190,6 +191,7 @@ private struct MusicPage: View {
             YumiSlot(width: 70)
         }
         .padding(.horizontal, 10)
+        .frame(maxHeight: .infinity)
     }
 
     private func round(_ symbol: String, size: CGFloat, fill: Color, label: String, action: @escaping () -> Void) -> some View {
@@ -268,8 +270,8 @@ private struct GitHubPage2: View {
             ModHead(symbol: "arrow.triangle.branch", title: "GitHub", color: Color(hex: "#C9D1D9")) { HStack(spacing: 10) { tabs; YumiSlot(width: 40) } }
             Group {
                 switch tab {
-                case .activity:      list(activity, limit: 5, big: true)
-                case .repos:         list(module.pages["repos"] ?? [], limit: 4, big: true)
+                case .activity:      scrolling(activity)
+                case .repos:         scrolling(module.pages["repos"] ?? [])
                 case .contributions: IslandContributions(cell: 9, gap: 2.5).padding(.top, 14)
                 case .compact:
                     VStack(alignment: .leading, spacing: 10) {
@@ -307,6 +309,18 @@ private struct GitHubPage2: View {
         }
         .padding(3)
         .background(Capsule().fill(Color.white.opacity(0.07)))
+    }
+
+    /// Every line, scrolling under the heading: the older pushes, commits and pull requests too.
+    @ViewBuilder private func scrolling(_ rows: [ModuleRow]) -> some View {
+        if rows.isEmpty {
+            list(rows, limit: 0, big: true)
+        } else {
+            ScrollView(.vertical, showsIndicators: false) {
+                list(rows, limit: rows.count, big: true)
+                    .padding(.bottom, 8)
+            }
+        }
     }
 
     @ViewBuilder private func list(_ rows: [ModuleRow], limit: Int, big: Bool) -> some View {

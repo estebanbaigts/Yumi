@@ -86,7 +86,7 @@ import Testing
         pushes.append(push(9, "me/other", ago: 1, commits: ["o1"]))
         let rows = GitHubPages.repo("me/a", pushes: pushes, loading: false)
         #expect(rows.first?.action == GitHubPages.backAction)
-        #expect(rows.count == 1 + GitHubPages.repoPushes)
+        #expect(rows.count == 1 + min(7, GitHubPages.repoPushes))
         #expect(rows[1].id == "repo-push-7")
         #expect(rows[1].details == ["fix c7 (c700000)", "· et 2 de plus", "· Sources/App.swift  +12 −3"])
         #expect(rows[1].action == "https://github.com/me/a/compare/def...abc")

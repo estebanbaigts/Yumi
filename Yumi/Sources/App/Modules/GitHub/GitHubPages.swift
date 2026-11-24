@@ -53,9 +53,9 @@ extension Notification.Name {
 }
 
 enum GitHubPages {
-    static let recentLimit = 12
+    static let recentLimit = 30
     /// Pushes shown when a repository is opened.
-    static let repoPushes = 5
+    static let repoPushes = 20
     /// The action of a repository line: its latest pushes open in place.
     static let repoAction = "yumi-repo:"
     /// The action of the line that goes back to every repository.

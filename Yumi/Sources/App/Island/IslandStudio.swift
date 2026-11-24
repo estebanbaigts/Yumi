@@ -56,6 +56,7 @@ enum IslandStudio {
         var music = ModuleSnapshot(id: "music", name: loc("Musique"), colorHex: "#F58AD9", status: loc("lecture"),
                                    title: loc("Lueur"), subtitle: loc("Halo Nord"), primaryAction: loc("Pause"), secondaryAction: loc("Suivant"))
         music.symbol = "music.note"
+        music.source = "Spotify"
         music.primarySymbol = "pause.fill"
         music.secondarySymbol = "forward.end.fill"
         music.progress = ModuleProgress(fraction: 0.58, leading: "1:52", trailing: "3:14")
@@ -801,6 +802,7 @@ extension IslandStudio {
             ("17d-fin", { state.droppedFile = nil }),
             ("18-termine", { show(sessions()); controller?.expand(to: .finished) }),
             ("19-demarrage", { controller?.collapse(); controller?.studioLaunch() }),
+            ("20-personnage", { show(modules(musicPlaying: true)); IslandModel.shared.selectedModuleID = IslandHomeOrder.characterID; controller?.expand(to: .module) }),
             ("07-reglages", { controller?.expand(to: .settings) }),
             ("08-skin-couronne", { wear(.crown, .yumi); show(sessions()); IslandActions.showTab(.work); controller?.expand(to: .overview) }),
             ("09-skin-chat", { wear(.cat, .pink); show(modules(musicPlaying: false)); IslandActions.showTab(.day); controller?.expand(to: .overview) }),

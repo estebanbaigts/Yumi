@@ -361,6 +361,7 @@ enum MusicSummary {
 
         snapshot.status = playing.isPlaying ? loc("lecture") : loc("pause")
         snapshot.title = playing.title
+        snapshot.source = playing.player.name
         let credits = [playing.artist, playing.album].filter { !$0.isEmpty }
         snapshot.subtitle = credits.isEmpty ? playing.player.name : credits.joined(separator: ", ")
         if canControl {

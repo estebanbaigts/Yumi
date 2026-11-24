@@ -66,7 +66,9 @@ struct IslandOpenLayer: View {
                         .padding(.bottom, -24)
                         .transition(.opacity)
                 }
-                if let glow = IslandHalo.color(screen: screen, module: state.modules.first { $0.id == currentID }, accent: accent) {
+                let onCharacter = screen == .module && model.selectedModuleID == IslandHomeOrder.characterID
+                if let glow = onCharacter ? Color(hex: "#C77DFF")
+                    : IslandHalo.color(screen: screen, module: state.modules.first { $0.id == currentID }, accent: accent) {
                     IslandHalo(color: glow)
                 }
             }
@@ -132,6 +134,8 @@ struct IslandOpenLayer: View {
     @ViewBuilder private var tab: some View {
         if screen == .home {
             IslandHome(state: state, model: model)
+        } else if screen == .module, model.selectedModuleID == IslandHomeOrder.characterID {
+            CharacterPage(model: model)
         } else {
             sheet(currentID)
         }
