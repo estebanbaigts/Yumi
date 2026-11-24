@@ -232,8 +232,8 @@ enum SessionHost {
 /// Every session of the module's list, with since when each one is in its state. A finished
 /// session (its answer done, or the session closed) stays a moment with its result, then leaves.
 struct SessionBoard: Equatable, Sendable {
-    /// How long a finished session stays in the list.
-    static let keepFinished: TimeInterval = 90
+    /// How long a finished session stays in the list: a trace of the afternoon's work.
+    static let keepFinished: TimeInterval = 6 * 3600
 
     private struct Seen: Equatable, Sendable {
         var session: Session

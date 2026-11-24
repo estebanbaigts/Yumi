@@ -84,8 +84,18 @@ final class AgendaModule: YumiModule {
         switch access {
         case .notDetermined:
             guard action == .primary else { return }
-            eventStore.requestFullAccessToEvents { @Sendable [weak self] _, _ in
-                Task { @MainActor in self?.reload() }
+            eventStore.requestFullAccessToEvents { @Sendable [weak self] granted, _ in
+                Task { @MainActor in
+                    guard let self else { return }
+                    if granted {
+                        // The store asked before the answer stays empty until it is reset
+                        self.eventStore.reset()
+                    } else {
+                        // macOS said no without asking (refused before): the switch is in the settings
+                        NSWorkspace.shared.open(PrivacySettings.calendars)
+                    }
+                    self.reload()
+                }
             }
         case .denied:
             if action == .primary { NSWorkspace.shared.open(PrivacySettings.calendars) }

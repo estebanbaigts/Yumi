@@ -55,9 +55,9 @@ import Foundation
         #expect(board.nextDeparture(now: start) == start.addingTimeInterval(SessionBoard.keepFinished))
         #expect(board.rows(now: start.addingTimeInterval(SessionBoard.keepFinished)).isEmpty)
         // Still completed in the store: it does not come back.
-        board.update([done], now: start.addingTimeInterval(120))
-        board.update([done], now: start.addingTimeInterval(130))
-        #expect(board.rows(now: start.addingTimeInterval(130)).isEmpty)
+        board.update([done], now: start.addingTimeInterval(SessionBoard.keepFinished + 30))
+        board.update([done], now: start.addingTimeInterval(SessionBoard.keepFinished + 40))
+        #expect(board.rows(now: start.addingTimeInterval(SessionBoard.keepFinished + 40)).isEmpty)
         // A new prompt brings it back.
         var busy = done
         busy.status = .running

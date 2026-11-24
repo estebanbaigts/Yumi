@@ -237,10 +237,12 @@ struct GmailSheet: View {
 
     /// The first mails of the list, read while the person looks at it.
     private func readAhead() {
-        let first = Array((inbox.mails.filter(\.important) + inbox.mails.filter { !$0.important }).prefix(4))
+        let first = Array((inbox.mails.filter(\.important) + inbox.mails.filter { !$0.important }).prefix(8))
         let credentials = credentials
         Task {
             for mail in first where MailTexts.kept[mail.uid] == nil {
+                // A mail opened meanwhile goes first: no reading ahead in front of it
+                guard chosen == nil else { return }
                 _ = await MailTexts.load(mail, credentials: credentials)
             }
         }

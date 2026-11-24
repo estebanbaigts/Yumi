@@ -768,7 +768,7 @@ struct AgentsPage: View {
                     VStack(alignment: .leading, spacing: 0) {
                         group(working, title: loc("Travaillent"), color: blue)
                         group(waiting, title: loc("T'attendent"), color: IslandTheme.amber)
-                        if !asleep.isEmpty { sleepers }
+                        group(asleep, title: loc("Terminés"), color: Color(hex: "#8E8E93"))
                     }
                 }
             }
@@ -781,48 +781,49 @@ struct AgentsPage: View {
                 .font(IslandTheme.text(10.5, .bold)).tracking(0.8)
                 .foregroundStyle(color)
                 .padding(.bottom, 6)
-                .padding(.top, rows.first?.state == .waiting && !working.isEmpty ? 10 : 0)
+                .padding(.top, rows.first.map { first in module.rows.first?.id != first.id } == true ? 10 : 0)
             ForEach(rows) { row in line(row, color: color) }
         }
     }
 
+    /// A card: the project on top, the agent, its model and its branch under it, what it does on the right.
     private func line(_ row: ModuleRow, color: Color) -> some View {
         let waits = row.state == .waiting
+        let done = row.state != .busy && !waits
         return Button {
             if waits { IslandActions.go(.approval) } else if let action = row.action { IslandActions.row(module.id, action) }
         } label: {
             HStack(spacing: 12) {
-                Circle().fill(color).frame(width: 8, height: 8)
-                    .shadow(color: color.opacity(0.7), radius: 4)
+                Image(systemName: done ? (row.state == .failure ? "exclamationmark" : "checkmark") : "terminal.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(color)
+                    .frame(width: 34, height: 34)
+                    .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(color.opacity(0.15)))
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 5) {
-                        Text(row.agent ?? row.title).font(IslandTheme.text(13, .bold))
-                        if let model = row.model {
-                            Text("· \(model)").font(IslandTheme.text(13)).foregroundStyle(Color(hex: "#8E8E93"))
-                        }
-                    }
                     HStack(spacing: 6) {
-                        Text(row.place ?? row.title).font(IslandTheme.text(11.5)).foregroundStyle(Color(hex: "#B9BCC8"))
+                        Text(row.place ?? row.title).font(IslandTheme.text(13.5, .bold)).lineLimit(1)
                         if let branch = row.branch {
-                            Text("⎇ \(branch)").font(.system(size: 11, design: .monospaced)).foregroundStyle(Color(hex: "#8E8E93"))
-                        } else if row.isRepository == false, row.place != nil {
+                            Text("⎇ \(branch)").font(.system(size: 11, design: .monospaced)).foregroundStyle(Color(hex: "#8E8E93")).lineLimit(1)
+                        } else if !row.isRepository, row.place != nil {
                             Text(loc("dossier local")).font(IslandTheme.text(11)).foregroundStyle(Color(hex: "#8E8E93"))
                         }
                     }
-                    .lineLimit(1)
+                    Text([row.agent, row.model].compactMap { $0 }.joined(separator: " · "))
+                        .font(IslandTheme.text(11.5)).foregroundStyle(Color(hex: "#B9BCC8")).lineLimit(1)
                 }
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(row.detail).font(IslandTheme.text(12)).foregroundStyle(color).lineLimit(1)
+                    Text(row.detail).font(IslandTheme.text(12)).foregroundStyle(done ? Color(hex: "#B9BCC8") : color).lineLimit(1)
                     if let date = row.date {
-                        Text(date, style: .relative).font(IslandTheme.text(11).monospacedDigit()).foregroundStyle(Color(hex: "#8E8E93"))
+                        Text(done ? date.formatted(.dateTime.hour().minute()) : date.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)))
+                            .font(IslandTheme.text(11).monospacedDigit()).foregroundStyle(Color(hex: "#8E8E93"))
                     }
                 }
-                .frame(maxWidth: 220, alignment: .trailing)
+                .frame(maxWidth: 230, alignment: .trailing)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(waits ? IslandTheme.amber.opacity(0.1) : Color.white.opacity(0.05)))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(waits ? IslandTheme.amber.opacity(0.1) : Color.white.opacity(done ? 0.035 : 0.05)))
             .overlay { if waits { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(IslandTheme.amber.opacity(0.33)) } }
             .contentShape(Rectangle())
         }
@@ -830,16 +831,4 @@ struct AgentsPage: View {
         .padding(.bottom, 6)
     }
 
-    private var sleepers: some View {
-        let names = asleep.map { row in
-            [row.agent ?? row.title, row.place].compactMap { $0 }.joined(separator: " · ")
-        }
-        return HStack(spacing: 8) {
-            Image(systemName: "moon.zzz.fill").font(.system(size: 12)).foregroundStyle(Color(hex: "#8E8E93"))
-            Text(asleep.count == 1 ? loc("1 agent dort : \(names.joined(separator: ", "))")
-                                   : loc("\(asleep.count) agents dorment : \(names.joined(separator: ", "))"))
-                .font(IslandTheme.text(12)).foregroundStyle(Color(hex: "#8E8E93")).lineLimit(2)
-        }
-        .padding(.top, 10)
-    }
 }

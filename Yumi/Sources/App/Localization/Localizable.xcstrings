@@ -1,6 +1,56 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Terminés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished"
+          }
+        }
+      }
+    },
+    "Sa voix": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "His voice"
+          }
+        }
+      }
+    },
+    "Femme": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Woman"
+          }
+        }
+      }
+    },
+    "Homme": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Man"
+          }
+        }
+      }
+    },
+    "Ajouter la clé ElevenLabs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add the ElevenLabs key"
+          }
+        }
+      }
+    },
     "hier, %@": {
       "localizations": {
         "en": {
