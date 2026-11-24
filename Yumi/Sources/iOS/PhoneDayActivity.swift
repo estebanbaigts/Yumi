@@ -17,6 +17,14 @@ enum PhoneDayActivity {
 
     /// What the island shows now, from the day and the Mac.
     static func state(today: PhoneToday, mac: LinkSnapshot?, now: Date = Date()) -> YumiDayActivity.ContentState {
+        var state = dayState(today: today, mac: mac, now: now)
+        if !state.urgent, let session = mac?.sessions.first(where: { PhoneAgentLook.state($0, waiting: false) == .working }) {
+            state.working = session.updatedAt
+        }
+        return state
+    }
+
+    private static func dayState(today: PhoneToday, mac: LinkSnapshot?, now: Date) -> YumiDayActivity.ContentState {
         if let approval = mac?.approvals.first(where: { $0.expiresAt > now }) {
             return .init(face: "asking", title: approval.summary, detail: loc("Ton Mac attend ton accord"),
                          at: nil, urgent: true, symbol: "hand.raised.fill")

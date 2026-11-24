@@ -4,7 +4,7 @@ import SwiftUI
 /// a card or a row.
 enum PhonePage: String, Hashable {
     case today, modules, yumi, settings, mac
-    case talk, agents, agenda, weather, mail
+    case talk, agents, agenda, weather, mail, notes, github
 
     static let menu: [PhonePage] = [.today, .modules, .yumi, .settings, .mac]
 
@@ -20,6 +20,8 @@ enum PhonePage: String, Hashable {
         case .agenda: loc("Agenda")
         case .weather: loc("Météo")
         case .mail: loc("Mail")
+        case .notes: loc("Notes")
+        case .github: loc("GitHub")
         }
     }
 }
@@ -117,6 +119,8 @@ struct PhoneRootView: View {
         case .agenda: PhoneAgendaView(phone: phone)
         case .weather: PhoneWeatherView(phone: phone)
         case .mail: PhoneMailPage(phone: phone)
+        case .notes: PhoneNotesPage(phone: phone)
+        case .github: PhoneGitHubPage(phone: phone)
         }
     }
 

@@ -14,7 +14,7 @@ struct PhoneSettingsView: View {
                 section(loc("Yumi")) {
                     link(loc("Voix"), PhoneVoiceChoice.current.phoneLabel, 0xF58AD9) { phone.go(.yumi) }
                     push(loc("Mémoire"), loc("\(phone.memoryBook.entries.count) souvenirs"), 0x4EE6B0) { PhoneMemoryView(phone: phone) }
-                    row(loc("Moteur"), PhoneChat.whyNoModel(AppleModelAvailability.current) == nil ? loc("Modèle d'Apple") : loc("Indisponible"), 0x8B6CFF)
+                    push(loc("Cerveau"), PhoneBrain.remote != nil ? PhoneBrain.current.label : loc("Modèle d'Apple"), 0x8B6CFF) { PhoneBrainView() }
                 }
                 section(loc("Comptes")) {
                     if phone.mail.isConnected {
@@ -179,4 +179,82 @@ enum PhoneVoiceChoice {
 
 extension YumiVoice {
     var phoneLabel: String { PhoneVoiceChoice.label(self) }
+}
+
+/// Who thinks and answers: Apple's model, Claude, ChatGPT or Gemini.
+struct PhoneBrainView: View {
+    @State private var brain = PhoneBrain.current
+    @State private var key = PhoneBrain.current.keyName.flatMap { PhoneKeychain.get($0) } ?? ""
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: u(8)) {
+                ForEach(PhoneBrain.allCases, id: \.self) { choice in
+                    Button {
+                        brain = choice
+                        PhoneBrain.current = choice
+                        key = choice.keyName.flatMap { PhoneKeychain.get($0) } ?? ""
+                    } label: {
+                        HStack(spacing: u(12)) {
+                            Image(systemName: Self.symbol(choice))
+                                .font(.system(size: u(16), weight: .semibold))
+                                .foregroundStyle(Self.color(choice))
+                                .frame(width: u(36), height: u(36))
+                                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: u(11), style: .continuous))
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(choice.label).font(.system(size: u(14), weight: .semibold))
+                                Text(choice.hasKey || choice == .apple ? choice.detail : loc("Clé à ajouter"))
+                                    .font(.system(size: u(12))).foregroundStyle(PhoneTheme.gray)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            Image(systemName: brain == choice ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: u(18))).foregroundStyle(brain == choice ? PhoneTheme.violet : PhoneTheme.gray)
+                        }
+                        .phoneTile(brain == choice ? PhoneTheme.violet : nil)
+                    }
+                    .buttonStyle(.plain)
+                }
+                if let name = brain.keyName {
+                    Text(loc("Clé \(brain.service == .anthropic ? "Anthropic" : brain.service == .openai ? "OpenAI" : "Gemini")"))
+                        .phoneEyebrow(PhoneTheme.gray).padding(.top, u(12))
+                    SecureField(loc("Colle ta clé"), text: $key)
+                        .font(.system(size: u(14)))
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .padding(.horizontal, u(14)).frame(height: u(44))
+                        .background(PhoneTheme.ink, in: Capsule())
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 1))
+                        .onChange(of: key) { PhoneKeychain.set(name, key.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty) }
+                    Text(loc("Crée-la sur \(brain.keyHelp). Elle reste dans le trousseau de cet iPhone ; seule la conversation part chez ce service."))
+                        .font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray)
+                }
+                if brain == .apple, let why = PhoneChat.whyNoModel(AppleModelAvailability.current) {
+                    Text(why).font(.system(size: u(12))).foregroundStyle(PhoneTheme.gray).padding(.top, u(8))
+                }
+                Text(loc("Codex et Claude Code tournent sur ton Mac : ils passeront par la liaison avec le Mac."))
+                    .font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray).padding(.top, u(12))
+            }
+            .padding(.horizontal, u(14)).padding(.top, u(8)).padding(.bottom, u(40))
+        }
+        .background(Color.black)
+        .navigationTitle(loc("Cerveau"))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private static func symbol(_ brain: PhoneBrain) -> String {
+        switch brain.service {
+        case .apple: "apple.logo"
+        case .anthropic: "sparkle"
+        case .openai: "circle.hexagongrid"
+        case .gemini: "diamond"
+        }
+    }
+
+    private static func color(_ brain: PhoneBrain) -> Color {
+        switch brain.service {
+        case .apple: .white
+        case .anthropic: YumiRGB(hex: 0xD97757).color
+        case .openai: YumiRGB(hex: 0x10A37F).color
+        case .gemini: YumiRGB(hex: 0x8AB4F8).color
+        }
+    }
 }

@@ -65,10 +65,11 @@ struct YumiTodayWidget: Widget {
                     entries.append(Entry(date: now.addingTimeInterval(Double(i) * 0.9), data: data.at(now), beat: 0, reaction: face))
                 }
             }
-            // Then a face a minute, from the next whole minute
-            let minute = (now.timeIntervalSince1970 / 60).rounded(.down) * 60 + 60
-            entries += (0..<60).map {
-                let date = Date(timeIntervalSince1970: minute + Double($0) * 60)
+            // Then a moment every 10 s for the hour: his face changes each minute, the weather's
+            // ground moves each moment (a widget cannot run an animation; iOS cross-fades them)
+            let step = (now.timeIntervalSince1970 / 10).rounded(.down) * 10 + 10
+            entries += (0..<360).map {
+                let date = Date(timeIntervalSince1970: step + Double($0) * 10)
                 return Entry(date: date, data: data.at(date), beat: $0)
             }
             if entries.first.map({ $0.date > now }) ?? true { entries.insert(Entry(date: now, data: data.at(now), beat: 0), at: 0) }
@@ -86,7 +87,7 @@ enum WidgetFace {
         if entry.data.macWaiting != nil { return "asking" }
         let hour = Calendar.current.component(.hour, from: entry.date)
         if hour >= 23 || hour < 6 { return "asleep" }
-        return ["happy", "left", "calm", "right", "wink", "happy", "surprised", "calm"][entry.beat % 8]
+        return ["happy", "left", "calm", "right", "wink", "happy", "surprised", "calm"][(entry.beat / 6) % 8]
     }
 
     static func agent(_ mood: String) -> String {
@@ -115,6 +116,7 @@ private struct YumiTodayView: View {
     private func yumi(_ size: CGFloat) -> some View {
         Button(intent: YumiWidgetPoke()) {
             YumiPicture(name: face, size: size)
+                .offset(y: entry.beat % 2 == 0 ? 0 : -2)
                 .id(face)
                 .transition(entry.reaction == nil ? .push(from: .bottom).combined(with: .opacity)
                                                   : .scale(scale: 0.7).combined(with: .opacity))
@@ -250,5 +252,141 @@ private struct YumiAgentsView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Yumi in the weather: the ground of the ambiance moving behind him, the degrees and the sky.
+struct YumiWeatherWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "YumiWeather", provider: YumiTodayWidget.Provider()) { entry in
+            YumiWeatherView(entry: entry)
+                .containerBackground(for: .widget) { YumiWeatherGround(entry: entry) }
+        }
+        .contentMarginsDisabled()
+        .configurationDisplayName("Météo de Yumi")
+        .description("Yumi dans la météo d'ici, avec son ambiance.")
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+/// One still moment of the ambiance's ground, a different one at each moment of the timeline.
+private struct YumiWeatherGround: View {
+    let entry: YumiTodayWidget.Entry
+
+    var body: some View {
+        ZStack {
+            Color.black
+            if entry.data.ambiance != nil,
+               let url = YumiWidgetData.imageURL("weather-\(entry.beat % YumiWidgetData.weatherFrames)"),
+               let image = UIImage(contentsOfFile: url.path) {
+                Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill()
+                    .id(entry.beat)
+                    .transition(.opacity)
+            }
+        }
+    }
+}
+
+private struct YumiWeatherView: View {
+    let entry: YumiTodayWidget.Entry
+    @Environment(\.widgetFamily) private var family
+
+    private var color: Color { entry.data.ambianceColor.map { WidgetInk.hex($0) } ?? WidgetInk.timer }
+
+    private var yumi: some View {
+        Button(intent: YumiWidgetPoke()) {
+            Group {
+                if let url = YumiWidgetData.imageURL("weather-yumi"), let image = UIImage(contentsOfFile: url.path) {
+                    Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFit()
+                } else {
+                    YumiPicture(name: WidgetFace.of(entry), size: 60)
+                }
+            }
+            // He breathes: a little up, a little down, from one moment to the next
+            .offset(y: entry.beat % 2 == 0 ? 0 : -3)
+            .animation(.easeInOut(duration: 1.2), value: entry.beat)
+        }
+        .buttonStyle(.plain)
+    }
+
+    var body: some View {
+        switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: -2) {
+                    YumiPicture(name: "weather-yumi-small", size: 30)
+                    Text(entry.data.degrees ?? "–").font(.system(size: 13, weight: .semibold)).monospacedDigit()
+                }
+            }
+        case .accessoryRectangular:
+            HStack(spacing: 6) {
+                YumiPicture(name: "weather-yumi-small", size: 38)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text([entry.data.degrees, entry.data.ambiance.map(Self.name)].compactMap { $0 }.joined(separator: " · "))
+                        .font(.headline).lineLimit(1)
+                    Text([entry.data.place, entry.data.sky].compactMap { $0 }.joined(separator: " · "))
+                        .font(.caption).lineLimit(2).opacity(0.8)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        case .accessoryInline:
+            Text([entry.data.degrees, entry.data.sky].compactMap { $0 }.joined(separator: " · "))
+        default:
+            home
+        }
+    }
+
+    @ViewBuilder private var home: some View {
+        if entry.data.degrees == nil {
+            VStack(spacing: 8) {
+                YumiPicture(name: "calm", size: 54)
+                Text("Ouvre Yumi pour avoir la météo d'ici.").font(.system(size: 12)).foregroundStyle(WidgetInk.gray)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(14)
+        } else if family == .systemMedium {
+            HStack(spacing: 14) {
+                yumi.frame(width: 104, height: 104)
+                info(big: 44)
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top) {
+                    yumi.frame(width: 58, height: 58)
+                    Spacer()
+                    Text(entry.data.degrees ?? "").font(.system(size: 30, weight: .light)).monospacedDigit().foregroundStyle(.white)
+                }
+                Spacer(minLength: 0)
+                info(big: nil)
+            }
+            .padding(14)
+        }
+    }
+
+    private func info(big: CGFloat?) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(entry.data.place ?? String(localized: "Météo")).font(.system(size: 11, weight: .bold)).textCase(.uppercase)
+                .foregroundStyle(color)
+            if let big {
+                Text(entry.data.degrees ?? "").font(.system(size: big, weight: .light)).monospacedDigit().foregroundStyle(.white)
+            }
+            Text(entry.data.ambiance.map(Self.name) ?? "").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+            Text(entry.data.sky ?? "").font(.system(size: 12)).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
+        }
+    }
+
+    private static func name(_ raw: String) -> String {
+        switch raw {
+        case "pluie": String(localized: "Pluie")
+        case "soleil": String(localized: "Soleil")
+        case "neige": String(localized: "Neige")
+        case "nuit": String(localized: "Nuit")
+        case "chaud": String(localized: "Chaud")
+        case "froid": String(localized: "Froid")
+        default: String(localized: "Doux")
+        }
     }
 }

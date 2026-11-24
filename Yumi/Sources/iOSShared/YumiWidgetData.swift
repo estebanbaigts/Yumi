@@ -21,6 +21,12 @@ struct YumiWidgetData: Codable, Equatable {
     var dueReminders: [Reminder]? = nil
     /// « 11° · averses », nil without the weather.
     var weather: String? = nil
+    /// The weather's ambiance (`WeatherAmbiance.rawValue`), its colour, the degrees, the town, the sky.
+    var ambiance: String? = nil
+    var ambianceColor: UInt32? = nil
+    var degrees: String? = nil
+    var place: String? = nil
+    var sky: String? = nil
     /// The agents of the Mac, nil without the link.
     var agents: [Agent]? = nil
 
@@ -76,6 +82,9 @@ struct YumiWidgetData: Codable, Equatable {
     }
 
     private static var fileURL: URL? { folder?.appendingPathComponent("widget.json") }
+
+    /// The frames of the weather's ground, drawn by the app: `weather-0.png` … `weather-5.png`.
+    static let weatherFrames = 6
 
     /// His picture for a mood: `yumi-happy.png`, `yumi-asking.png`...
     static func imageURL(_ name: String) -> URL? { folder?.appendingPathComponent("yumi-\(name).png") }

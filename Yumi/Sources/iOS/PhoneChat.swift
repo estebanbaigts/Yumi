@@ -94,7 +94,7 @@ final class PhoneChat {
             succeeded = false
             append(.init(role: .yumi, text: Self.readable(reason)))
         case .agendaKeptFromChat, .chat:
-            succeeded = AppleModelAvailability.current.isAvailable
+            succeeded = PhoneBrain.remote != nil || AppleModelAvailability.current.isAvailable
             append(.init(role: .yumi, text: await converse(text)))
         }
     }
@@ -144,6 +144,7 @@ final class PhoneChat {
     }
 
     private func converse(_ text: String) async -> String {
+        if let remote = PhoneBrain.remote { return await converse(text, with: remote) }
         let availability = AppleModelAvailability.current
         guard availability.isAvailable else { return Self.withoutModel(availability) }
         #if canImport(FoundationModels)
@@ -159,6 +160,24 @@ final class PhoneChat {
         }
         #endif
         return Self.withoutModel(availability)
+    }
+
+    /// A model of the person's own account: Yumi's voice, what he knows of the person and of the day, the last exchanges.
+    private func converse(_ text: String, with remote: any LLMProvider) async -> String {
+        let system = (AppLanguage.isEnglish
+            ? "You are Yumi, a small friendly character living on the person's iPhone. Answer briefly and warmly, in plain sentences, without markdown, without long dashes. Your answer may be read aloud."
+            : "Tu es Yumi, un petit personnage bienveillant qui vit dans l'iPhone de la personne. Réponds brièvement et chaleureusement, en phrases simples, sans markdown, sans tirets longs, en la tutoyant. Ta réponse peut être lue à voix haute.")
+            + (knowledge.isEmpty ? "" : "\n" + knowledge)
+            + ((day?(false)).map { "\n" + $0 } ?? "")
+        var history = messages.suffix(12).map { LLMMessage(role: $0.role == .person ? .user : .assistant, content: $0.text) }
+        if history.first?.role == .assistant { history.removeFirst() }
+        if history.last?.content != text { history.append(LLMMessage(role: .user, content: text)) }
+        do {
+            let answer = try await remote.complete(LLMRequest(system: system, messages: history, expectsJSON: false, maxOutputTokens: 700))
+            return VoiceRules.withoutLongDashes(MemoryNotes.extract(from: answer.text).visible)
+        } catch {
+            return loc("Je n'arrive pas à joindre \(PhoneBrain.current.label). Vérifie ta clé dans Réglages › Cerveau, ou ta connexion.")
+        }
     }
 
     /// What Yumi knows of the person, short: a small model drowns in long instructions.

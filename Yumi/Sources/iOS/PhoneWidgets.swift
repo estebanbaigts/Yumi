@@ -42,8 +42,53 @@ enum PhoneWidgets {
         }
     }
 
+    private static var drawnAmbiance: WeatherAmbiance?
+
+    /// The weather widget: Yumi as the weather makes him, and a few still moments of its ground
+    /// that the widget shows one after the other.
+    static func drawWeather(_ ambiance: WeatherAmbiance?, force: Bool = false) {
+        guard let ambiance, force || ambiance != drawnAmbiance else { return }
+        drawnAmbiance = ambiance
+        let start = Date().timeIntervalSinceReferenceDate
+        for frame in 0..<YumiWidgetData.weatherFrames {
+            guard let url = YumiWidgetData.imageURL("weather-\(frame)") else { continue }
+            let renderer = ImageRenderer(content: ZStack {
+                Color.black
+                WeatherEffects(ambiance: ambiance, frozenAt: start + Double(frame) * 0.9)
+            }.frame(width: 340, height: 160))
+            renderer.scale = 2
+            if let png = renderer.uiImage?.pngData() { try? png.write(to: url, options: .atomic) }
+        }
+        let costume = YumiCostume.current()
+        if let url = YumiWidgetData.imageURL("weather-yumi") {
+            let renderer = ImageRenderer(content: StillYumi(mood: ambiance.mood ?? .happy, state: .idle, lit: true,
+                                                            habit: ambiance.habit,
+                                                            costume: ambiance.wearsBeanie && costume == .none ? .beanie : costume)
+                .frame(width: 180, height: 180))
+            renderer.scale = 3
+            if let png = renderer.uiImage?.pngData() { try? png.write(to: url, options: .atomic) }
+        }
+        // A small one for the Lock Screen
+        if let url = YumiWidgetData.imageURL("weather-yumi-small") {
+            let renderer = ImageRenderer(content: StillYumi(mood: ambiance.mood ?? .happy, state: .idle, lit: true,
+                                                            habit: ambiance.habit,
+                                                            costume: ambiance.wearsBeanie && costume == .none ? .beanie : costume)
+                .frame(width: 60, height: 60))
+            renderer.scale = 2
+            if let png = renderer.uiImage?.pngData() { try? png.write(to: url, options: .atomic) }
+        }
+    }
+
+    private static func hex(_ ambiance: WeatherAmbiance) -> UInt32 {
+        let c = UIColor(ambiance.color)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        c.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return UInt32(r * 255) << 16 | UInt32(g * 255) << 8 | UInt32(b * 255)
+    }
+
     /// His colour or costume changed: draw the pictures again and show them.
     static func lookChanged() {
+        drawnAmbiance = nil
         drawn = false
         drawFaces()
         WidgetCenter.shared.reloadAllTimelines()
@@ -65,6 +110,11 @@ enum PhoneWidgets {
                 .map { .init(title: $0.title, start: $0.start, end: $0.end) },
             dueReminders: today.reminders.prefix(3).map { .init(title: $0.title, due: $0.due) },
             weather: { if case .ready(let report) = today.weather { return "\(PhoneWeather.degrees(report)) · \(WeatherSummary.sky(report.code))" }; return nil }(),
+            ambiance: PhoneWeather.ambiance(today.weather)?.rawValue,
+            ambianceColor: PhoneWeather.ambiance(today.weather).map(Self.hex),
+            degrees: { if case .ready(let report) = today.weather { return PhoneWeather.degrees(report) }; return nil }(),
+            place: today.placeName.nonEmpty,
+            sky: { if case .ready(let report) = today.weather { return WeatherSummary.sky(report.code) }; return nil }(),
             agents: mac.map { mac in
                 mac.sessions.map { session in
                     let waits = mac.approvals.contains { $0.sessionID == session.id && $0.expiresAt > now }
@@ -73,6 +123,7 @@ enum PhoneWidgets {
                                  mood: state == .approval ? "wait" : state == .sleeping ? "sleep" : "work", since: session.updatedAt)
                 }
             })
+        drawWeather(PhoneWeather.ambiance(today.weather))
         var compared = data
         compared.updatedAt = YumiWidgetData.load()?.updatedAt ?? now
         guard force || compared != YumiWidgetData.load() else { return }
@@ -83,17 +134,20 @@ enum PhoneWidgets {
 
 /// One still picture of Yumi: the engine is run for a moment so that the mood and the light have
 /// settled, then drawn once.
-private struct StillYumi: View {
+struct StillYumi: View {
     let mood: YumiMood?
     let state: BotState
     let lit: Bool
     var gaze: CGPoint? = nil
+    var habit: YumiHabit? = nil
+    var costume: YumiCostume? = nil
 
     var body: some View {
         Canvas { context, size in
             let engine = BotEngine()
-            engine.setLook(accent: .current(), costume: .current())
+            engine.setLook(accent: .current(), costume: costume ?? .current())
             engine.setState(state, force: true)
+            if let habit { engine.setHabit(habit) }
             engine.setLit(lit)
             engine.setMood(mood)
             if let gaze { engine.setGaze(gaze) }

@@ -1,6 +1,216 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Aucun mail aujourd'hui.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No mail today."
+          }
+        }
+      }
+    },
+    "Aucune note. Dis à Yumi « note : … » pour en garder une.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No notes. Tell Yumi “note: …” to keep one."
+          }
+        }
+      }
+    },
+    "Aujourd'hui · %lld mails · %lld non lus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today · %lld mails · %lld unread"
+          }
+        }
+      }
+    },
+    "Avec ta clé Google AI Studio": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With your Google AI Studio key"
+          }
+        }
+      }
+    },
+    "Avec ta clé OpenAI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With your OpenAI key"
+          }
+        }
+      }
+    },
+    "Cerveau": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brain"
+          }
+        }
+      }
+    },
+    "Clé à ajouter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key to add"
+          }
+        }
+      }
+    },
+    "Clé %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ key"
+          }
+        }
+      }
+    },
+    "Codex et Claude Code tournent sur ton Mac : ils passeront par la liaison avec le Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex and Claude Code run on your Mac: they will come through the link with the Mac."
+          }
+        }
+      }
+    },
+    "Colle ta clé": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste your key"
+          }
+        }
+      }
+    },
+    "Crée-la sur %@. Elle reste dans le trousseau de cet iPhone ; seule la conversation part chez ce service.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create it at %@. It stays in this iPhone's keychain; only the conversation goes to that service."
+          }
+        }
+      }
+    },
+    "GitHub passe par ton Mac : relie-le pour voir tes pushs et tes PR.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub goes through your Mac: link it to see your pushes and PRs."
+          }
+        }
+      }
+    },
+    "Je n'arrive pas à joindre %@. Vérifie ta clé dans Réglages › Cerveau, ou ta connexion.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't reach %@. Check your key in Settings › Brain, or your connection."
+          }
+        }
+      }
+    },
+    "Le plus rapide": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The fastest"
+          }
+        }
+      }
+    },
+    "Le plus réfléchi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most thoughtful"
+          }
+        }
+      }
+    },
+    "Notes · %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes · %lld"
+          }
+        }
+      }
+    },
+    "Ouvre Yumi pour avoir la météo d'ici.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Yumi to get the weather here."
+          }
+        }
+      }
+    },
+    "Rapide et malin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fast and smart"
+          }
+        }
+      }
+    },
+    "Sur l'iPhone, rien ne sort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the iPhone, nothing leaves"
+          }
+        }
+      }
+    },
+    "Météo de Yumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi's weather"
+          }
+        }
+      }
+    },
+    "Yumi dans la météo d'ici, avec son ambiance.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumi in the weather here, with its mood."
+          }
+        }
+      }
+    },
     "Colle ta clé ElevenLabs, la même que sur le Mac (elevenlabs.io › Profile › API Keys). Sans elle, il prend la plus belle voix de l'iPhone.": {
       "localizations": {
         "en": {

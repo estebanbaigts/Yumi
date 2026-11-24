@@ -10,6 +10,7 @@ struct YumiWidgets: WidgetBundle {
         YumiDayLiveActivity()
         YumiTodayWidget()
         YumiAgentsWidget()
+        YumiWeatherWidget()
     }
 }
 
@@ -106,11 +107,15 @@ struct YumiDayLiveActivity: Widget {
                     DayBanner(state: context.state)
                 }
             } compactLeading: {
-                YumiIslandPicture(face: context.state.face, size: 24)
+                YumiIslandPicture(face: context.state.working != nil ? "working" : context.state.face, size: 26)
             } compactTrailing: {
-                if let at = context.state.at, at > Date() {
+                if let since = context.state.working {
+                    Text(timerInterval: since...Date.distantFuture, countsDown: false, showsHours: false)
+                        .monospacedDigit().font(.system(size: 12, weight: .bold)).foregroundStyle(WidgetInk.timer)
+                        .frame(maxWidth: 46)
+                } else if let at = context.state.at, at > Date() {
                     Text(timerInterval: Date()...at, countsDown: true, showsHours: false)
-                        .monospacedDigit().font(.caption2.weight(.bold)).foregroundStyle(WidgetInk.timer).frame(maxWidth: 44)
+                        .monospacedDigit().font(.system(size: 12, weight: .bold)).foregroundStyle(WidgetInk.timer).frame(maxWidth: 46)
                 } else {
                     Image(systemName: context.state.symbol)
                         .foregroundStyle(context.state.urgent ? WidgetInk.amber : WidgetInk.timer)

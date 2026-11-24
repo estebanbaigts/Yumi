@@ -115,13 +115,14 @@ struct PhoneRequestCard: View {
 /// An empty screen: Yumi, one sentence, one button.
 struct PhoneEmpty: View {
     var state: BotState = .idle
+    var mood: YumiMood? = nil
     let text: String
     var action: String?
     var run: () -> Void = {}
 
     var body: some View {
         VStack(spacing: u(14)) {
-            PhoneMiniYumi(state: state).frame(width: u(80), height: u(80))
+            PhoneMiniYumi(state: state, mood: mood).frame(width: u(80), height: u(80))
             Text(text).font(.system(size: u(14))).foregroundStyle(PhoneTheme.gray).multilineTextAlignment(.center)
             if let action {
                 Button(action: run) {
@@ -163,15 +164,15 @@ struct PhoneModulesView: View {
                         detail: next.map { $0.start > Date() ? "\($0.title) · \(PhoneTodayTile.until($0.start, now: Date()))" : $0.title } ?? loc("Rien de prévu aujourd'hui."),
                         value: next.map { $0.isAllDay ? "" : $0.start.formatted(date: .omitted, time: .shortened) } ?? "",
                         page: .agenda))
-        let unread = phone.mail.mails.filter(\.unread)
+        let unread = phone.mail.mails.filter { $0.unread && ($0.date.map(Calendar.current.isDateInToday) ?? false) }
         rows.append(Row(id: "mail", name: loc("Mail"), symbol: "envelope", color: PhoneTheme.mail,
                         detail: phone.mail.isConnected ? unread.first?.subject ?? loc("Aucun mail.") : loc("Connecte Gmail dans Réglages."),
                         value: phone.mail.isConnected ? "\(unread.count)" : "", page: .mail))
         rows.append(Row(id: "github", name: loc("GitHub"), symbol: "arrow.triangle.branch", color: YumiRGB(hex: 0xC9D1D9).color,
                         detail: mac?.github.first ?? loc("Rien de neuf sur GitHub."),
-                        value: mac.map { "\($0.github.count)" } ?? "", page: mac == nil ? .mac : nil))
+                        value: mac.map { "\($0.github.count)" } ?? "", page: .github))
         rows.append(Row(id: "notes", name: loc("Notes"), symbol: "note.text", color: YumiRGB(hex: 0xFFD36B).color,
-                        detail: phone.today.notes.first ?? loc("Aucune note."), value: "\(phone.today.notes.count)", page: .agenda))
+                        detail: phone.today.notes.first ?? loc("Aucune note."), value: "\(phone.today.notes.count)", page: .notes))
         var weather = loc("Je ne sais pas encore où tu es.")
         var degrees = ""
         if case .ready(let report) = phone.today.weather {
@@ -213,18 +214,111 @@ struct PhoneModulesView: View {
     }
 }
 
-/// The mails, from the Modules screen.
+/// Today's mails, newest first; a touch opens one (Yumi's summary, the text, an answer).
 struct PhoneMailPage: View {
+    let phone: Phone
+    @State private var open: GmailMail?
+    @State private var connecting = false
+
+    private var today: [GmailMail] {
+        phone.mail.mails.filter { $0.date.map(Calendar.current.isDateInToday) ?? false }
+            .sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: u(8)) {
+                if !phone.mail.isConnected {
+                    PhoneEmpty(state: .idle, text: loc("Je peux lire tes derniers mails, te les résumer et t'aider à répondre."),
+                               action: loc("Connecter Gmail")) { connecting = true }
+                } else {
+                    let unread = today.filter(\.unread).count
+                    Text(loc("Aujourd'hui · \(today.count) mails · \(unread) non lus")).phoneEyebrow(PhoneTheme.mail)
+                        .padding(.bottom, u(4))
+                    if case .failed(let why) = phone.mail.state {
+                        Text(why).font(.system(size: u(13))).foregroundStyle(PhoneTheme.gray)
+                    } else if phone.mail.state == .loading, phone.mail.mails.isEmpty {
+                        ProgressView().frame(maxWidth: .infinity).padding(.top, u(30))
+                    } else if today.isEmpty {
+                        PhoneEmpty(state: .idle, mood: .happy, text: loc("Aucun mail aujourd'hui."))
+                    }
+                    ForEach(today) { mail in
+                        Button { open = mail } label: { row(mail) }.buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, u(14))
+            .padding(.bottom, u(110))
+        }
+        .scrollIndicators(.hidden)
+        .refreshable { await phone.mail.refresh() }
+        .sheet(item: $open) { mail in PhoneMailSheet(phone: phone, mail: mail) }
+        .sheet(isPresented: $connecting) { PhoneMailConnect(mail: phone.mail) }
+    }
+
+    private func row(_ mail: GmailMail) -> some View {
+        HStack(alignment: .top, spacing: u(10)) {
+            Circle().fill(mail.unread ? PhoneTheme.mail : .clear).frame(width: u(8), height: u(8)).padding(.top, u(6))
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(mail.from).font(.system(size: u(14), weight: mail.unread ? .bold : .regular)).lineLimit(1)
+                    Spacer()
+                    if let date = mail.date {
+                        Text(date.formatted(date: .omitted, time: .shortened)).font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray)
+                    }
+                }
+                Text(mail.subject).font(.system(size: u(12.5))).foregroundStyle(PhoneTheme.soft).lineLimit(2)
+            }
+        }
+        .phoneTile()
+        .opacity(mail.bulk ? 0.6 : 1)
+    }
+}
+
+/// What Yumi keeps in notes (« note : … » in the conversation).
+struct PhoneNotesPage: View {
     let phone: Phone
 
     var body: some View {
         ScrollView {
-            PhoneMailCard(phone: phone)
-                .padding(.horizontal, u(14))
-                .padding(.bottom, u(110))
+            VStack(alignment: .leading, spacing: u(8)) {
+                Text(loc("Notes · \(phone.today.notes.count)")).phoneEyebrow(YumiRGB(hex: 0xFFD36B).color).padding(.bottom, u(4))
+                if phone.today.notes.isEmpty {
+                    PhoneEmpty(state: .idle, text: loc("Aucune note. Dis à Yumi « note : … » pour en garder une."))
+                }
+                ForEach(phone.today.notes, id: \.self) { note in
+                    Text(note).font(.system(size: u(14))).phoneTile()
+                }
+            }
+            .padding(.horizontal, u(14))
+            .padding(.bottom, u(110))
         }
         .scrollIndicators(.hidden)
-        .refreshable { await phone.mail.refresh() }
+    }
+}
+
+/// What happened on GitHub, as the Mac tells it.
+struct PhoneGitHubPage: View {
+    let phone: Phone
+
+    var body: some View {
+        let lines = phone.linkOn ? phone.mac?.github ?? [] : []
+        ScrollView {
+            VStack(alignment: .leading, spacing: u(8)) {
+                if !phone.linkOn || phone.mac == nil {
+                    PhoneEmpty(state: .idle, text: loc("GitHub passe par ton Mac : relie-le pour voir tes pushs et tes PR."),
+                               action: loc("Relier mon Mac")) { phone.go(.mac) }
+                } else if lines.isEmpty {
+                    PhoneEmpty(state: .idle, text: loc("Rien de neuf sur GitHub."))
+                }
+                ForEach(lines, id: \.self) { line in
+                    Label(line, systemImage: "arrow.triangle.branch").font(.system(size: u(14))).phoneTile()
+                }
+            }
+            .padding(.horizontal, u(14))
+            .padding(.bottom, u(110))
+        }
+        .scrollIndicators(.hidden)
     }
 }
 

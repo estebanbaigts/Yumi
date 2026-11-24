@@ -109,5 +109,8 @@ struct YumiDayActivity: ActivityAttributes {
         var urgent: Bool
         /// The SF Symbol of the kind: calendar, checklist, hand.raised.
         var symbol: String
+        /// An agent of the Mac at work since then: the compact island shows Yumi working and
+        /// counts the time up.
+        var working: Date? = nil
     }
 }

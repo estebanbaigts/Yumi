@@ -75,10 +75,12 @@ enum WeatherAmbiance: String, CaseIterable {
 /// The animated ground of the weather page, drawn in a Canvas.
 struct WeatherEffects: View {
     let ambiance: WeatherAmbiance
+    /// A still moment, for a picture (the iPhone's widgets cannot run the animation).
+    var frozenAt: TimeInterval? = nil
 
     var body: some View {
-        TimelineView(.animation) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
+        TimelineView(.animation(paused: frozenAt != nil)) { context in
+            let t = frozenAt ?? context.date.timeIntervalSinceReferenceDate
             Canvas { g, size in
                 switch ambiance {
                 case .pluie: rain(g, size, t)

@@ -231,14 +231,18 @@ struct PhoneMailSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text(mail.subject).font(.title3.weight(.semibold))
-                    Text(mail.from).font(.subheadline).foregroundStyle(.secondary)
+                    Text(mail.from).phoneEyebrow(PhoneTheme.mail)
+                    Text(mail.subject).font(.system(size: u(21), weight: .semibold))
                     if let summary {
-                        Label(summary, systemImage: "sparkles")
-                            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(PhoneTheme.violet.opacity(0.18), in: RoundedRectangle(cornerRadius: 14))
+                        HStack(alignment: .top, spacing: u(10)) {
+                            PhoneMiniYumi(state: .idle, mood: .curious).frame(width: u(30), height: u(30))
+                            Text(summary).font(.system(size: u(14)))
+                        }
+                        .phoneTile(PhoneTheme.violet)
                     }
-                    if loading { ProgressView() } else { Text(text).font(.callout).textSelection(.enabled) }
+                    if loading { ProgressView() } else {
+                        Text(text).font(.system(size: u(14))).foregroundStyle(PhoneTheme.soft).textSelection(.enabled)
+                    }
                     if sent {
                         Label(loc("Réponse envoyée."), systemImage: "checkmark.circle.fill").foregroundStyle(.green).font(.headline)
                     } else if replying {
@@ -253,7 +257,7 @@ struct PhoneMailSheet: View {
                         } label: {
                             Label(sending ? loc("Envoi…") : loc("Envoyer"), systemImage: "paperplane.fill").frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.borderedProminent).tint(PhoneTheme.mail)
                         .disabled(sending || reply.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     } else if !mail.replyAddress.isEmpty, !mail.bulk {
                         Button { Task { await startReply() } } label: {
@@ -265,6 +269,7 @@ struct PhoneMailSheet: View {
                 .padding(20)
             }
             .phoneScreen()
+            .background(Color.black)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(loc("Fermer")) { dismiss() } } }
             .task {
                 text = await phone.mail.text(of: mail)
