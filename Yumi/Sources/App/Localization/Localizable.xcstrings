@@ -1,6 +1,36 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "C'est bon, on est connectés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All set, we're connected"
+          }
+        }
+      }
+    },
+    "Ton iPhone et %@ se parlent maintenant, par ton iCloud.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iPhone and %@ now talk to each other, through your iCloud."
+          }
+        }
+      }
+    },
+    "C'est bon, on est connectés avec %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All set, we're connected with %@."
+          }
+        }
+      }
+    },
     "Colle un jeton GitHub pour suivre tes pushs, tes PR et tes étoiles, sans Mac.": {
       "localizations": {
         "en": {

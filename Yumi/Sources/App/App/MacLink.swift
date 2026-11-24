@@ -28,7 +28,10 @@ final class MacLink {
     /// One round: publish when something changed, read the answers. True when a request waits.
     private func tick() async -> Bool {
         let link = YumiLinks.current()
-        guard await link.isAvailable() else { return false }
+        guard await link.isAvailable() else {
+            Self.trace("link not available (setting \(LinkSetting.isOn()), built in \(YumiLinks.isBuiltIn))")
+            return false
+        }
         let snapshot = Self.snapshot()
         var compared = snapshot
         compared.sentAt = lastPublished?.sentAt ?? snapshot.sentAt
@@ -39,13 +42,37 @@ final class MacLink {
                 lastPublished = snapshot
                 lastPublishedAt = Date()
             } catch {
+                Self.trace("publish failed: \(error)")
                 return !snapshot.approvals.isEmpty
             }
+            Self.trace("published \(snapshot.sessions.count) sessions, \(snapshot.approvals.count) requests")
         }
         for reply in (try? await link.takeReplies()) ?? [] {
+            if reply.approvalID == LinkHello.id { Self.hello(from: reply.fingerprint); continue }
             HookServer.shared.answerFromLink(reply)
         }
         return !snapshot.approvals.isEmpty
+    }
+
+    /// The iPhone just found this Mac: the island says so, happy, with a sound.
+    private static func hello(from phone: String) {
+        trace("hello from \(phone)")
+        let state = AppState.shared
+        let remark = YumiRemark(id: "link-hello-\(Date().timeIntervalSince1970)",
+                                text: loc("C'est bon, on est connectés avec \(phone.isEmpty ? "ton iPhone" : phone)."), mood: .happy, duration: 7)
+        state.remark = remark
+        SoundEngine.shared.play("love")
+        Task { @MainActor [weak state] in
+            try? await Task.sleep(for: .seconds(remark.duration))
+            if state?.remark?.id == remark.id { state?.remark = nil }
+        }
+    }
+
+    /// `YUMI_TRACE_LINK=1` (Debug): what the link does, in the console.
+    private static func trace(_ text: @autoclosure () -> String) {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["YUMI_TRACE_LINK"] == "1" { FileHandle.standardError.write(Data("[link] \(text())\n".utf8)) }
+        #endif
     }
 
     private static func snapshot() -> LinkSnapshot {

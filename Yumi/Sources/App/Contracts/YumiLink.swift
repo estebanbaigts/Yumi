@@ -106,6 +106,12 @@ enum LinkReplyCheck {
     }
 }
 
+/// The iPhone saying it is there, once, when it first sees the Mac: a reply to no request,
+/// shown on the island and never acted on. Its fingerprint carries the iPhone's name.
+enum LinkHello {
+    static let id = "yumi-hello"
+}
+
 /// The transport. Each app gives its own (CloudKit); `OffLink` when the link is off or iCloud
 /// is not there, so that nothing ever depends on the other device.
 protocol YumiLink: Sendable {

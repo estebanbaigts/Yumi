@@ -50,13 +50,40 @@ final class PhoneLink: NSObject {
             return
         }
         do {
+            let was = mac
             mac = try await link.latestSnapshot()
             lastError = nil
+            if was == nil, let mac, Date().timeIntervalSince(mac.sentAt) < 180 { await connected(mac) }
         } catch {
             lastError = loc("Je n'arrive pas à joindre ton iCloud.")
             return
         }
         await show(mac?.approvals ?? [], from: mac)
+    }
+
+    /// The Mac just showed up: the link view celebrates, a notification says so, and the Mac is
+    /// told the iPhone is there (a « hello » it shows on its island, never acted on).
+    private(set) var connectedAt: Date?
+
+    private func connected(_ mac: LinkSnapshot) async {
+        connectedAt = Date()
+        let key = "phoneLinkGreeted"
+        guard UserDefaults.standard.string(forKey: key) != mac.deviceName else { return }
+        UserDefaults.standard.set(mac.deviceName, forKey: key)
+        await LinkAnswers.send(approvalID: LinkHello.id, fingerprint: UIDevice.current.name, allow: true)
+        let content = UNMutableNotificationContent()
+        content.title = loc("C'est bon, on est connectés")
+        content.body = loc("Ton iPhone et \(mac.deviceName) se parlent maintenant, par ton iCloud.")
+        content.sound = .default
+        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "yumi-linked", content: content, trigger: nil))
+    }
+
+    /// While the app is open, the Mac is looked at often: every 5 s until it shows, every 20 s after.
+    func watch() async {
+        while !Task.isCancelled {
+            if LinkSetting.isOn(), UIApplication.shared.applicationState == .active { await refresh() }
+            try? await Task.sleep(for: .seconds(mac == nil ? 5 : 20))
+        }
     }
 
     /// Filming mode: the made-up request of the Mac on the Lock Screen and in the Dynamic Island.

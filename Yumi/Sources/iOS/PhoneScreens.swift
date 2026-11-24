@@ -652,10 +652,9 @@ struct PhoneLinkView: View {
             VStack(spacing: 0) {
                 HStack(spacing: u(14)) {
                     Image(systemName: "iphone").font(.system(size: u(36), weight: .light))
-                    Capsule().fill(LinearGradient(colors: [PhoneTheme.blue, PhoneTheme.pink], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: u(70), height: 2)
-                        .shadow(color: YumiRGB(hex: 0xC77DFF).color, radius: 5)
-                        .opacity(phone.linkOn ? (pulse ? 1 : 0.35) : 0.25)
+                    PhoneLinkWire(state: !phone.linkOn ? .off : phone.mac == nil ? .searching
+                                  : (PhoneLink.shared.connectedAt.map { Date().timeIntervalSince($0) < 6 } ?? false) ? .connecting : .connected)
+                        .frame(width: u(70), height: u(14))
                     Image(systemName: "laptopcomputer").font(.system(size: u(46), weight: .light))
                 }
                 .foregroundStyle(Color(white: 0.96))
@@ -663,6 +662,12 @@ struct PhoneLinkView: View {
                 PhoneMiniYumi(state: .idle, mood: phone.linkOn && phone.mac != nil ? .happy : .curious)
                     .frame(width: u(80), height: u(80))
                 if phone.linkOn, let mac = phone.mac {
+                    if let at = PhoneLink.shared.connectedAt, Date().timeIntervalSince(at) < 6 {
+                        Text(loc("C'est bon, on est connectés"))
+                            .font(.system(size: u(14), weight: .semibold)).foregroundStyle(PhoneTheme.allow)
+                            .padding(.top, u(10))
+                            .transition(.scale.combined(with: .opacity))
+                    }
                     Text(mac.deviceName).font(.system(size: u(21), weight: .semibold)).padding(.top, u(14)).padding(.bottom, u(6))
                     Text(loc("Relié par ton iCloud. Une réponse donnée ici est toujours vérifiée par le Mac avant d'agir."))
                         .font(.system(size: u(14))).foregroundStyle(PhoneTheme.gray).multilineTextAlignment(.center)
@@ -689,7 +694,50 @@ struct PhoneLinkView: View {
             .padding(.bottom, u(110))
         }
         .scrollIndicators(.hidden)
-        .onAppear { withAnimation(.easeInOut(duration: 1.1).repeatForever()) { pulse = true } }
+        // The celebration lasts a few seconds, then the view goes back to its calm state
+        .task(id: PhoneLink.shared.connectedAt) {
+            guard PhoneLink.shared.connectedAt != nil else { return }
+            try? await Task.sleep(for: .seconds(6.2))
+            withAnimation { pulse.toggle() }
+        }
+    }
+}
+
+/// The line between the iPhone and the Mac: dots that look for the Mac, then a burst both
+/// ways when it answers, then a calm flow of data.
+struct PhoneLinkWire: View {
+    enum State { case off, searching, connecting, connected }
+    let state: State
+
+    var body: some View {
+        TimelineView(.animation(paused: state == .off)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            Canvas { g, size in
+                let y = size.height / 2
+                let line = Path(CGRect(x: 0, y: y - 1, width: size.width, height: 2))
+                g.opacity = state == .off ? 0.25 : state == .searching ? 0.45 : 1
+                g.fill(line, with: .linearGradient(Gradient(colors: [PhoneTheme.blue, PhoneTheme.pink]),
+                                                   startPoint: .zero, endPoint: CGPoint(x: size.width, y: 0)))
+                g.opacity = 1
+                guard state != .off else { return }
+                let (count, speed): (Int, Double) = switch state {
+                case .searching: (2, 0.6)
+                case .connecting: (6, 2.2)
+                default: (3, 0.45)
+                }
+                for i in 0..<count {
+                    var p = (t * speed + Double(i) / Double(count)).truncatingRemainder(dividingBy: 1)
+                    // Both ways once connected: half of the dots come back from the Mac
+                    if state != .searching, i % 2 == 1 { p = 1 - p }
+                    let x = p * size.width
+                    var glow = g
+                    glow.addFilter(.shadow(color: YumiRGB(hex: 0xC77DFF).color, radius: state == .connecting ? 6 : 3))
+                    let r: CGFloat = state == .connecting ? 3 : 2.2
+                    glow.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)), with: .color(.white))
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.4), value: state)
     }
 }
 

@@ -147,6 +147,7 @@ final class Phone {
             return
         }
         permissions?.presenter = approvals
+        Task { await PhoneLink.shared.watch() }
         memory?.start()
         // All at once: the Mac's agents do not wait for the calendar, nor the mails
         Task { await mail.refresh() }
