@@ -112,5 +112,7 @@ struct YumiDayActivity: ActivityAttributes {
         /// An agent of the Mac at work since then: the compact island shows Yumi working and
         /// counts the time up.
         var working: Date? = nil
+        /// « 5° »: shown in the compact island when there is nothing else to say.
+        var degrees: String? = nil
     }
 }

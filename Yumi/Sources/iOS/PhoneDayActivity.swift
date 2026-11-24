@@ -21,6 +21,7 @@ enum PhoneDayActivity {
         if !state.urgent, let session = mac?.sessions.first(where: { PhoneAgentLook.state($0, waiting: false) == .working }) {
             state.working = session.updatedAt
         }
+        if case .ready(let report) = today.weather { state.degrees = PhoneWeather.degrees(report) }
         return state
     }
 
@@ -52,6 +53,11 @@ enum PhoneDayActivity {
     static func update(today: PhoneToday, mac: LinkSnapshot?) async {
         guard isOn, ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let state = state(today: today, mac: mac)
+        // Nothing to say at all: Yumi leaves the island rather than sit there doing nothing
+        if state.symbol == "sun.max", state.working == nil, state.degrees == nil {
+            await endAll()
+            return
+        }
         // Stale when the shown thing starts: iOS dims it until the app runs again
         let content = ActivityContent(state: state, staleDate: state.at.map { $0.addingTimeInterval(60) })
         if let activity = Activity<YumiDayActivity>.activities.first {

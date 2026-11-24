@@ -65,11 +65,11 @@ struct YumiTodayWidget: Widget {
                     entries.append(Entry(date: now.addingTimeInterval(Double(i) * 0.9), data: data.at(now), beat: 0, reaction: face))
                 }
             }
-            // Then a moment every 10 s for the hour: his face changes each minute, the weather's
+            // Then a moment every 20 s for the hour: his face changes each minute, the weather's
             // ground moves each moment (a widget cannot run an animation; iOS cross-fades them)
-            let step = (now.timeIntervalSince1970 / 10).rounded(.down) * 10 + 10
-            entries += (0..<360).map {
-                let date = Date(timeIntervalSince1970: step + Double($0) * 10)
+            let step = (now.timeIntervalSince1970 / 20).rounded(.down) * 20 + 20
+            entries += (0..<180).map {
+                let date = Date(timeIntervalSince1970: step + Double($0) * 20)
                 return Entry(date: date, data: data.at(date), beat: $0)
             }
             if entries.first.map({ $0.date > now }) ?? true { entries.insert(Entry(date: now, data: data.at(now), beat: 0), at: 0) }
@@ -87,7 +87,7 @@ enum WidgetFace {
         if entry.data.macWaiting != nil { return "asking" }
         let hour = Calendar.current.component(.hour, from: entry.date)
         if hour >= 23 || hour < 6 { return "asleep" }
-        return ["happy", "left", "calm", "right", "wink", "happy", "surprised", "calm"][(entry.beat / 6) % 8]
+        return ["happy", "left", "calm", "right", "wink", "happy", "surprised", "calm"][(entry.beat / 3) % 8]
     }
 
     static func agent(_ mood: String) -> String {

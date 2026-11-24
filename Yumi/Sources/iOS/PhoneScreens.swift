@@ -510,10 +510,46 @@ struct PhoneWeatherYumi: View {
 /// The weather card of « Aujourd'hui »: its ambiance behind, Yumi in it.
 struct PhoneWeatherTile: View {
     let phone: Phone
+    var half = false
 
     var body: some View {
         let state = phone.today.weather
         let mood = PhoneWeather.ambiance(state)
+        Group {
+            if half { halfBody(state, mood) } else { wideBody(state, mood) }
+        }
+        .padding(u(12))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            ZStack {
+                PhoneTheme.ink
+                if let mood { WeatherEffects(ambiance: mood).opacity(0.7).allowsHitTesting(false) }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: u(20), style: .continuous))
+    }
+
+    /// Half a row: the town, Yumi and the degrees, the mood.
+    private func halfBody(_ state: WeatherState, _ mood: WeatherAmbiance?) -> some View {
+        VStack(alignment: .leading, spacing: u(4)) {
+            Text(phone.today.placeName.isEmpty ? loc("Météo") : phone.today.placeName)
+                .phoneEyebrow(mood?.color ?? PhoneTheme.listen).lineLimit(1)
+            HStack(spacing: u(6)) {
+                PhoneWeatherYumi(ambiance: mood).frame(width: u(36), height: u(36))
+                if case .ready(let report) = state {
+                    Text(PhoneWeather.degrees(report)).font(.system(size: u(24), weight: .bold)).monospacedDigit()
+                }
+            }
+            if case .ready(let report) = state {
+                Text("\(mood?.name ?? "") · \(WeatherSummary.sky(report.code))")
+                    .font(.system(size: u(11.5))).foregroundStyle(YumiRGB(hex: 0xD6D8E0).color).lineLimit(2)
+            } else {
+                Text(loc("Je ne sais pas encore où tu es.")).font(.system(size: u(11.5))).foregroundStyle(PhoneTheme.gray).lineLimit(2)
+            }
+        }
+    }
+
+    private func wideBody(_ state: WeatherState, _ mood: WeatherAmbiance?) -> some View {
         HStack(spacing: u(12)) {
             PhoneWeatherYumi(ambiance: mood).frame(width: u(40), height: u(40))
             VStack(alignment: .leading, spacing: 2) {
@@ -537,15 +573,6 @@ struct PhoneWeatherTile: View {
             Spacer(minLength: 0)
         }
         .frame(minHeight: u(52))
-        .padding(u(12))
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            ZStack {
-                PhoneTheme.ink
-                if let mood { WeatherEffects(ambiance: mood).opacity(0.7).allowsHitTesting(false) }
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: u(20), style: .continuous))
     }
 }
 

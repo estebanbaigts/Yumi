@@ -116,6 +116,8 @@ struct YumiDayLiveActivity: Widget {
                 } else if let at = context.state.at, at > Date() {
                     Text(timerInterval: Date()...at, countsDown: true, showsHours: false)
                         .monospacedDigit().font(.system(size: 12, weight: .bold)).foregroundStyle(WidgetInk.timer).frame(maxWidth: 46)
+                } else if !context.state.urgent, context.state.symbol == "sun.max", let degrees = context.state.degrees {
+                    Text(degrees).font(.system(size: 13, weight: .semibold)).monospacedDigit().foregroundStyle(WidgetInk.timer)
                 } else {
                     Image(systemName: context.state.symbol)
                         .foregroundStyle(context.state.urgent ? WidgetInk.amber : WidgetInk.timer)

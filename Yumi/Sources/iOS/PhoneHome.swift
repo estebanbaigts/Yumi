@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The cards of « Aujourd'hui », in the order the person chose.
 enum PhoneTodayCard: String, CaseIterable, Identifiable {
-    case agenda, meteo, rappels, agents, demande, mail, github
+    case agenda, meteo, rappels, agents, demande, mail, github, notes
 
     var id: String { rawValue }
     static let standard: [PhoneTodayCard] = [.agenda, .meteo, .rappels, .agents, .demande]
@@ -17,6 +17,7 @@ enum PhoneTodayCard: String, CaseIterable, Identifiable {
         case .demande: loc("Demandes")
         case .mail: loc("Mail")
         case .github: loc("GitHub")
+        case .notes: loc("Notes")
         }
     }
 
@@ -26,7 +27,9 @@ enum PhoneTodayCard: String, CaseIterable, Identifiable {
         case .agenda, .rappels: .agenda
         case .meteo: .weather
         case .agents, .demande: .agents
-        case .mail, .github: .modules
+        case .mail: .mail
+        case .github: .github
+        case .notes: .notes
         }
     }
 
@@ -38,12 +41,52 @@ enum PhoneTodayCard: String, CaseIterable, Identifiable {
     static func store(_ order: [PhoneTodayCard], _ defaults: UserDefaults = .standard) {
         defaults.set(order.map(\.rawValue), forKey: key)
     }
+
+    /// How big a card is on « Aujourd'hui »: half (two side by side), wide, or tall (more of it).
+    enum Size: String, CaseIterable { case half, wide, tall
+        var next: Size { self == .half ? .wide : self == .wide ? .tall : .half }
+        /// How many lines of the list it shows.
+        var lines: Int { self == .tall ? 6 : 3 }
+    }
+
+    private static let sizesKey = "phoneTodaySizes"
+
+    static func storedSizes(_ defaults: UserDefaults = .standard) -> [PhoneTodayCard: Size] {
+        var sizes: [PhoneTodayCard: Size] = [:]
+        for (key, value) in defaults.dictionary(forKey: sizesKey) as? [String: String] ?? [:] {
+            if let card = PhoneTodayCard(rawValue: key), let size = Size(rawValue: value) { sizes[card] = size }
+        }
+        return sizes
+    }
+
+    static func storeSizes(_ sizes: [PhoneTodayCard: Size], _ defaults: UserDefaults = .standard) {
+        defaults.set(Dictionary(uniqueKeysWithValues: sizes.map { ($0.key.rawValue, $0.value.rawValue) }), forKey: sizesKey)
+    }
 }
 
 struct PhoneHomeView: View {
     @Bindable var phone: Phone
     @State private var order = PhoneTodayCard.stored()
     @State private var dragging: PhoneTodayCard?
+    @State private var sizes = PhoneTodayCard.storedSizes()
+
+    private func size(_ card: PhoneTodayCard) -> PhoneTodayCard.Size { sizes[card] ?? .wide }
+
+    /// The cards in rows: two halves side by side, everything else alone.
+    private var rows: [[PhoneTodayCard]] {
+        var rows: [[PhoneTodayCard]] = []
+        var waiting: PhoneTodayCard?
+        for card in order {
+            if size(card) == .half {
+                if let first = waiting { rows.append([first, card]); waiting = nil } else { waiting = card }
+            } else {
+                if let first = waiting { rows.append([first]); waiting = nil }
+                rows.append([card])
+            }
+        }
+        if let first = waiting { rows.append([first]) }
+        return rows
+    }
 
     var body: some View {
         let editing = phone.editingToday
@@ -57,10 +100,16 @@ struct PhoneHomeView: View {
                         .font(.system(size: u(12))).foregroundStyle(PhoneTheme.gray)
                         .padding(.bottom, u(8))
                 }
+                // A bento: a half card sits next to the half card that follows it
                 VStack(spacing: u(10)) {
-                    ForEach(order) { card in
-                        tile(card, editing: editing)
-                            .phoneReveal(phone.revealed, step: order.firstIndex(of: card) ?? 0)
+                    ForEach(rows, id: \.first) { row in
+                        HStack(alignment: .top, spacing: u(10)) {
+                            ForEach(row) { card in
+                                tile(card, editing: editing)
+                                    .frame(maxWidth: .infinity)
+                                    .phoneReveal(phone.revealed, step: order.firstIndex(of: card) ?? 0)
+                            }
+                        }
                     }
                 }
                 let hidden = PhoneTodayCard.allCases.filter { !order.contains($0) }
@@ -91,12 +140,23 @@ struct PhoneHomeView: View {
     }
 
     @ViewBuilder private func tile(_ card: PhoneTodayCard, editing: Bool) -> some View {
-        let content = PhoneTodayTile(phone: phone, card: card)
+        let content = PhoneTodayTile(phone: phone, card: card, size: size(card))
         if editing {
             content
-                .overlay(alignment: .trailing) {
-                    Image(systemName: "ellipsis").font(.system(size: u(16))).foregroundStyle(PhoneTheme.gray)
-                        .padding(.trailing, u(10))
+                .overlay(alignment: .bottomTrailing) {
+                    // Half, wide, tall: the bento
+                    Button {
+                        withAnimation(.spring(duration: 0.35)) { sizes[card] = size(card).next }
+                        PhoneTodayCard.storeSizes(sizes)
+                    } label: {
+                        Image(systemName: size(card) == .half ? "rectangle.split.2x1" : size(card) == .wide ? "rectangle" : "rectangle.portrait")
+                            .font(.system(size: u(12), weight: .semibold)).foregroundStyle(.white)
+                            .frame(width: u(26), height: u(26))
+                            .background(Color(white: 0.23), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .offset(x: u(6), y: u(6))
+                    .accessibilityLabel(Text(loc("Taille de la carte")))
                 }
                 .padding(3)
                 .overlay(RoundedRectangle(cornerRadius: u(22), style: .continuous)
@@ -140,16 +200,22 @@ struct PhoneHomeView: View {
 struct PhoneTodayTile: View {
     let phone: Phone
     let card: PhoneTodayCard
+    var size: PhoneTodayCard.Size = .wide
 
     var body: some View {
+        tileBody
+    }
+
+    @ViewBuilder private var tileBody: some View {
         switch card {
-        case .agenda: agenda
-        case .meteo: PhoneWeatherTile(phone: phone)
+        case .agenda: if size == .half { agendaHalf } else { agenda }
+        case .meteo: PhoneWeatherTile(phone: phone, half: size == .half)
         case .rappels: reminders
         case .agents: agents
         case .demande: request
         case .mail: mail
         case .github: github
+        case .notes: notes
         }
     }
 
@@ -177,7 +243,7 @@ struct PhoneTodayTile: View {
                 } else if coming.isEmpty {
                     Text(loc("Rien de prévu aujourd'hui.")).foregroundStyle(PhoneTheme.gray)
                 }
-                ForEach(Array(coming.prefix(3).enumerated()), id: \.element.id) { index, event in
+                ForEach(Array(coming.prefix(size.lines).enumerated()), id: \.element.id) { index, event in
                     if index == 0 {
                         Text(event.title).fontWeight(.bold) + Text(event.location.isEmpty ? "" : " · " + event.location)
                     } else {
@@ -195,6 +261,27 @@ struct PhoneTodayTile: View {
         .phoneTile()
     }
 
+    /// Half a row: when, in how long, what.
+    private var agendaHalf: some View {
+        let now = Date()
+        let first = phone.today.events.first { $0.end > now }
+        return VStack(alignment: .leading, spacing: u(2)) {
+            Text(loc("Agenda")).phoneEyebrow(PhoneTheme.coral).lineLimit(1)
+            if let first {
+                Text(first.isAllDay ? loc("Journée") : first.start.formatted(date: .omitted, time: .shortened))
+                    .font(.system(size: u(24), weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                    .padding(.top, u(4))
+                if first.start > now {
+                    Text(Self.until(first.start, now: now)).font(.system(size: u(11))).foregroundStyle(PhoneTheme.coral).lineLimit(1)
+                }
+                Text(first.title).font(.system(size: u(12.5), weight: .semibold)).lineLimit(2).padding(.top, u(4))
+            } else {
+                Text(loc("Libre")).font(.system(size: u(22), weight: .bold)).padding(.top, u(4))
+            }
+        }
+        .phoneTile()
+    }
+
     static func until(_ date: Date, now: Date) -> String {
         let minutes = Int(date.timeIntervalSince(now) / 60)
         if minutes < 60 { return loc("dans \(max(minutes, 1)) min") }
@@ -204,14 +291,14 @@ struct PhoneTodayTile: View {
     private var reminders: some View {
         VStack(alignment: .leading, spacing: u(0)) {
             HStack {
-                Text(loc("Rappels · \(phone.today.reminders.count)")).phoneEyebrow(PhoneTheme.mint)
+                Text(loc("Rappels · \(phone.today.reminders.count)")).phoneEyebrow(PhoneTheme.mint).lineLimit(1)
                 Spacer()
                 Text(loc("+ Ajouter")).font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray)
             }
             if phone.today.reminders.isEmpty {
                 Text(loc("Aucun rappel en cours.")).font(.system(size: u(14))).foregroundStyle(PhoneTheme.gray).padding(.top, u(9))
             }
-            ForEach(phone.today.reminders.prefix(3), id: \.id) { reminder in
+            ForEach(phone.today.reminders.prefix(size.lines), id: \.id) { reminder in
                 HStack(spacing: u(10)) {
                     Button {
                         withAnimation(.spring(duration: 0.35)) { phone.today.complete(reminder) }
@@ -250,7 +337,7 @@ struct PhoneTodayTile: View {
                 Text(phone.linkOn ? loc("Aucun agent en cours.") : loc("Relie ton Mac pour voir tes agents."))
                     .font(.system(size: u(12.5))).foregroundStyle(PhoneTheme.gray).padding(.top, u(7))
             }
-            ForEach(sessions.prefix(3)) { session in
+            ForEach(sessions.prefix(size.lines)) { session in
                 HStack(spacing: u(8)) {
                     PhoneMiniYumi(state: PhoneAgentLook.state(session, waiting: waits(session)))
                         .frame(width: u(22), height: u(22))
@@ -301,9 +388,22 @@ struct PhoneTodayTile: View {
             if !phone.mail.isConnected {
                 Text(loc("Connecte Gmail dans Réglages.")).font(.system(size: u(13))).foregroundStyle(PhoneTheme.gray).padding(.top, u(7))
             }
-            ForEach(phone.mail.shown.prefix(2)) { item in
+            ForEach(phone.mail.shown.prefix(size.lines - 1)) { item in
                 (Text(item.from).bold() + Text(" " + item.subject).foregroundStyle(PhoneTheme.gray))
                     .font(.system(size: u(13))).lineLimit(1).padding(.top, u(7))
+            }
+        }
+        .phoneTile()
+    }
+
+    private var notes: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(loc("Notes · \(phone.today.notes.count)")).phoneEyebrow(YumiRGB(hex: 0xFFD36B).color)
+            if phone.today.notes.isEmpty {
+                Text(loc("Aucune note.")).font(.system(size: u(13))).foregroundStyle(PhoneTheme.gray).padding(.top, u(6))
+            }
+            ForEach(phone.today.notes.prefix(size.lines), id: \.self) { note in
+                Text(note).font(.system(size: u(13))).lineLimit(1).padding(.top, u(6))
             }
         }
         .phoneTile()
@@ -312,7 +412,7 @@ struct PhoneTodayTile: View {
     private var github: some View {
         VStack(alignment: .leading, spacing: u(0)) {
             Text(loc("GitHub")).phoneEyebrow(YumiRGB(hex: 0xC9D1D9).color)
-            Text((phone.linkOn ? phone.mac?.github ?? [] : []).prefix(2).joined(separator: " · ").nonEmpty
+            Text((phone.github.isConnected ? phone.github.lines : (phone.linkOn ? phone.mac?.github ?? [] : [])).prefix(2).joined(separator: " · ").nonEmpty
                  ?? loc("Rien de neuf sur GitHub."))
                 .font(.system(size: u(13))).padding(.top, u(6))
         }
