@@ -301,12 +301,13 @@ final class ShowMeController {
         let filter = SCContentFilter(display: display, excludingApplications: mine, exceptingWindows: [])
         let configuration = SCStreamConfiguration()
         // 1280 points wide is enough to find a button, and travels faster than the full screen
-        let scale = min(1, 1280 / CGFloat(display.width))
+        // 1024 wide: about a third fewer picture tokens than 1280, and still readable
+        let scale = min(1, 1024 / CGFloat(display.width))
         configuration.width = Int(CGFloat(display.width) * scale)
         configuration.height = Int(CGFloat(display.height) * scale)
         configuration.showsCursor = false
         guard let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration),
-              let jpeg = NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.6])
+              let jpeg = NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.55])
         else { return nil }
         return (LLMImage(data: jpeg), screen.frame)
     }

@@ -94,15 +94,19 @@ struct ClaudeCodeLLMProvider: LLMProvider {
 
     /// The fastest model when an answer is awaited right now and none was chosen.
     static let fastModel = "haiku"
+    /// A question asked aloud about the screen (a picture, awaited now) always takes the light
+    /// model: it is asked often, and Haiku reads a screen well. The model chosen in the settings
+    /// stays for the rest.
     static func model(_ chosen: String?, for request: LLMRequest) -> String? {
-        chosen ?? (request.fast ? fastModel : nil)
+        if request.fast, request.hasImage { return fastModel }
+        return chosen ?? (request.fast ? fastModel : nil)
     }
 
     // MARK: Picture questions, in a session kept open (ClaudeCodeLive)
 
     /// Opens the session ahead of a picture question that will come in a moment.
     static func prepare(binary: String, system: String, model: String?, folder: String) {
-        ClaudeCodeLive.shared.warm(binary: binary, arguments: liveArguments(system: system, model: model ?? fastModel),
+        ClaudeCodeLive.shared.warm(binary: binary, arguments: liveArguments(system: system, model: fastModel),
                                    folder: folder)
     }
 

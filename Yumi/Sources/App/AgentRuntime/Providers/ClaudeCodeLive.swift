@@ -3,10 +3,13 @@ import Foundation
 /// One `claude` kept open for picture questions (`--input-format stream-json`): started once,
 /// then each question is one more line on its standard input and its answer the next `result`
 /// line. Starting `claude` costs seconds; a question in an open session only costs the model.
-/// It starts again after a few questions or a quiet while, so the conversation stays light.
+/// It starts again after each question or a quiet while, so a question never carries the last.
 final class ClaudeCodeLive: @unchecked Sendable {
     static let shared = ClaudeCodeLive()
-    static let maxTurns = 6
+    /// One question per session: a second one would send the first again, with its picture, and
+    /// every question would cost more than the last. The next session opens as soon as the key
+    /// is pressed (`warm`), so starting it again costs no waiting.
+    static let maxTurns = 1
     static let idleLimit: TimeInterval = 600
 
     private let lock = NSLock()
