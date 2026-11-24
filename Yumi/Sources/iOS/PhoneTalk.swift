@@ -102,10 +102,15 @@ struct PhoneChatView: View {
                                 Text("« \(message.text) »").font(.system(size: u(13))).foregroundStyle(PhoneTheme.gray)
                                     .padding(.top, u(12))
                             } else {
-                                Text(message.text)
-                                    .font(.system(size: u(21), weight: .medium))
-                                    .lineSpacing(u(4))
-                                    .padding(.horizontal, u(4))
+                                VStack(spacing: u(4)) {
+                                    Text(message.text)
+                                        .font(.system(size: u(21), weight: .medium))
+                                        .lineSpacing(u(4))
+                                        .padding(.horizontal, u(4))
+                                    if let by = message.by {
+                                        Text(by).font(.system(size: u(10.5), weight: .semibold)).foregroundStyle(PhoneTheme.dim)
+                                    }
+                                }
                             }
                         }
                         .multilineTextAlignment(.center)

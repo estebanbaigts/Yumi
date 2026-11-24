@@ -142,3 +142,17 @@ struct PhoneMacThinker: LLMProvider {
         throw LLMProviderError.failed("timeout")
     }
 }
+
+/// The model the agent plans with on the iPhone: the same as the conversation's (the Mac's
+/// Claude Code, Gemini…) when there is one, Apple's otherwise. Every step it plans still waits
+/// for the person's tap (`PhoneApprovals`).
+struct PhoneBrainProvider: LLMProvider {
+    var name: String { "phone-brain" }
+
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        if let remote = await MainActor.run(body: { PhoneBrain.remote }) {
+            do { return try await remote.complete(request) } catch { /* Apple's below */ }
+        }
+        return try await AppleLLMProvider().complete(request)
+    }
+}

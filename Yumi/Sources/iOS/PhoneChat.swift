@@ -11,6 +11,8 @@ struct PhoneMessage: Identifiable, Codable, Equatable, Sendable {
     var date = Date()
     /// The name of a file the person gave with this message.
     var attachment: String? = nil
+    /// Who thought the answer: « Mon Mac · Claude Code », « Gemini », « Modèle d'Apple ».
+    var by: String? = nil
 }
 
 /// A file the person chose to give Yumi: he never reaches the files himself. A picture goes to
@@ -90,7 +92,7 @@ final class PhoneChat {
             return
         }
         // A question about the day: answered from the calendar itself, never guessed
-        if case .agent = route {} else if let day, Self.asksAboutTheDay(text) {
+        if case .agent = route {} else if let day, PhoneBrain.remote == nil, Self.asksAboutTheDay(text) {
             append(.init(role: .yumi, text: day(Self.meansTomorrow(text))))
             return
         }
@@ -105,7 +107,8 @@ final class PhoneChat {
             append(.init(role: .yumi, text: Self.readable(reason)))
         case .agendaKeptFromChat, .chat:
             succeeded = PhoneBrain.remote != nil || AppleModelAvailability.current.isAvailable
-            append(.init(role: .yumi, text: await converse(text)))
+            let by = PhoneBrain.answering.label
+            append(.init(role: .yumi, text: await converse(text), by: by))
         }
     }
 
@@ -171,7 +174,7 @@ final class PhoneChat {
     /// « ajoute », « mets », « crée », « note », « rappelle-moi », « programme »…
     static func asksToAdd(_ text: String) -> Bool {
         let folded = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "fr_FR"))
-        return ["ajoute", "rajoute", "mets ", "met un", "cree", "planifie", "programme ", "note ", "rappelle-moi", "rappelle moi",
+        return ["ajoute", "rajoute", "remplis", "remplir", "fill", "mets ", "met un", "cree", "planifie", "programme ", "note ", "rappelle-moi", "rappelle moi",
                 "add ", "schedule", "remind me", "put "].contains(where: folded.contains)
     }
 

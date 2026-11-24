@@ -296,7 +296,7 @@ final class Phone {
     /// only what an iPhone can do (reminders, calendar). Every step goes through `permissions`.
     private static func makeAgent(permissions: LocalPermissionManager) -> RuntimeAgent {
         let planner = PhonePlanner(simple: SimplePlanner(taskDestination: { (.reminders, nil) }),
-                                   llm: LLMAgentPlanner(provider: AppleLLMProvider()))
+                                   llm: LLMAgentPlanner(provider: PhoneBrainProvider()))
         var tools = ToolRegistry.standard
         try? tools.register(AddReminderTool(store: EventKitReminderStore()))
         try? tools.register(AddEventTool(store: EventKitEventStore()))
