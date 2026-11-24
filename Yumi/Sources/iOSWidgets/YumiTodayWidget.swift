@@ -1,17 +1,33 @@
 import SwiftUI
 import WidgetKit
 
-/// Yumi on the home screen: his face of the moment and what he has to say (the next event,
-/// the reminders, the Mac). The app writes it (`PhoneWidgets`); iOS asks again every 15 minutes
-/// and whenever the app has news.
+/// The colours of the widgets: almost black, his greys and the colours of the app's cards.
+enum WidgetInk {
+    static func hex(_ value: UInt32, _ alpha: Double = 1) -> Color {
+        Color(.sRGB, red: Double((value >> 16) & 0xFF) / 255, green: Double((value >> 8) & 0xFF) / 255,
+              blue: Double(value & 0xFF) / 255, opacity: alpha)
+    }
+    static let ground = hex(0x0A0A0E)
+    static let gray = hex(0x8E8E93)
+    static let coral = hex(0xFF8A7A)
+    static let blue = hex(0x5B8CFF)
+    static let amber = hex(0xFFB547)
+    static let timer = hex(0x7FD0FF)
+    static let code = hex(0xFFE3B0)
+    static let refuse = hex(0xFF453A)
+    static let allow = hex(0x30D158)
+    static let bars: [Color] = [hex(0xFF8A7A), hex(0xF2B36B), hex(0x3DDC97), hex(0x8B9CFF)]
+}
+
+/// Yumi on the home screen: the next thing of the day (small), the day with the weather (medium),
+/// and on the Lock Screen. The app writes the data (`PhoneWidgets`); iOS asks again every minute
+/// of the hour so that his face changes, and whenever the app has news.
 struct YumiTodayWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "YumiToday", provider: Provider()) { entry in
             YumiTodayView(entry: entry)
-                .containerBackground(for: .widget) { WidgetNight() }
+                .containerBackground(WidgetInk.ground, for: .widget)
         }
-        // His night is drawn by the view itself (see YumiTodayView), edge to edge
-        .contentMarginsDisabled()
         .configurationDisplayName("Yumi")
         .description("Ce que Yumi a à te dire aujourd'hui.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular])
@@ -37,8 +53,11 @@ struct YumiTodayWidget: Widget {
         /// he looks around and changes expression on the home screen (a widget cannot run a
         /// continuous animation).
         func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
+            completion(Self.timeline(now: Date()))
+        }
+
+        static func timeline(now: Date) -> Timeline<Entry> {
             let data = YumiWidgetData.load() ?? .placeholder
-            let now = Date()
             var entries: [Entry] = []
             // Just touched: a short reaction, one face every 0.9 s
             if let poke = YumiWidgetPokes.recent(now: now) {
@@ -55,45 +74,14 @@ struct YumiTodayWidget: Widget {
             if entries.first.map({ $0.date > now }) ?? true { entries.insert(Entry(date: now, data: data.at(now), beat: 0), at: 0) }
             // Asked again within the hour at the latest, and at midnight: a new day, a new agenda
             let midnight = Calendar.current.startOfDay(for: now).addingTimeInterval(86_400)
-            completion(Timeline(entries: entries.filter { $0.date < midnight }, policy: .after(min(midnight, now.addingTimeInterval(3600)))))
+            return Timeline(entries: entries.filter { $0.date < midnight }, policy: .after(min(midnight, now.addingTimeInterval(3600))))
         }
     }
 }
 
-/// His night, light enough for a black Yumi to stand out: violet at the top, a halo behind him.
-/// Drawn as a picture so that iOS keeps its colours on a tinted or clear home screen, where it
-/// takes the widget's own background away and turns the rest to one colour.
-private struct WidgetNight: View {
-    var body: some View {
-        Image(uiImage: Self.picture)
-            .resizable()
-            .widgetAccentedRenderingMode(.fullColor)
-            .scaledToFill()
-    }
-
-    private static let picture: UIImage = {
-        let size = CGSize(width: 360, height: 360)
-        return UIGraphicsImageRenderer(size: size).image { context in
-            let cg = context.cgContext
-            let space = CGColorSpaceCreateDeviceRGB()
-            let linear = CGGradient(colorsSpace: space, colors: [
-                UIColor(red: 0.24, green: 0.2, blue: 0.5, alpha: 1).cgColor,
-                UIColor(red: 0.1, green: 0.1, blue: 0.27, alpha: 1).cgColor] as CFArray, locations: [0, 1])!
-            cg.drawLinearGradient(linear, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
-            let halo = CGGradient(colorsSpace: space, colors: [
-                UIColor(red: 0.62, green: 0.5, blue: 1, alpha: 0.55).cgColor,
-                UIColor(red: 0.62, green: 0.5, blue: 1, alpha: 0).cgColor] as CFArray, locations: [0, 1])!
-            let center = CGPoint(x: size.width * 0.27, y: size.height * 0.36)
-            cg.drawRadialGradient(halo, startCenter: center, startRadius: 2, endCenter: center, endRadius: 150, options: [])
-        }
-    }()
-}
-
-private struct YumiTodayView: View {
-    let entry: YumiTodayWidget.Entry
-    @Environment(\.widgetFamily) private var family
-
-    private var face: String {
+/// His face of the moment, from the hour, a request of the Mac, or a touch.
+enum WidgetFace {
+    static func of(_ entry: YumiTodayWidget.Entry) -> String {
         if let reaction = entry.reaction { return reaction }
         if entry.data.macWaiting != nil { return "asking" }
         let hour = Calendar.current.component(.hour, from: entry.date)
@@ -101,7 +89,28 @@ private struct YumiTodayView: View {
         return ["happy", "left", "calm", "right", "wink", "happy", "surprised", "calm"][entry.beat % 8]
     }
 
-    /// His face of the moment, swapped with a soft transition from one moment to the next.
+    static func agent(_ mood: String) -> String {
+        switch mood {
+        case "wait": "asking"
+        case "sleep": "asleep"
+        default: "working"
+        }
+    }
+}
+
+/// « dans 18 min » until the hour, then « dans 2 h 15 ».
+func widgetUntil(_ date: Date, now: Date) -> String {
+    let minutes = max(1, Int(date.timeIntervalSince(now) / 60))
+    if minutes < 60 { return String(localized: "dans \(minutes) min") }
+    return String(localized: "dans \(minutes / 60) h \(String(format: "%02d", minutes % 60))")
+}
+
+private struct YumiTodayView: View {
+    let entry: YumiTodayWidget.Entry
+    @Environment(\.widgetFamily) private var family
+
+    private var face: String { WidgetFace.of(entry) }
+
     /// Touch him and he reacts (YumiWidgetPoke), without opening the app.
     private func yumi(_ size: CGFloat) -> some View {
         Button(intent: YumiWidgetPoke()) {
@@ -113,68 +122,133 @@ private struct YumiTodayView: View {
         .buttonStyle(.plain)
     }
 
-    /// « dans 2 h 15 », kept up to date by iOS itself.
-    @ViewBuilder private var countdown: some View {
-        if let at = entry.data.nextEventAt, at > entry.date, at > Date(), let event = entry.data.nextEvent {
-            HStack(spacing: 4) {
-                Image(systemName: "calendar")
-                Text(event).lineLimit(1)
-                Text(at, style: .relative).monospacedDigit()
-            }
-            .font(.caption).foregroundStyle(.white.opacity(0.75))
-        }
-    }
+    private var line: String { entry.data.macWaiting.map { String(localized: "Ton Mac attend ton accord : \($0)") } ?? entry.data.remark }
 
-    private var line: String { entry.data.macWaiting.map { "Ton Mac attend ton accord : \($0)" } ?? entry.data.remark }
+    private var upcoming: [YumiWidgetData.Event] {
+        (entry.data.upcoming ?? []).filter { $0.end > entry.date && Calendar.current.isDate($0.start, inSameDayAs: entry.date) }
+    }
 
     var body: some View {
-        if family == .systemSmall || family == .systemMedium {
-            ZStack {
-                WidgetNight()
-                content.padding(16)
-            }
-        } else {
-            content
-        }
-    }
-
-    @ViewBuilder private var content: some View {
         switch family {
         case .accessoryCircular:
             ZStack {
                 AccessoryWidgetBackground()
-                YumiPicture(name: face, size: 46)
+                YumiPicture(name: face, size: 40)
             }
         case .accessoryRectangular:
-            HStack(spacing: 6) {
-                YumiPicture(name: face, size: 34)
-                VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 1) {
+                if let title = entry.data.nextEvent, let at = entry.data.nextEventAt {
+                    Text("\(at.formatted(date: .omitted, time: .shortened)) \(title)").font(.headline).lineLimit(1)
+                    Text(lockDetail(at)).font(.caption).lineLimit(1).opacity(0.8)
+                } else {
                     Text("Yumi").font(.headline)
-                    Text(line).font(.caption).lineLimit(2)
+                    Text(line).font(.caption).lineLimit(2).opacity(0.8)
                 }
             }
-        case .systemMedium:
-            HStack(spacing: 12) {
-                yumi(118)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(line).font(.subheadline.weight(.semibold)).foregroundStyle(.white).lineLimit(3)
-                    countdown
-                    if let first = entry.data.reminders.first {
-                        Label(first, systemImage: "circle").font(.caption).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
-                    }
-                    if let mac = entry.data.mac {
-                        Label(mac, systemImage: "laptopcomputer").font(.caption).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
-                    }
-                }
-                Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        case .systemMedium: medium
+        default: small
+        }
+    }
+
+    private func lockDetail(_ at: Date) -> String {
+        let working = entry.data.agents?.filter { $0.mood != "sleep" }.count ?? 0
+        let until = widgetUntil(at, now: entry.date)
+        return working > 0 ? String(localized: "\(until) · \(working) agents") : until
+    }
+
+    /// Yumi at the top, the next event at the bottom: when, what.
+    private var small: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                yumi(44)
+                Spacer()
+                Text("Yumi").font(.system(size: 13)).foregroundStyle(WidgetInk.gray)
             }
-        default:
-            VStack(alignment: .leading, spacing: 4) {
-                yumi(78)
-                Spacer(minLength: 0)
-                countdown
-                Text(line).font(.caption.weight(.semibold)).foregroundStyle(.white).lineLimit(3)
+            Spacer(minLength: 0)
+            if let title = entry.data.nextEvent, let at = entry.data.nextEventAt {
+                Text(widgetUntil(at, now: entry.date)).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(WidgetInk.coral)
+                Text(at.formatted(date: .omitted, time: .shortened)).font(.system(size: 26, weight: .bold)).monospacedDigit()
+                    .foregroundStyle(.white)
+                Text(title).font(.system(size: 14)).foregroundStyle(.white).lineLimit(1)
+            } else {
+                Text(line).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white).lineLimit(3)
             }
         }
+    }
+
+    /// Yumi on the left; the date and the weather, then the next three things of the day.
+    private var medium: some View {
+        HStack(spacing: 16) {
+            yumi(92)
+            VStack(alignment: .leading, spacing: 6) {
+                Text([entry.date.formatted(.dateTime.weekday(.wide).day()).capitalized, entry.data.weather]
+                    .compactMap { $0 }.joined(separator: " · "))
+                    .font(.system(size: 13.5)).foregroundStyle(WidgetInk.gray).lineLimit(1)
+                if upcoming.isEmpty {
+                    Text(line).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white).lineLimit(3)
+                }
+                ForEach(Array(upcoming.prefix(3).enumerated()), id: \.offset) { index, event in
+                    HStack(spacing: 10) {
+                        RoundedRectangle(cornerRadius: 2).fill(WidgetInk.bars[index % WidgetInk.bars.count]).frame(width: 4, height: 18)
+                        Text(event.start.formatted(date: .omitted, time: .shortened)).font(.system(size: 16, weight: .bold)).monospacedDigit()
+                        Text(event.title).font(.system(size: 16)).lineLimit(1)
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+/// The agents of the Mac at a glance: who works, who waits.
+struct YumiAgentsWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "YumiAgents", provider: YumiTodayWidget.Provider()) { entry in
+            YumiAgentsView(entry: entry)
+                .containerBackground(WidgetInk.ground, for: .widget)
+        }
+        .configurationDisplayName("Agents")
+        .description("Tes agents sur le Mac, et ce qui attend ta réponse.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+private struct YumiAgentsView: View {
+    let entry: YumiTodayWidget.Entry
+
+    var body: some View {
+        let agents = entry.data.agents ?? []
+        let waiting = agents.filter { $0.mood == "wait" }.count
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Agents").font(.system(size: 13.5, weight: .semibold)).foregroundStyle(WidgetInk.blue)
+            if entry.data.agents == nil {
+                Spacer(minLength: 0)
+                Text("Relie ton Mac pour voir tes agents.").font(.system(size: 14)).foregroundStyle(WidgetInk.gray)
+            } else if agents.isEmpty {
+                Spacer(minLength: 0)
+                Text("Aucun agent en cours.").font(.system(size: 14)).foregroundStyle(WidgetInk.gray)
+            }
+            ForEach(Array(agents.prefix(3).enumerated()), id: \.offset) { _, agent in
+                HStack(spacing: 8) {
+                    YumiPicture(name: WidgetFace.agent(agent.mood), size: 28)
+                    Text(agent.project).font(.system(size: 15)).foregroundStyle(.white).lineLimit(1)
+                    Spacer(minLength: 4)
+                    if agent.mood == "wait" {
+                        Text("attend").font(.system(size: 13.5)).foregroundStyle(WidgetInk.amber)
+                    } else if agent.mood == "work" {
+                        Text(agent.since, style: .timer).font(.system(size: 13.5)).monospacedDigit()
+                            .foregroundStyle(WidgetInk.gray).multilineTextAlignment(.trailing).frame(maxWidth: 48)
+                    }
+                }
+                .padding(.top, 9)
+            }
+            Spacer(minLength: 0)
+            if waiting > 0 {
+                Text("\(waiting) demande en attente").font(.system(size: 13)).foregroundStyle(WidgetInk.gray)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

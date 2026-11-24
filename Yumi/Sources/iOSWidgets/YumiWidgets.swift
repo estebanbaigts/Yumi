@@ -9,41 +9,34 @@ struct YumiWidgets: WidgetBundle {
         YumiApprovalLiveActivity()
         YumiDayLiveActivity()
         YumiTodayWidget()
+        YumiAgentsWidget()
     }
 }
 
-/// A request of an agent on the Mac: on the Lock Screen and in the Dynamic Island.
+/// A request of an agent on the Mac: on the Lock Screen and in the Dynamic Island. Opened, it is
+/// Yumi surprised, who asks and what, then Refuser in red and Autoriser in green.
 struct YumiApprovalLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: YumiApprovalActivity.self) { context in
             ApprovalBanner(state: context.state, device: context.attributes.deviceName)
-                .padding(16)
+                .padding(.horizontal, 16).padding(.vertical, 14)
                 .activityBackgroundTint(.black)
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    YumiIslandPicture(face: context.state.answered == nil ? "asking" : "happy", size: 44)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    Text(timerInterval: Date()...max(Date(), context.state.expiresAt), countsDown: true)
-                        .monospacedDigit().font(.caption).foregroundStyle(.secondary)
-                        .frame(width: 44)
-                }
-                DynamicIslandExpandedRegion(.center) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(context.state.source).font(.caption).foregroundStyle(.secondary)
-                        Text(context.state.summary).font(.headline).lineLimit(2)
-                    }
-                }
                 DynamicIslandExpandedRegion(.bottom) {
-                    ApprovalButtons(state: context.state)
+                    ApprovalBanner(state: context.state, device: context.attributes.deviceName)
                 }
             } compactLeading: {
                 YumiIslandPicture(face: context.state.answered == nil ? "asking" : "happy", size: 24)
             } compactTrailing: {
-                Image(systemName: context.state.answered == nil ? "hand.raised.fill" : "checkmark")
-                    .foregroundStyle(.orange)
+                if context.state.answered == nil {
+                    Text(timerInterval: Date()...max(Date(), context.state.expiresAt), countsDown: true, showsHours: false)
+                        .monospacedDigit().font(.caption2.weight(.semibold)).foregroundStyle(WidgetInk.amber).frame(maxWidth: 40)
+                } else {
+                    Image(systemName: context.state.answered == "allow" ? "checkmark" : "xmark")
+                        .foregroundStyle(context.state.answered == "allow" ? WidgetInk.allow : WidgetInk.refuse)
+                }
             } minimal: {
                 YumiIslandPicture(face: "asking", size: 22)
             }
@@ -56,14 +49,15 @@ private struct ApprovalBanner: View {
     let device: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 YumiIslandPicture(face: state.answered == nil ? "asking" : "happy", size: 40)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(state.source) · \(device)").font(.caption).foregroundStyle(.white.opacity(0.7))
-                    Text(state.summary).font(.headline).foregroundStyle(.white).lineLimit(2)
+                    Text(state.source.isEmpty ? device : state.source).font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(WidgetInk.amber).lineLimit(1)
+                    Text(state.summary).font(.system(size: 13, design: .monospaced)).foregroundStyle(WidgetInk.code).lineLimit(2)
                 }
-                Spacer()
+                Spacer(minLength: 0)
             }
             ApprovalButtons(state: state)
         }
@@ -80,17 +74,19 @@ private struct ApprovalButtons: View {
                   systemImage: "paperplane.fill")
                 .font(.subheadline).foregroundStyle(.white.opacity(0.8))
         } else {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Button(intent: LinkAnswerIntent(approvalID: state.approvalID, fingerprint: state.fingerprint, allow: false)) {
-                    Text("Refuser").frame(maxWidth: .infinity)
+                    Text("Refuser").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).frame(height: 40)
+                        .background(WidgetInk.refuse, in: Capsule())
                 }
-                .tint(.gray)
                 Button(intent: LinkAnswerIntent(approvalID: state.approvalID, fingerprint: state.fingerprint, allow: true)) {
-                    Text("Autoriser").frame(maxWidth: .infinity)
+                    Text("Autoriser").font(.system(size: 15, weight: .semibold)).foregroundStyle(.black)
+                        .frame(maxWidth: .infinity).frame(height: 40)
+                        .background(WidgetInk.allow, in: Capsule())
                 }
-                .tint(Color(red: 0.36, green: 0.55, blue: 1))
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
         }
     }
 }
@@ -102,37 +98,22 @@ struct YumiDayLiveActivity: Widget {
         ActivityConfiguration(for: YumiDayActivity.self) { context in
             DayBanner(state: context.state)
                 .padding(16)
-                .activityBackgroundTint(Color(red: 0.08, green: 0.06, blue: 0.16))
+                .activityBackgroundTint(.black)
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    YumiIslandPicture(face: context.state.face, size: 48)
-                }
-                DynamicIslandExpandedRegion(.center) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(context.state.title).font(.headline).lineLimit(1)
-                        Label(context.state.detail, systemImage: context.state.symbol)
-                            .font(.caption).foregroundStyle(context.state.urgent ? Color.orange : .secondary)
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    if let at = context.state.at, at > Date() {
-                        Text(at, style: .relative).monospacedDigit().font(.caption)
-                            .multilineTextAlignment(.trailing).frame(width: 64)
-                    }
+                DynamicIslandExpandedRegion(.bottom) {
+                    DayBanner(state: context.state)
                 }
             } compactLeading: {
                 YumiIslandPicture(face: context.state.face, size: 24)
             } compactTrailing: {
                 if let at = context.state.at, at > Date() {
                     Text(timerInterval: Date()...at, countsDown: true, showsHours: false)
-                        .monospacedDigit().font(.caption2).frame(maxWidth: 44)
+                        .monospacedDigit().font(.caption2.weight(.bold)).foregroundStyle(WidgetInk.timer).frame(maxWidth: 44)
                 } else {
                     Image(systemName: context.state.symbol)
-                        .foregroundStyle(context.state.urgent ? Color.orange : Color(red: 0.62, green: 0.55, blue: 1))
+                        .foregroundStyle(context.state.urgent ? WidgetInk.amber : WidgetInk.timer)
                 }
             } minimal: {
                 YumiIslandPicture(face: context.state.face, size: 22)
@@ -141,22 +122,23 @@ struct YumiDayLiveActivity: Widget {
     }
 }
 
+/// « Ta journée »: Yumi, then the next thing and when.
 private struct DayBanner: View {
     let state: YumiDayActivity.ContentState
 
     var body: some View {
-        HStack(spacing: 12) {
-            YumiIslandPicture(face: state.face, size: 46)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(state.title).font(.headline).foregroundStyle(.white).lineLimit(2)
-                Label(state.detail, systemImage: state.symbol).font(.subheadline)
-                    .foregroundStyle(state.urgent ? Color.orange : .white.opacity(0.7)).lineLimit(1)
+        HStack(spacing: 10) {
+            YumiIslandPicture(face: state.face, size: 36)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(state.urgent ? state.detail : String(localized: "Ta journée"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(state.urgent ? WidgetInk.amber : WidgetInk.coral).lineLimit(1)
+                (Text(state.at.map { $0.formatted(date: .omitted, time: .shortened) + " " } ?? "").bold()
+                 + Text(state.title)
+                 + Text(state.at.map { $0 > Date() ? " · " + widgetUntil($0, now: Date()) : "" } ?? ""))
+                    .font(.system(size: 13.5)).foregroundStyle(.white).lineLimit(1)
             }
-            Spacer()
-            if let at = state.at, at > Date() {
-                Text(at, style: .relative).font(.caption.monospacedDigit()).foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.trailing)
-            }
+            Spacer(minLength: 0)
         }
     }
 }

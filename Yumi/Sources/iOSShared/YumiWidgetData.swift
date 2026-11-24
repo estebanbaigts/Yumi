@@ -19,6 +19,18 @@ struct YumiWidgetData: Codable, Equatable {
     /// minute after minute, what comes next and what is over, without waiting for the app.
     var upcoming: [Event]? = nil
     var dueReminders: [Reminder]? = nil
+    /// « 11° · averses », nil without the weather.
+    var weather: String? = nil
+    /// The agents of the Mac, nil without the link.
+    var agents: [Agent]? = nil
+
+    struct Agent: Codable, Equatable {
+        var project: String
+        var agent: String
+        /// "work", "wait" or "sleep".
+        var mood: String
+        var since: Date
+    }
 
     struct Event: Codable, Equatable {
         var title: String

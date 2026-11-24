@@ -15,6 +15,7 @@ enum PhoneWidgets {
         ("left", nil, .idle, true, CGPoint(x: -1, y: 0.2)),
         ("right", nil, .idle, true, CGPoint(x: 1, y: 0.2)),
         ("surprised", .surprised, .idle, true, nil),
+        ("working", .focused, .working, true, nil),
     ]
 
     private static var drawn = false
@@ -62,7 +63,16 @@ enum PhoneWidgets {
             updatedAt: now,
             upcoming: today.week.flatMap(\.events).filter { !$0.isAllDay && $0.end > now }.prefix(12)
                 .map { .init(title: $0.title, start: $0.start, end: $0.end) },
-            dueReminders: today.reminders.prefix(3).map { .init(title: $0.title, due: $0.due) })
+            dueReminders: today.reminders.prefix(3).map { .init(title: $0.title, due: $0.due) },
+            weather: { if case .ready(let report) = today.weather { return "\(PhoneWeather.degrees(report)) · \(WeatherSummary.sky(report.code))" }; return nil }(),
+            agents: mac.map { mac in
+                mac.sessions.map { session in
+                    let waits = mac.approvals.contains { $0.sessionID == session.id && $0.expiresAt > now }
+                    let state = PhoneAgentLook.state(session, waiting: waits)
+                    return .init(project: session.project, agent: session.agent,
+                                 mood: state == .approval ? "wait" : state == .sleeping ? "sleep" : "work", since: session.updatedAt)
+                }
+            })
         var compared = data
         compared.updatedAt = YumiWidgetData.load()?.updatedAt ?? now
         guard force || compared != YumiWidgetData.load() else { return }

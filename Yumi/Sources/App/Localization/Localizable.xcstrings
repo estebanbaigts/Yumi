@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Ta journée": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your day"
+          }
+        }
+      }
+    },
+    "Tes agents sur le Mac, et ce qui attend ta réponse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your agents on the Mac, and what waits for your answer."
+          }
+        }
+      }
+    },
+    "attend": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "waiting"
+          }
+        }
+      }
+    },
+    "%lld demande en attente": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld request waiting"
+          }
+        }
+      }
+    },
+    "%@ · %lld agents": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld agents"
+          }
+        }
+      }
+    },
+    "Ton Mac attend ton accord : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Mac is waiting for your OK: %@"
+          }
+        }
+      }
+    },
     " (météo, heure et saison)": {
       "localizations": {
         "en": {
