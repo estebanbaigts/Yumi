@@ -57,6 +57,19 @@ He can also tell the time and see which app and window are in front, when you le
 
 He does **not** control your whole Mac. He never deletes, moves, sends a message or an email on his own, runs a command, or edits a file he did not create. A request he cannot do is refused, and he says why. (In the Mail module, a reply he suggests opens as a draft in Mail, or with Gmail leaves only when you press **Send** yourself.) New tricks come with each release.
 
+## Yumi on your iPhone
+
+The same Yumi lives on the iPhone: your day as long cards (calendar, weather, reminders, agents, mail, GitHub), Yumi at the bottom of every screen to talk to him, and his weather moods.
+
+<p align="center">
+  <img src="docs/images/iphone.png" alt="Yumi on iPhone: Today, the agents of the Mac with a request to allow, the weather with its mood, and the conversation" width="860">
+</p>
+
+- **Linked to your Mac through your own iCloud** (no server of ours): your coding agents and their requests on the iPhone, Allow or Refuse from the Lock Screen or the Dynamic Island, and the Mac checks every answer before acting.
+- **Thinks with your Mac's Claude Code**, on your own subscription: no API key. Without the Mac, Gemini with its free key, or Apple's on-device model.
+- **Give him a file or a photo** (an invoice, a letter): he says what it is and what to do. Only what you pick reaches him.
+- **Widgets and Live Activities**: the next thing of your day, your agents, and Yumi in the weather.
+
 ## Why Yumi?
 
 **Lives in your notch.** Not another chat window: he sits at the top of your screen, shows what matters now, and sometimes speaks first (a meeting coming, two hours without a break).
