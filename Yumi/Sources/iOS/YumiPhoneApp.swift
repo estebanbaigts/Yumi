@@ -144,6 +144,10 @@ final class Phone {
         #if DEBUG
         // `-YumiPage agents` opens a screen at launch, to check it
         if let raw = UserDefaults.standard.string(forKey: "YumiPage"), let page = PhonePage(rawValue: raw) { self.page = page }
+        // `-YumiAsk "…"`: a question asked by itself once the opening is over, for the film
+        if let question = UserDefaults.standard.string(forKey: "YumiAsk") {
+            Task { try? await Task.sleep(for: .seconds(7.5)); await chat.send(question) }
+        }
         if UserDefaults.standard.bool(forKey: "YumiCelebrate") {
             Task { try? await Task.sleep(for: .seconds(6)); PhoneLink.shared.celebrateForTesting() }
         }

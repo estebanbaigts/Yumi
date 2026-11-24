@@ -35,7 +35,7 @@ const SCRIPT: YumiScript = {
   ],
 };
 
-export const Fin: React.FC = () => {
+export const Fin: React.FC<{ readonly subtitle?: string }> = ({ subtitle = "Bientôt." }) => {
   const { fps } = useVideoConfig();
   const t = useCurrentFrame() / fps;
 
@@ -54,7 +54,7 @@ export const Fin: React.FC = () => {
       <AbsoluteFill style={{ top: 1230 }}>
         <Words lines={["Yumi."]} by="letter" enter={0.2} exit={NIGHT - 0.25} size={210} style={{ fontWeight: 700 }} />
         <Words
-          lines={["Bientôt."]}
+          lines={[subtitle]}
           enter={0.55}
           exit={NIGHT - 0.15}
           size={64}

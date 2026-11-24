@@ -91,6 +91,20 @@ final class PhoneLink: NSObject {
         }
     }
 
+    /// For filming the video (design/video-beta.md): in 5 s, the same notification as a real request
+    /// of the Mac, and its Live Activity. Nothing is sent anywhere.
+    func demoNotification() async {
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+        let content = UNMutableNotificationContent()
+        content.title = "Yumi"
+        content.subtitle = loc("Claude Code veut pousser sur GitHub")
+        content.body = loc("Touche pour décider")
+        content.sound = .default
+        content.categoryIdentifier = Self.categoryID
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "yumi-demo", content: content, trigger: trigger))
+    }
+
     /// Filming mode: the made-up request of the Mac on the Lock Screen and in the Dynamic Island.
     /// Nothing is sent anywhere: the link is `OffLink` while filming.
     func showStudio(_ mac: LinkSnapshot) {
@@ -102,7 +116,8 @@ final class PhoneLink: NSObject {
     /// A tap in the app. « Autoriser » asks for Face ID (or the code) first, as from a
     /// notification; nothing is sent if that fails. The Mac still checks the answer.
     func answer(_ approval: LinkApproval, allow: Bool) async {
-        if allow {
+        // Filming: nothing is sent, so nothing to unlock
+        if allow, !StudioMode.isOn {
             let context = LAContext()
             let ok = (try? await context.evaluatePolicy(.deviceOwnerAuthentication,
                                                         localizedReason: loc("Autoriser la demande de ton Mac"))) ?? false

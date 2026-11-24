@@ -581,9 +581,11 @@ struct PhoneWeatherBackdrop: View {
     let phone: Phone
 
     var body: some View {
+        // Read so that a mood chosen by hand redraws the ground at once
+        let _ = phone.weatherChanged
         ZStack {
             Color.black
-            if let mood = PhoneWeather.ambiance(phone.today.weather) { WeatherEffects(ambiance: mood) }
+            if let mood = PhoneWeather.ambiance(phone.today.weather) { WeatherEffects(ambiance: mood).id(mood) }
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)

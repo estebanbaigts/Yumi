@@ -78,7 +78,9 @@ final class PhoneChat {
             character?.finished(success: succeeded)
         }
         guard let agent else {
-            append(.init(role: .yumi, text: loc("En mode tournage, je fais semblant d'écouter.")))
+            // Filming: a real-looking answer, as the Mac's Claude Code would give it
+            try? await Task.sleep(for: .milliseconds(1400))
+            append(.init(role: .yumi, text: Self.studioAnswer(to: text), by: PhoneBrain.answering.label))
             return
         }
 
@@ -155,6 +157,20 @@ final class PhoneChat {
             succeeded = false
             append(.init(role: .yumi, text: loc("Pour regarder une image, choisis Claude, ChatGPT ou Gemini dans Réglages › Cerveau.")))
         }
+    }
+
+    static func studioAnswer(to text: String) -> String {
+        let folded = text.lowercased()
+        if folded.contains("refonte") || folded.contains("reste") {
+            return AppLanguage.isEnglish ? "The tests pass. Settings and the review of PR #33 are left." : "Les tests passent. Il manque les réglages et la relecture de la PR #33."
+        }
+        if folded.contains("demain") || folded.contains("tomorrow") {
+            return AppLanguage.isEnglish ? "Dentist at 10, then nothing until the evening. I'll remind you at 9:45." : "Dentiste à 10 h, puis rien jusqu'au soir. Je te le rappelle à 9 h 45."
+        }
+        if folded.contains("facture") || folded.contains("invoice") {
+            return AppLanguage.isEnglish ? "It's Figma's invoice, €45, due on December 1st. I can remind you on the 29th." : "C'est la facture Figma, 45 €, à régler avant le 1er décembre. Je te le rappelle le 29 ?"
+        }
+        return AppLanguage.isEnglish ? "Done. Point with Camille at 2 pm, sport at 6:30. Your agents are working on Yumi." : "C'est noté. Point avec Camille à 14 h, sport à 18 h 30. Tes agents bossent sur Yumi."
     }
 
     /// « qu'est-ce que j'ai aujourd'hui », « j'ai quoi de prévu demain », « mon agenda »...

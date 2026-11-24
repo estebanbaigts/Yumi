@@ -50,6 +50,9 @@ struct PhoneSettingsView: View {
                     }
                     #if DEBUG
                     toggle(loc("Mode tournage au prochain lancement"), 0xFFB547, $phone.studioNextLaunch)
+                    link(loc("Notification de démo"), loc("dans 5 s"), 0xFFB547) {
+                        Task { await PhoneLink.shared.demoNotification() }
+                    }
                     #endif
                     Button { confirmClear = true } label: {
                         HStack(spacing: u(10)) {

@@ -1,6 +1,46 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Claude Code veut pousser sur GitHub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code wants to push to GitHub"
+          }
+        }
+      }
+    },
+    "Touche pour décider": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch to decide"
+          }
+        }
+      }
+    },
+    "Notification de démo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo notification"
+          }
+        }
+      }
+    },
+    "dans 5 s": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in 5 s"
+          }
+        }
+      }
+    },
     "Activité · 1 actif": {
       "localizations": {
         "en": {

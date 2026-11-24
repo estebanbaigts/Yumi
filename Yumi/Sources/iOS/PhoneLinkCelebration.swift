@@ -12,7 +12,7 @@ struct PhoneLinkCelebration: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(step >= 1 ? 0.92 : 0).ignoresSafeArea()
+            Color.black.opacity(step >= 1 ? 1 : 0).ignoresSafeArea()
             RadialGradient(colors: [PhoneTheme.violet.opacity(step >= 3 ? (step >= 5 ? 0.3 : 0.55) : 0), .clear],
                            center: UnitPoint(x: 0.5, y: 0.46), startRadius: 4, endRadius: u(260))
                 .ignoresSafeArea()
@@ -44,7 +44,7 @@ struct PhoneLinkCelebration: View {
                 if step >= 4 {
                     VStack(spacing: u(6)) {
                         Text(loc("C'est bon, on est connectés")).font(.system(size: u(22), weight: .bold))
-                        Text(loc("Ton iPhone et \\(macName) se parlent, par ton iCloud."))
+                        Text(loc("Ton iPhone et \(macName) se parlent, par ton iCloud."))
                             .font(.system(size: u(13))).foregroundStyle(PhoneTheme.soft).multilineTextAlignment(.center)
                     }
                     .padding(.top, u(26)).padding(.horizontal, u(24))
