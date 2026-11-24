@@ -23,9 +23,11 @@ import Foundation
     private func makeFSM(
         homeToPetit: TimeInterval = never,
         petitToHidden: TimeInterval = never,
-        greetTimeout: TimeInterval = never
+        greetTimeout: TimeInterval = never,
+        hoverOpen: TimeInterval = 0.3
     ) -> (IslandStateMachine, Log) {
         let fsm = IslandStateMachine()
+        fsm.hoverOpenDelay = hoverOpen
         fsm.homeToPetitDelay = homeToPetit
         fsm.petitToHiddenDelay = petitToHidden
         fsm.greetingTimeout = greetTimeout
@@ -118,14 +120,14 @@ import Foundation
     }
 
     @Test func compactIslandStaysWhileHovered() async {
-        let (fsm, _) = makeFSM(petitToHidden: Self.short)
+        let (fsm, _) = makeFSM(petitToHidden: Self.short, hoverOpen: Self.never)
         fsm.mouseEntered()
         try? await Task.sleep(for: Self.settle)
         #expect(fsm.state == .petit)
     }
 
     @Test func comingBackCancelsTheHide() async {
-        let (fsm, _) = makeFSM(petitToHidden: Self.short)
+        let (fsm, _) = makeFSM(petitToHidden: Self.short, hoverOpen: Self.never)
         fsm.mouseEntered()
         fsm.mouseLeft()
         fsm.mouseEntered()
@@ -406,7 +408,7 @@ import Foundation
     }
 
     @Test func hoveringARevealedIslandKeepsItOpen() async {
-        let (fsm, _) = makeFSM(petitToHidden: Self.short)
+        let (fsm, _) = makeFSM(petitToHidden: Self.short, hoverOpen: Self.never)
         fsm.reveal()
         fsm.mouseEntered()
         try? await Task.sleep(for: Self.settle)
