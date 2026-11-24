@@ -130,6 +130,8 @@ targets:
       properties:
         com.apple.developer.icloud-container-identifiers: [iCloud.app.yumi]
         com.apple.developer.icloud-services: [CloudKit]
+        # The same database as the Mac's, whatever the build
+        com.apple.developer.icloud-container-environment: Production
         aps-environment: development
         # Shared with the widgets: what Yumi says now, and his pictures
         com.apple.security.application-groups: [group.app.yumi]
@@ -246,7 +248,7 @@ targets:
         CFBundleIdentifier: app.yumi
         CFBundleVersion: "13"
         CFBundleShortVersionString: "0.1.0"
-        YumiDisplayVersion: "0.1.0-beta.3"
+        YumiDisplayVersion: "0.1.0-beta.1"
         # The Yumi GitHub App (Modules/GitHub/GitHubApp.swift): its public Client ID and its slug,
         # filled in once the maintainer registered it. Empty: only the personal token is offered.
         YumiGitHubAppClientID: ""
@@ -281,9 +283,12 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "15.0"
         ENABLE_SANDBOX: NO
       configs:
-        # A signed Debug build (Apple Development, automatic) carries iCloud for the link with the
-        # iPhone. The Developer ID release adds it only once its profile includes iCloud.
+        # iCloud for the link with the iPhone, in the production environment for every build so
+        # that the Mac and the iPhone always meet in the same database. The Developer ID release
+        # gets its provisioning profile from Xcode (scripts/release.sh archives and exports it).
         Debug:
+          CODE_SIGN_ENTITLEMENTS: Resources/YumiLink.entitlements
+        Release:
           CODE_SIGN_ENTITLEMENTS: Resources/YumiLink.entitlements
 
   YumiAppStore:

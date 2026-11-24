@@ -107,19 +107,40 @@ DISPLAY_VERSION=$(/usr/libexec/PlistBuddy -c "Print :YumiDisplayVersion" Resourc
 # ── 3. Release build, signed with the Developer ID ────────────────────────────
 rm -rf "$BUILD_DIR" && mkdir -p "$BUILD_DIR"
 
+# The app carries iCloud (the link with the iPhone), which needs a Developer ID
+# provisioning profile: Xcode makes and embeds it when it exports the archive.
 # CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO keeps get-task-allow out of the
 # signature: notarization rejects it.
+ARCHIVE="$BUILD_DIR/Yumi.xcarchive"
 xcodebuild \
   -project Yumi.xcodeproj \
   -scheme Yumi \
   -configuration Release \
-  build \
+  archive \
+  -archivePath "$ARCHIVE" \
+  -allowProvisioningUpdates \
   DEVELOPMENT_TEAM="$TEAM_ID" \
-  CODE_SIGN_IDENTITY="$IDENTITY" \
+  CODE_SIGN_STYLE=Automatic \
+  CODE_SIGN_IDENTITY="Apple Development" \
   CODE_SIGNING_REQUIRED=YES \
   CODE_SIGNING_ALLOWED=YES \
-  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
-  CONFIGURATION_BUILD_DIR="$BUILD_DIR"
+  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO
+
+EXPORT_OPTIONS="$BUILD_DIR/ExportOptions.plist"
+cat > "$EXPORT_OPTIONS" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>method</key><string>developer-id</string>
+<key>signingStyle</key><string>automatic</string>
+<key>teamID</key><string>$TEAM_ID</string>
+</dict></plist>
+PLIST
+xcodebuild -exportArchive \
+  -archivePath "$ARCHIVE" \
+  -exportPath "$BUILD_DIR" \
+  -exportOptionsPlist "$EXPORT_OPTIONS" \
+  -allowProvisioningUpdates
 
 [ -d "$APP" ] || die "build finished but $APP is missing"
 
@@ -132,6 +153,8 @@ echo "$SIGN_INFO" | grep -Eq "flags=.*runtime"         || die "the hardened runt
 echo "$SIGN_INFO" | grep -q "^Timestamp="              || die "the signature has no secure timestamp"
 
 ENTITLEMENTS=$(codesign -d --entitlements - --xml "$APP" 2>/dev/null || true)
+echo "$ENTITLEMENTS" | grep -q "iCloud.app.yumi" \
+  || die "the iCloud entitlement (link with the iPhone) is missing from the signature"
 echo "$ENTITLEMENTS" | grep -q "com.apple.security.automation.apple-events" \
   || die "the apple-events entitlement is missing from the signature"
 if echo "$ENTITLEMENTS" | grep -q "get-task-allow"; then
