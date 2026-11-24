@@ -61,7 +61,7 @@ struct IslandOpenLayer: View {
         .background {
             ZStack {
                 // The weather's mood fills the whole island, behind the frame
-                if screen == .module, currentID == "weather", let weather = state.modules.first(where: { $0.id == "weather" }) {
+                if screen == .module, currentID == "weather", let weather = state.modules.first(where: { $0.id == "weather" }), weather.status.contains("°") {
                     WeatherEffects(ambiance: WeatherAmbiance.pick(symbol: weather.symbol, status: weather.status))
                         .padding(.bottom, -24)
                         .transition(.opacity)

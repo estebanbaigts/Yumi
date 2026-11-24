@@ -34,6 +34,8 @@ enum IslandHomeOrder {
         kept += new
         if !new.isEmpty || defaults.stringArray(forKey: seenKey) == nil {
             defaults.set(Array(seen.union(known)), forKey: seenKey)
+            // Kept in the order too, or it would be gone again at the next look
+            if !new.isEmpty { defaults.set(encode(kept), forKey: key) }
         }
         return kept
     }

@@ -445,7 +445,7 @@ final class IslandModel: ObservableObject {
 
     /// The mood of the weather on screen, from the weather module.
     static func weatherAmbiance() -> WeatherAmbiance? {
-        guard let weather = AppState.shared.modules.first(where: { $0.id == "weather" }) else { return nil }
+        guard let weather = AppState.shared.modules.first(where: { $0.id == "weather" }), weather.status.contains("°") else { return nil }
         return WeatherAmbiance.pick(symbol: weather.symbol, status: weather.status)
     }
 

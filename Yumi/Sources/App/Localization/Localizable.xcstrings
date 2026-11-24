@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Je lis le mail…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading the mail…"
+          }
+        }
+      }
+    },
+    "Je n'arrive pas à lire ce mail. Ouvre-le dans ta boîte.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't read this mail. Open it in your inbox."
+          }
+        }
+      }
+    },
     "Skins": {
       "localizations": {
         "en": {

@@ -449,9 +449,45 @@ private struct WeatherPage: View {
         return city.isEmpty ? module.name : "\(module.name) · \(city)"
     }
 
-    var body: some View {
-        let mood = ambiance
+
+    /// The weather is not known yet: no place, or no network.
+    private var needsSetup: Bool { !module.status.contains("°") }
+
+    @ViewBuilder var body: some View {
+        if needsSetup { setup } else { weather }
+    }
+
+    /// Where to look: one click on « Autoriser », then Yumi finds the place himself.
+    private var setup: some View {
         HStack(spacing: 24) {
+            YumiSlot(width: 80)
+            VStack(alignment: .leading, spacing: 0) {
+                ModHead(symbol: "sun.max", title: module.name, color: Color(hex: "#7FD8FF"))
+                Text(module.title).font(.system(size: 19, weight: .semibold))
+                Text(module.subtitle).font(IslandTheme.text(12.5)).foregroundStyle(Color(hex: "#B9BCC8")).padding(.top, 2)
+                HStack(spacing: 8) {
+                    Button { IslandActions.module(module.id, "primary") } label: {
+                        Label(module.primaryAction, systemImage: "location.fill")
+                            .font(IslandTheme.text(12.5, .semibold))
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 14)
+                            .frame(height: 34)
+                            .background(Capsule().fill(Color(hex: "#7FD8FF")))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.top, 14)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 10)
+        .frame(maxHeight: .infinity)
+    }
+
+    private var weather: some View {
+        let mood = ambiance
+        return HStack(spacing: 24) {
             YumiSlot(width: 96)
             VStack(alignment: .leading, spacing: 0) {
                 ModHead(symbol: "sun.max", title: Self.title(module), color: mood.color)

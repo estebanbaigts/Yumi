@@ -803,6 +803,13 @@ extension IslandStudio {
             ("18-termine", { show(sessions()); controller?.expand(to: .finished) }),
             ("19-demarrage", { controller?.collapse(); controller?.studioLaunch() }),
             ("20-personnage", { show(modules(musicPlaying: true)); IslandModel.shared.selectedModuleID = IslandHomeOrder.characterID; controller?.expand(to: .module) }),
+            ("21-meteo-ou", {
+                var all = modules(musicPlaying: false)
+                if let i = all.firstIndex(where: { $0.id == "weather" }) {
+                    all[i].status = loc("où ?"); all[i].title = loc("Je ne sais pas où tu es."); all[i].subtitle = loc("Dis-moi où tu es pour voir le ciel."); all[i].primaryAction = loc("Autoriser")
+                }
+                show(all); IslandActions.showModule("weather"); controller?.expand(to: .module)
+            }),
             ("07-reglages", { controller?.expand(to: .settings) }),
             ("08-skin-couronne", { wear(.crown, .yumi); show(sessions()); IslandActions.showTab(.work); controller?.expand(to: .overview) }),
             ("09-skin-chat", { wear(.cat, .pink); show(modules(musicPlaying: false)); IslandActions.showTab(.day); controller?.expand(to: .overview) }),

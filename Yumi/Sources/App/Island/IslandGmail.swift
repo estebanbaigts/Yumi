@@ -11,6 +11,8 @@ struct GmailSheet: View {
     @State private var chosen: GmailMail?
     @State private var draft = ""
     @State private var step = Step.reading
+    /// The text of the mail opened, read when it is opened. nil while it is read.
+    @State private var text: String?
 
     enum Step: Equatable { case reading, thinking, editing, sending, sent, failed(String) }
 
@@ -62,16 +64,20 @@ struct GmailSheet: View {
     private var list: some View {
         let important = inbox.mails.filter(\.important)
         let others = inbox.mails.filter { !$0.important }
-        return VStack(alignment: .leading, spacing: 8) {
-            if inbox.mails.isEmpty {
-                ActSub(text: emptyText)
+        return ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 8) {
+                if inbox.mails.isEmpty {
+                    ActSub(text: emptyText)
+                }
+                // Every mail of the inbox, scrolling: the important ones first
+                if !important.isEmpty {
+                    section(loc("Importants"), important[...], color: IslandTheme.amber)
+                }
+                if !others.isEmpty {
+                    section(loc("Le reste"), others[...], color: IslandTheme.muted)
+                }
             }
-            if !important.isEmpty {
-                section(loc("Importants"), important.prefix(4), color: IslandTheme.amber)
-            }
-            if !others.isEmpty {
-                section(loc("Le reste"), others.prefix(important.isEmpty ? 5 : 3), color: IslandTheme.muted)
-            }
+            .padding(.bottom, 8)
         }
     }
 
@@ -110,6 +116,20 @@ struct GmailSheet: View {
                                                     userInfo: ["module": "gmail", "row": String(mail.uid)])
                 }
                 .fixedSize()
+            }
+            if step == .reading || step == .thinking {
+                // What the mail says, scrolling
+                ScrollView(.vertical, showsIndicators: true) {
+                    Text(text ?? loc("Je lis le mail…"))
+                        .font(IslandTheme.text(12.5))
+                        .foregroundStyle(text == nil ? IslandTheme.muted : IslandTheme.fg)
+                        .lineSpacing(2)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                }
+                .frame(maxHeight: 108)
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.05)))
             }
             switch step {
             case .reading:
@@ -179,8 +199,26 @@ struct GmailSheet: View {
             chosen = mail
             step = .reading
             draft = ""
+            text = nil
         }
         IslandActions.tap()
+        read(mail)
+    }
+
+    /// Reads the mail's text from where it lives: Apple's Mail or Gmail.
+    private func read(_ mail: GmailMail) {
+        let credentials = credentials
+        Task {
+            var body = ""
+            if mail.source == .mailApp {
+                body = (try? await MailAppScript.text(of: mail)) ?? ""
+            } else if let credentials {
+                body = (try? await GmailIMAP.text(of: mail.uid, address: credentials.address, password: credentials.password)) ?? ""
+            }
+            guard chosen?.uid == mail.uid else { return }
+            let clean = body.trimmingCharacters(in: .whitespacesAndNewlines)
+            text = clean.isEmpty ? loc("Je n'arrive pas à lire ce mail. Ouvre-le dans ta boîte.") : clean
+        }
     }
 
     private func reset() {
