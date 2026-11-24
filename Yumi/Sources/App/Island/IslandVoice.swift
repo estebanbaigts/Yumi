@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // MARK: - Asking aloud, in the island (★ Proposition, `voix` and `reponse`)
@@ -24,6 +25,11 @@ final class IslandVoice: ObservableObject {
     var repeatAnswer: (() -> Void)?
     var pointAgain: (() -> Void)?
     var canPoint = false
+    var stopSpeaking: (() -> Void)?
+    /// The links the answer gave, shown to click instead of read aloud.
+    @Published var links: [URL] = []
+    /// He is saying the answer aloud: « Arrêter » shows.
+    @Published var speaking = false
 
     static let cyan = Color(hex: "#7FD8FF")
 
@@ -110,7 +116,26 @@ struct VoicePage: View {
                             .overlay(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 4, bottomTrailingRadius: 18, topTrailingRadius: 18, style: .continuous)
                                 .strokeBorder(IslandVoice.cyan.opacity(0.27)))
                     }
-                    .frame(maxHeight: 92)
+                    .frame(maxHeight: voice.links.isEmpty ? 92 : 70)
+                    if !voice.links.isEmpty {
+                        // Where he found it: to look at, not to hear
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(voice.links, id: \.self) { url in
+                                    Button { NSWorkspace.shared.open(url) } label: {
+                                        Label(url.host() ?? url.absoluteString, systemImage: "link")
+                                            .font(IslandTheme.text(11, .medium))
+                                            .foregroundStyle(IslandVoice.cyan)
+                                            .padding(.horizontal, 9)
+                                            .frame(height: 22)
+                                            .background(Capsule().fill(IslandVoice.cyan.opacity(0.1)))
+                                            .contentShape(Capsule())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
                     HStack(spacing: 6) {
                         VoiceWave(running: true, bars: 5).frame(width: 22, height: 12)
                         Text(note ?? loc("Yumi le dit à voix haute"))
@@ -123,7 +148,11 @@ struct VoicePage: View {
                 if voice.canPoint {
                     pill(loc("Montre-moi"), filled: true) { voice.pointAgain?() }
                 }
-                pill(loc("Répéter"), filled: false) { voice.repeatAnswer?() }
+                if voice.speaking {
+                    pill(loc("Arrêter"), filled: false) { voice.stopSpeaking?() }
+                } else {
+                    pill(loc("Répéter"), filled: false) { voice.repeatAnswer?() }
+                }
                 pill(loc("Continuer dans le chat"), filled: false) {
                     withAnimation(.islandSpring(0.4)) { voice.continueInChat(state: state) }
                 }
@@ -170,5 +199,51 @@ struct VoiceWave: View {
                 }
             }
         }
+    }
+}
+
+
+/// An answer said aloud: the text without its links (« [titre](url) » keeps its title, a bare
+/// address and a « Sources » list go away), and the links apart, to show as buttons.
+enum SpokenAnswer {
+    static func split(_ answer: String) -> (text: String, links: [URL]) {
+        var links: [URL] = []
+        func keep(_ raw: String) {
+            let cleaned = raw.trimmingCharacters(in: CharacterSet(charactersIn: "<>()[].,;:!?»«\"' "))
+            if let url = URL(string: cleaned), url.scheme?.hasPrefix("http") == true, !links.contains(url) { links.append(url) }
+        }
+        var text = answer
+        // [title](url): the title stays
+        if let markdown = try? NSRegularExpression(pattern: #"\[([^\]]+)\]\((https?://[^)\s]+)\)"#) {
+            let ns = text as NSString
+            for match in markdown.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+                keep(ns.substring(with: match.range(at: 2)))
+            }
+            text = markdown.stringByReplacingMatches(in: text, range: NSRange(location: 0, length: ns.length), withTemplate: "$1")
+        }
+        // Bare addresses
+        if let bare = try? NSRegularExpression(pattern: #"\(?<?https?://[^\s)>\]]+[)>]?"#) {
+            let ns = text as NSString
+            for match in bare.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+                keep(ns.substring(with: match.range))
+            }
+            text = bare.stringByReplacingMatches(in: text, range: NSRange(location: 0, length: ns.length), withTemplate: "")
+        }
+        // A « Sources » section at the end, and what the links left behind
+        var lines = text.components(separatedBy: "\n")
+        if let start = lines.lastIndex(where: { line in
+            let t = line.trimmingCharacters(in: .whitespaces).lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "*#_ "))
+            return t.hasPrefix("sources") || t.hasPrefix("source :") || t.hasPrefix("source:")
+        }) {
+            lines.removeSubrange(start...)
+        }
+        text = lines
+            .map { $0.replacingOccurrences(of: "  ", with: " ").trimmingCharacters(in: .whitespaces) }
+            .filter { line in !line.isEmpty && line.trimmingCharacters(in: CharacterSet(charactersIn: "-•*–() ")).isEmpty == false }
+            .joined(separator: "\n")
+            .replacingOccurrences(of: " ,", with: ",")
+            .replacingOccurrences(of: " .", with: ".")
+            .replacingOccurrences(of: "()", with: "")
+        return (text.trimmingCharacters(in: .whitespacesAndNewlines), links)
     }
 }

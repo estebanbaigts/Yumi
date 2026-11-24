@@ -414,6 +414,11 @@ final class IslandWindowController: NSWindowController {
                 }
                 // A letter typed on the open island, outside any field: the chat opens with it
                 if typing, self.fsm.state == .home, self.startsChat(with: letters) { return true }
+                // Escape while Yumi speaks: he stops talking, nothing else
+                if keyCode == 53, IslandVoice.shared.speaking {
+                    ShowMeController.shared.hush()
+                    return true
+                }
                 // Escape on a sheet goes back to the tab's bento first
                 if keyCode == 53, self.fsm.state == .home, self.state.view == .module {
                     withAnimation(.islandSpring(0.5)) { IslandActions.go(.overview) }
@@ -546,6 +551,10 @@ final class IslandWindowController: NSWindowController {
 
     private func keyDown(keyCode: UInt16, flags: UInt) {
         if keyCode == 53 { // Escape
+            if IslandVoice.shared.speaking {
+                ShowMeController.shared.hush()
+                return
+            }
             if fsm.state == .home && !state.isPinned { collapse() }
             return
         }

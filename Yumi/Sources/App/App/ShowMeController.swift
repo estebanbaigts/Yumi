@@ -81,6 +81,7 @@ final class ShowMeController {
     private func showInIsland(_ phase: IslandVoice.Phase) {
         voicePanel.phase = phase
         voicePanel.repeatAnswer = { [weak self] in self.map { $0.speak($0.lastAnswer) } }
+        voicePanel.stopSpeaking = { [weak self] in self?.hush() }
         voicePanel.pointAgain = { [weak self] in
             guard let self, let (point, label, screen) = self.lastPoint else { return }
             self.pointer.show(at: point, label: label, on: screen)
@@ -179,11 +180,14 @@ final class ShowMeController {
                 }
                 let outcome = await look(question, prepared: prepared)
                 trace("réponse (\(outcome.engine ?? "?")) « \(outcome.text) »")
-                lastAnswer = outcome.text
+                // The links are shown to click, never read aloud
+                let parts = SpokenAnswer.split(outcome.text)
+                lastAnswer = parts.text
+                voicePanel.links = parts.links
                 voicePanel.canPoint = outcome.pointed
-                showInIsland(.answer(question: question, text: outcome.text, note: nil))
+                showInIsland(.answer(question: question, text: parts.text, note: nil))
                 // Asked aloud, answered aloud: the voice of the Mac, nothing sent anywhere.
-                speak(outcome.text)
+                speak(parts.text)
             }
         case .cancel:
             earlyCapture?.cancel()
@@ -203,6 +207,7 @@ final class ShowMeController {
     private func speak(_ text: String) {
         voice.stopSpeaking(at: .immediate)
         player?.stop()
+        voicePanel.speaking = true
         let choice = YumiVoice.stored()
         guard let id = choice.voiceID(), let key = KeychainStore.shared.get(YumiVoice.keychainKey)?.nonEmptyTrimmed,
               let request = try? YumiVoice.speechRequest(text: text, voiceID: id, key: key) else {
@@ -214,8 +219,11 @@ final class ShowMeController {
             let result = try? await URLSession.shared.data(for: request)
             let status = (result?.1 as? HTTPURLResponse)?.statusCode
             if let (data, _) = result, status == 200, let player = try? AVAudioPlayer(data: data) {
+                // Stopped while ElevenLabs was answering: stay quiet
+                guard self.voicePanel.speaking else { return }
                 self.player = player
                 player.play()
+                self.watchSpeech()
                 #if DEBUG
                 print("[voix] ElevenLabs +\((ContinuousClock.now - asked).formatted(.units(allowed: [.milliseconds])))")
                 #endif
@@ -226,9 +234,30 @@ final class ShowMeController {
                 if case .answer(let question, let shown, _) = voicePanel.phase {
                     voicePanel.phase = .answer(question: question, text: shown, note: why)
                 }
-                speakLocally(text)
+                if voicePanel.speaking { speakLocally(text) }
             }
         }
+    }
+
+    /// « Arrêter » turns back into « Répéter » once he has said it all.
+    private func watchSpeech() {
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            while let self, self.voicePanel.speaking {
+                if !self.voice.isSpeaking, self.player?.isPlaying != true {
+                    self.voicePanel.speaking = false
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(300))
+            }
+        }
+    }
+
+    /// Quiet at once: the person asked him to stop.
+    func hush() {
+        voice.stopSpeaking(at: .immediate)
+        player?.stop()
+        voicePanel.speaking = false
     }
 
     private func speakLocally(_ text: String) {
@@ -237,6 +266,7 @@ final class ShowMeController {
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 1.05
         utterance.prefersAssistiveTechnologySettings = false
         voice.speak(utterance)
+        watchSpeech()
     }
 
     /// The most natural voice installed for the language: Premium, then Enhanced (downloaded

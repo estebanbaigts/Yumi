@@ -185,6 +185,11 @@ struct IslandHome: View {
             return Item(name: "Yumi", symbol: "person.fill", color: Color(hex: "#C77DFF"), value: nil, badge: false)
         }
         let module = state.modules.first { $0.id == id }
+        if id == IslandModel.agentModuleID {
+            // The agents, whichever they are: named « Agents » on the circle
+            return Item(name: loc("Agents"), symbol: "terminal.fill", color: module?.color ?? IslandTheme.amber,
+                        value: nil, badge: module?.needsAttention ?? false)
+        }
         let status = module?.status ?? ""
         return Item(name: module?.name ?? id, symbol: module?.symbol ?? "circle.fill",
                     color: module?.color ?? IslandTheme.violet,

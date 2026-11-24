@@ -752,6 +752,8 @@ struct WeatherEffects: View {
 struct AgentsPage: View {
     let module: ModuleSnapshot
     private let blue = Color(hex: "#5B8CFF")
+    /// The agent opened: what it was asked, what it did, its files and its tasks.
+    @State private var opened: String?
 
     private var working: [ModuleRow] { module.rows.filter { $0.state == .busy } }
     private var waiting: [ModuleRow] { module.rows.filter { $0.state == .waiting } }
@@ -760,7 +762,9 @@ struct AgentsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ModHead(symbol: "terminal.fill", title: loc("Agents"), color: blue) { YumiSlot(width: 40) }
-            if module.rows.isEmpty {
+            if let id = opened, let row = module.rows.first(where: { $0.id == id }) {
+                detail(row)
+            } else if module.rows.isEmpty {
                 Text(loc("Aucun agent en cours.")).font(IslandTheme.text(13, .semibold))
                 Text(module.subtitle).font(IslandTheme.text(12)).foregroundStyle(IslandCardTheme.mute)
             } else {
@@ -786,12 +790,46 @@ struct AgentsPage: View {
         }
     }
 
+    /// One agent in full: back to the list, what it did, and its terminal.
+    private func detail(_ row: ModuleRow) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Button { withAnimation(.islandSpring(0.4)) { opened = nil } } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left").font(.system(size: 11, weight: .bold))
+                        Text(loc("Tous les agents")).font(IslandTheme.text(12, .semibold))
+                    }
+                    .foregroundStyle(blue)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                if let action = row.action {
+                    Button { IslandActions.row(module.id, action) } label: {
+                        Text(row.actionLabel ?? loc("Ouvrir le terminal"))
+                            .font(IslandTheme.text(11.5, .semibold))
+                            .padding(.horizontal, 12)
+                            .frame(height: 26)
+                            .overlay(Capsule().strokeBorder(Color.white.opacity(0.3)))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            ScrollView(.vertical, showsIndicators: false) {
+                SessionLive(row: row, journal: ClaudeSessionJournals.shared.journal(row.id))
+                    .padding(.bottom, 8)
+            }
+        }
+        .transition(.opacity)
+    }
+
     /// A card: the project on top, the agent, its model and its branch under it, what it does on the right.
     private func line(_ row: ModuleRow, color: Color) -> some View {
         let waits = row.state == .waiting
         let done = row.state != .busy && !waits
         return Button {
-            if waits { IslandActions.go(.approval) } else if let action = row.action { IslandActions.row(module.id, action) }
+            if waits { IslandActions.go(.approval) } else { withAnimation(.islandSpring(0.4)) { opened = row.id } }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: done ? (row.state == .failure ? "exclamationmark" : "checkmark") : "terminal.fill")
