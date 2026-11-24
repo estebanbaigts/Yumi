@@ -1,25 +1,5 @@
 import SwiftUI
 
-struct PhoneRootView: View {
-    @Bindable var phone: Phone
-
-    var body: some View {
-        TabView {
-            Tab(loc("Aujourd'hui"), systemImage: "sun.max") { PhoneHomeView(phone: phone) }
-            Tab(loc("Parler"), systemImage: "bubble.left.and.bubble.right") { PhoneChatView(phone: phone) }
-            Tab(loc("Réglages"), systemImage: "gearshape") { PhoneSettingsView(phone: phone) }
-        }
-        .tint(PhoneTheme.violet)
-        .sheet(isPresented: Binding(get: { phone.asksName && !phone.nameAsked }, set: { if !$0 { phone.answerName(nil) } })) {
-            PhoneNameSheet(phone: phone)
-        }
-        .sheet(item: Binding(get: { phone.approvals.current }, set: { _ in })) { approval in
-            PhoneApprovalSheet(approval: approval, approvals: phone.approvals)
-                .interactiveDismissDisabled()
-        }
-    }
-}
-
 // MARK: - Yumi
 
 /// Yumi himself, drawn by the same engine and renderer as in the notch of the Mac. The same
@@ -99,169 +79,6 @@ struct PhoneMiniYumi: View {
                 engine.setState(state, force: true)
             }
             .accessibilityHidden(true)
-    }
-}
-
-// MARK: - Today
-
-struct PhoneHomeView: View {
-    let phone: Phone
-    @State private var adding: PhoneAddKind?
-    @State private var deleting: PhoneDeletion?
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    PhoneYumi(character: phone.character, size: 160, showsRemark: true)
-                        .padding(.top, 16)
-                    Text(greeting).font(.title2.weight(.bold)).multilineTextAlignment(.center)
-                        .phoneReveal(phone.revealed, step: 0)
-                    // A request of the Mac comes before everything else: it is the one thing waiting on the person
-                    if phone.linkOn, let mac = phone.mac, !PhoneMacRequests.live(mac).isEmpty {
-                        PhoneMacRequests(mac: mac).phoneReveal(phone.revealed, step: 1)
-                    }
-                    agenda.phoneReveal(phone.revealed, step: 1)
-                    reminders.phoneReveal(phone.revealed, step: 2)
-                    PhoneMailCard(phone: phone).phoneReveal(phone.revealed, step: 3)
-                    weather.phoneReveal(phone.revealed, step: 4)
-                    if phone.linkOn, let mac = phone.mac { PhoneSessionsCard(mac: mac).phoneReveal(phone.revealed, step: 4) }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 24)
-            }
-            .phoneScreen()
-            .refreshable { await phone.today.refresh(); await phone.mail.refresh(); phone.updateRemarks() }
-            .onAppear { phone.updateRemarks() }
-            .navigationTitle(loc("Aujourd'hui"))
-            .navigationBarTitleDisplayMode(.inline)
-            .sheet(item: $adding) { kind in PhoneAddSheet(kind: kind, today: phone.today) { phone.updateRemarks() } }
-            .confirmationDialog(deleting?.question ?? "", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
-                                titleVisibility: .visible, presenting: deleting) { item in
-                Button(loc("Supprimer"), role: .destructive) {
-                    withAnimation {
-                        switch item {
-                        case .event(let event): phone.today.delete(event)
-                        case .reminder(let reminder): phone.today.delete(reminder)
-                        }
-                    }
-                    phone.updateRemarks()
-                }
-            }
-        }
-    }
-
-    private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        let hello = hour < 18 ? loc("Bonjour") : loc("Bonsoir")
-        guard let name = phone.memoryBook.name ?? (phone.studio ? "Esteban" : nil) else { return hello + " !" }
-        return hello + " " + name + " !"
-    }
-
-    @ViewBuilder private var agenda: some View {
-        PhoneCard(title: loc("Agenda"), symbol: "calendar",
-                  opens: phone.today.calendarAccess == .granted ? PhoneApps.calendar : nil,
-                  add: phone.today.calendarAccess == .granted ? { adding = .event } : nil) {
-            switch phone.today.calendarAccess {
-            case .granted:
-                // Today's date first, then the days of the week that have something
-                Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide).locale(AppLanguage.locale)).firstCapitalized)
-                    .font(.headline)
-                if phone.today.week.isEmpty {
-                    Text(loc("Rien de prévu cette semaine.")).foregroundStyle(.secondary)
-                } else {
-                    if !phone.today.week.contains(where: { Calendar.current.isDateInToday($0.day) }) {
-                        Text(loc("Rien de prévu aujourd'hui.")).foregroundStyle(.secondary)
-                    }
-                    ForEach(phone.today.week, id: \.day) { day in
-                        VStack(alignment: .leading, spacing: 4) {
-                            if !Calendar.current.isDateInToday(day.day) {
-                                Text(PhoneToday.dayName(day.day).firstCapitalized)
-                                    .font(.subheadline.weight(.semibold)).foregroundStyle(PhoneTheme.rim)
-                                    .padding(.top, 6)
-                            }
-                            ForEach(day.events, id: \.id) { event in
-                                HStack {
-                                    Text(event.isAllDay ? loc("Journée") : event.start.formatted(date: .omitted, time: .shortened))
-                                        .monospacedDigit().foregroundStyle(.secondary).frame(width: 64, alignment: .leading)
-                                    Text(event.title)
-                                    Spacer()
-                                }
-                                .contentShape(Rectangle())
-                                .contextMenu {
-                                    Button(loc("Supprimer"), systemImage: "trash", role: .destructive) { deleting = .event(event) }
-                                }
-                            }
-                        }
-                    }
-                }
-            case .notDetermined:
-                Button(loc("Voir mon agenda")) { Task { await phone.today.askCalendar() } }
-            case .denied:
-                Text(loc("L'accès au calendrier est refusé. Tu peux le rendre dans Réglages.")).foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    @ViewBuilder private var reminders: some View {
-        PhoneCard(title: loc("Rappels et notes"), symbol: "checklist",
-                  opens: phone.today.remindersAccess == .granted ? PhoneApps.reminders : nil,
-                  add: phone.today.remindersAccess == .granted ? { adding = .reminder } : nil) {
-            switch phone.today.remindersAccess {
-            case .granted:
-                if phone.today.reminders.isEmpty { Text(loc("Aucun rappel en cours.")).foregroundStyle(.secondary) }
-                ForEach(phone.today.reminders.prefix(5), id: \.id) { reminder in
-                    HStack(alignment: .firstTextBaseline) {
-                        // A tap on the circle ticks it off: it leaves the list
-                        Button {
-                            withAnimation(.spring(duration: 0.35)) { phone.today.complete(reminder) }
-                            phone.updateRemarks()
-                        } label: {
-                            Image(systemName: "circle").foregroundStyle(PhoneTheme.violet)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text(loc("Terminer « \(reminder.title) »")))
-                        Text(reminder.title)
-                        Spacer(minLength: 8)
-                        if let due = PhoneToday.dueLabel(reminder) {
-                            Text(due.text)
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(due.late ? Color.red : Color.secondary)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .contextMenu {
-                        Button(loc("Supprimer"), systemImage: "trash", role: .destructive) { deleting = .reminder(reminder) }
-                    }
-                }
-            case .notDetermined:
-                Button(loc("Voir mes rappels")) { Task { await phone.today.askReminders() } }
-            case .denied:
-                Text(loc("L'accès aux rappels est refusé. Tu peux le rendre dans Réglages.")).foregroundStyle(.secondary)
-            }
-            ForEach(phone.today.notes.prefix(3), id: \.self) { note in
-                Label(note, systemImage: "note.text").foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    @ViewBuilder private var weather: some View {
-        PhoneCard(title: loc("Météo"), symbol: WeatherSummary.symbol(for: phone.today.weather),
-                  opens: { if case .ready = phone.today.weather { return PhoneApps.weather }; return nil }()) {
-            switch phone.today.weather {
-            case .ready(let report):
-                Text("\(Int(report.temperature.rounded())) °C · \(WeatherSummary.sky(report.code))").font(.headline)
-                Text(WeatherSummary.advice(report, now: Date())).foregroundStyle(.secondary)
-            case .loading:
-                ProgressView()
-            case .unavailable:
-                Text(loc("Je n'arrive pas à avoir la météo.")).foregroundStyle(.secondary)
-            case .needsLocation(.denied):
-                Text(loc("La localisation est refusée. Tu peux la rendre dans Réglages.")).foregroundStyle(.secondary)
-            case .needsLocation:
-                Button(loc("Voir le ciel d'ici")) { Task { await phone.today.loadWeather() } }
-            }
-        }
     }
 }
 
@@ -398,7 +215,7 @@ struct PhoneChatView: View {
     @FocusState private var typing: Bool
 
     var body: some View {
-        NavigationStack {
+        Group {
             VStack(spacing: 0) {
                 // He stays at the top of the conversation: he listens, thinks, rejoices
                 PhoneYumi(character: phone.character, size: 80)
@@ -451,8 +268,6 @@ struct PhoneChatView: View {
                     Button(loc("OK")) { typing = false }
                 }
             }
-            .navigationTitle(AppIdentity.characterName)
-            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -555,7 +370,7 @@ struct PhoneSettingsView: View {
     @State private var cleared = false
 
     var body: some View {
-        NavigationStack {
+        Group {
             Form {
                 Section {
                     Picker(loc("Langue"), selection: Binding(get: { language }, set: { language = $0; AppLanguage.choose($0) })) {
@@ -659,7 +474,6 @@ struct PhoneSettingsView: View {
                 }
             }
             .phoneScreen()
-            .navigationTitle(loc("Réglages"))
         }
     }
 }

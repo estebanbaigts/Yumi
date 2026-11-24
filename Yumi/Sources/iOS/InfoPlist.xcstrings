@@ -1,6 +1,42 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "NSMicrophoneUsageDescription": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you touch me to talk, I listen to your voice. Nothing is recorded."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quand tu me touches pour parler, j'écoute ta voix. Rien n'est enregistré."
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I turn what you say into text to answer you, on your iPhone when it can."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je transforme ce que tu me dis en texte pour te répondre, sur ton iPhone quand il le peut."
+          }
+        }
+      }
+    },
     "NSCalendarsFullAccessUsageDescription": {
       "comment": "",
       "extractionState": "manual",

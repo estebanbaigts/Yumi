@@ -16,6 +16,8 @@ final class PhoneToday {
     private(set) var remindersAccess: PermissionState = .notDetermined
     private(set) var notes: [String] = []
     private(set) var weather: WeatherState = .needsLocation(.notDetermined)
+    /// The town of the weather, found by the system from the place (nothing more is kept).
+    private(set) var placeName = ""
 
     @ObservationIgnored private let store = EKEventStore()
     @ObservationIgnored private let notesStore: NotesStore?
@@ -153,6 +155,7 @@ final class PhoneToday {
         today.remindersAccess = .granted
         today.notes = PhoneStudio.notes
         today.weather = .ready(PhoneStudio.weather)
+        today.placeName = "Paris"
         return today
     }
 
@@ -203,6 +206,7 @@ final class PhoneToday {
             return
         }
         guard let place else { weather = .unavailable; return }
+        if let town = try? await CLGeocoder().reverseGeocodeLocation(place).first?.locality { placeName = town }
         // Open-Meteo, as on the Mac: no key, no account, the place rounded by the API itself
         let url = OpenMeteo.forecastURL(latitude: place.coordinate.latitude, longitude: place.coordinate.longitude)
         do {

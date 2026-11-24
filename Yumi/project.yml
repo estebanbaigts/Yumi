@@ -88,6 +88,7 @@ targets:
       - path: Sources/App/AgentRuntime
         excludes:
           - Providers/ClaudeCodeLLMProvider.swift
+          - Providers/ClaudeCodeLive.swift
       # The modules' data and stores; their Mac side (NSWorkspace, AppleScript, IOKit) stays out
       - path: Sources/App/Modules
         excludes:
@@ -110,6 +111,7 @@ targets:
           - Providers/WorkspaceContextProvider.swift
           - Providers/WindowContextProvider.swift
       - path: Sources/App/Island/IslandTypes.swift
+      - path: Sources/App/Island/WeatherAmbiance.swift
       - path: Sources/App/App/AppIdentity.swift
       - path: Sources/App/App/SoundEngine.swift
       - path: Resources/sounds
@@ -151,6 +153,8 @@ targets:
         NSFaceIDUsageDescription: "Face ID confirme que c'est bien toi qui autorises une demande de ton Mac."
         NSRemindersFullAccessUsageDescription: "Je te montre tes rappels du jour, je coche ceux que tu termines, et j'en ajoute quand tu me le demandes."
         NSLocationWhenInUseUsageDescription: "Je regarde où tu es, au kilomètre près, pour te donner le ciel d'ici."
+        NSMicrophoneUsageDescription: "Quand tu me touches pour parler, j'écoute ta voix. Rien n'est enregistré."
+        NSSpeechRecognitionUsageDescription: "Je transforme ce que tu me dis en texte pour te répondre, sur ton iPhone quand il le peut."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.yumi.iphone

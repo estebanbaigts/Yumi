@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct YumiPhoneApp: App {
@@ -48,6 +49,11 @@ final class Phone {
     let character = PhoneCharacter()
     /// The home screen's content shows once the opening is over.
     var revealed = false
+    /// The screen shown, chosen from the menu of the title.
+    var page: PhonePage = .today
+    /// Today's cards are being arranged.
+    var editingToday = false
+    let listener = PhoneListener()
     @ObservationIgnored let memory: MemoryStore?
     @ObservationIgnored private let permissions: LocalPermissionManager?
     /// What Yumi remembers, as the screens show it.
@@ -175,9 +181,41 @@ final class Phone {
         }
         nameAsked.toggle()
         updateRemarks()
+        Task { await askEverything() }
     }
     /// Seen by the screens when the question has been answered.
     private(set) var nameAsked = false
+
+    func go(_ page: PhonePage) {
+        if page != .talk, listener.listening { listener.stop() }
+        editingToday = false
+        withAnimation(.easeInOut(duration: 0.22)) { self.page = page }
+    }
+
+    /// A touch on Yumi: to the conversation and he listens; a second touch sends what he heard.
+    func talk() {
+        if page != .talk { go(.talk) }
+        if listener.listening {
+            let text = listener.stop()
+            if !text.isEmpty { Task { await chat.send(text) } }
+            character.engine.setState(.idle)
+        } else {
+            character.engine.setState(.question)
+            Task { await listener.start(); if !listener.listening { character.engine.setState(.idle) } }
+        }
+    }
+
+    /// The first launch, right after the first name: every permission asked once, one after the
+    /// other, so that nothing asks again in the middle of something.
+    func askEverything() async {
+        guard !studio else { return }
+        await today.askCalendar()
+        await today.askReminders()
+        await today.loadWeather()
+        _ = await listener.ask()
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+        updateRemarks()
+    }
 
     func forget(_ entry: MemoryEntry) {
         memory?.change { _ = $0.forget(id: entry.id) }

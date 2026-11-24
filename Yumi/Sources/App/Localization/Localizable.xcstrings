@@ -1,6 +1,256 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "%lld attend ta réponse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld waiting for your answer"
+          }
+        }
+      }
+    },
+    "+ Ajouter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Add"
+          }
+        }
+      }
+    },
+    "1 sur %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 of %lld"
+          }
+        }
+      }
+    },
+    "Agents · %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agents · %lld"
+          }
+        }
+      }
+    },
+    "Connecte Gmail dans Réglages.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Gmail in Settings."
+          }
+        }
+      }
+    },
+    "Demande · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request · %@"
+          }
+        }
+      }
+    },
+    "Demandes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requests"
+          }
+        }
+      }
+    },
+    "Glisse les cartes pour choisir l'ordre. ✕ pour en retirer une.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag the cards to choose the order. ✕ to remove one."
+          }
+        }
+      }
+    },
+    "Je n'ai pas accès à ton agenda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't see your calendar."
+          }
+        }
+      }
+    },
+    "Je ne sais pas encore où tu es.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I don't know where you are yet."
+          }
+        }
+      }
+    },
+    "Libre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free"
+          }
+        }
+      }
+    },
+    "Mail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mail"
+          }
+        }
+      }
+    },
+    "Mail · %lld non lus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mail · %lld unread"
+          }
+        }
+      }
+    },
+    "Modules": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modules"
+          }
+        }
+      }
+    },
+    "Mon Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Mac"
+          }
+        }
+      }
+    },
+    "Météo · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weather · %@"
+          }
+        }
+      }
+    },
+    "Ouvre le menu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the menu"
+          }
+        }
+      }
+    },
+    "Rappels · %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders · %lld"
+          }
+        }
+      }
+    },
+    "Relie ton Mac pour voir tes agents.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link your Mac to see your agents."
+          }
+        }
+      }
+    },
+    "Rien de neuf sur GitHub.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing new on GitHub."
+          }
+        }
+      }
+    },
+    "Rien n'attend ta réponse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is waiting for your answer."
+          }
+        }
+      }
+    },
+    "Touche Yumi pour parler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch Yumi to talk"
+          }
+        }
+      }
+    },
+    "Touche pour décider.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch to decide."
+          }
+        }
+      }
+    },
+    "dans %lld min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in %lld min"
+          }
+        }
+      }
+    },
+    "dans %lld h %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in %lld h %@"
+          }
+        }
+      }
+    },
     "Terminés": {
       "localizations": {
         "en": {
