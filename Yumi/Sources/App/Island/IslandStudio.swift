@@ -791,6 +791,14 @@ extension IslandStudio {
                 controller?.expand(to: .prompt)
             }),
             ("06d-fin-voix", { IslandVoice.shared.phase = .idle }),
+            ("17-trou-noir", { show(modules(musicPlaying: false)); controller?.collapse(); withAnimation(nil) { BlackHole.shared.open = true } }),
+            ("17b-avale", { BlackHole.shared.heldAt = 0.45; BlackHole.shared.open = true; BlackHole.shared.swallowing = ("Contrat-v3.pdf", Date()) }),
+            ("17c-fichier", {
+                BlackHole.shared.heldAt = nil; BlackHole.shared.open = false; BlackHole.shared.swallowing = nil
+                state.droppedFile = DroppedFile(url: URL(fileURLWithPath: "/tmp/Contrat-v3.pdf"), name: "Contrat-v3.pdf")
+                controller?.expand(to: .choose)
+            }),
+            ("17d-fin", { state.droppedFile = nil }),
             ("07-reglages", { controller?.expand(to: .settings) }),
             ("08-skin-couronne", { wear(.crown, .yumi); show(sessions()); IslandActions.showTab(.work); controller?.expand(to: .overview) }),
             ("09-skin-chat", { wear(.cat, .pink); show(modules(musicPlaying: false)); IslandActions.showTab(.day); controller?.expand(to: .overview) }),
@@ -817,7 +825,10 @@ extension IslandStudio {
         Task { @MainActor in
             wear(.none, .yumi)
             try? await Task.sleep(for: .seconds(7))
-            for (name, setUp) in shots {
+            // `YUMI_ISLAND_V2_ONLY=17,05` takes only the shots whose name starts so
+            let only = (ProcessInfo.processInfo.environment["YUMI_ISLAND_V2_ONLY"] ?? "")
+                .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            for (name, setUp) in shots where only.isEmpty || only.contains(where: { name.hasPrefix($0) }) {
                 rest()
                 try? await Task.sleep(for: .seconds(1.2))
                 setUp()

@@ -142,6 +142,10 @@ struct IslandScene: View {
                 .animation(model.snap ? nil : .islandEase(0.25), value: seat.opacity)
                 .allowsHitTesting(false)
                 .onAppear { model.actorAppeared() }
+
+            // The black hole that takes a dropped file: it turns round Yumi, over him
+            IslandBlackHole(scale: seat.scale)
+                .position(x: middle + seat.x, y: seat.y)
         }
         .environment(\.islandAccent, accent)
         .onAppear { model.direct(from: nil, to: situation) }

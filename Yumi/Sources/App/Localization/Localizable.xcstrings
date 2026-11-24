@@ -1,6 +1,126 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "%@ veut lancer une commande": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ wants to run a command"
+          }
+        }
+      }
+    },
+    "%@ veut %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ wants to %@"
+          }
+        }
+      }
+    },
+    "Toujours autoriser %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always allow %@"
+          }
+        }
+      }
+    },
+    "J'en fais quoi ?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What should I do with it?"
+          }
+        }
+      }
+    },
+    "Le résumer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summarize it"
+          }
+        }
+      }
+    },
+    "Poser une question": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask a question"
+          }
+        }
+      }
+    },
+    "Le donner à %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give it to %@"
+          }
+        }
+      }
+    },
+    "L'envoyer par mail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send it by email"
+          }
+        }
+      }
+    },
+    "Le ranger": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put it away"
+          }
+        }
+      }
+    },
+    "Ou dis-moi ce que tu veux en faire…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Or tell me what you want done with it…"
+          }
+        }
+      }
+    },
+    "Lâche le fichier sur Yumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop the file on Yumi"
+          }
+        }
+      }
+    },
+    "Je le résume, je réponds à tes questions dessus ou je le range.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I summarize it, answer your questions about it or put it away."
+          }
+        }
+      }
+    },
     "Historique": {
       "localizations": {
         "en": {

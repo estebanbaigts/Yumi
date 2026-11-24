@@ -17,6 +17,11 @@ struct IslandFrameBar: View {
         HStack(spacing: 6) {
             if screen == .talk, voice.active {
                 VoiceTitle()
+            } else if screen == .alert {
+                Text(loc("Demande"))
+                    .font(IslandTheme.text(12, .semibold))
+                    .foregroundStyle(IslandTheme.amber)
+                    .padding(.leading, 4)
             } else if screen == .home {
                 EarButton(symbol: "mic.fill", label: loc("Parler ⌥"), color: Color(hex: "#7FD8FF")) { IslandActions.talk() }
             } else {

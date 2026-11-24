@@ -101,17 +101,23 @@ final class IslandWindowController: NSWindowController {
         // AppKit routes NSDraggingDestination events to registered views independently of hitTest.
         let dropView = FileDropNSView(frame: NSRect(origin: .zero, size: contentSize))
         dropView.autoresizingMask = [.width, .height]
-        dropView.onDragEntered = { [weak self] in
+        dropView.onDragEntered = {
             // He opens on the drop view and stretches up to catch the file
             AppState.shared.fileDragOver = true
-            self?.expand(to: .upload)
+            // The island stays as it is: a black hole opens round Yumi to take the file
+            withAnimation(.easeOut(duration: 0.3)) { BlackHole.shared.open = true }
         }
         dropView.onDragExited = {
-            // Do NOT collapse — drag session still active; island stays open.
+            // The file left without being dropped: the hole closes
             AppState.shared.fileDragOver = false
+            if BlackHole.shared.swallowing == nil { withAnimation(.easeOut(duration: 0.3)) { BlackHole.shared.open = false } }
         }
-        dropView.onFilesDropped = { urls in
+        dropView.onFilesDropped = { [weak self] urls in
             FileDropHandler.handle(urls: urls, state: AppState.shared)
+            // Swallowed, then the island opens on « J'en fais quoi ? »
+            DispatchQueue.main.asyncAfter(deadline: .now() + BlackHole.swallowDuration + 0.15) {
+                self?.expand(to: .choose)
+            }
         }
 
         container.addSubview(hosting)    // z-bottom: SwiftUI + mouse events

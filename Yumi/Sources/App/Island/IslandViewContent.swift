@@ -26,10 +26,12 @@ struct IslandOpenLayer: View {
     static func widthKind(for screen: IslandScreen, category: ModuleCategory) -> IslandOpenWidth {
         switch screen {
         case .home, .module, .working:            return .tab(.work)  // one size for the home and every module page
-        case .alert, .finished, .error:           return .alert
+        case .alert:                              return .tab(.work)
+        case .finished, .error:                   return .alert
         case .settings, .apps:                    return .settings
         case .talk:                               return .tab(.work)
-        case .memory, .quickTask, .drop, .welcome: return .chat
+        case .drop:                               return .tab(.work)
+        case .memory, .quickTask, .welcome:       return .chat
         }
     }
 
@@ -90,17 +92,7 @@ struct IslandOpenLayer: View {
         case .home, .module, .working:
             tab
         case .alert:
-            HStack(alignment: .center, spacing: 10) {
-                IslandCard(tint: IslandTheme.amber) {
-                    HStack(spacing: 14) {
-                        YumiSlot(width: 64)
-                        AlertActivity(state: state, model: model)
-                    }
-                }
-                let others = IslandSessions.rows(state.modules).filter { $0.state != .waiting }
-                if !others.isEmpty { SessionColumn(rows: others) }
-            }
-            .fixedSize(horizontal: false, vertical: true)
+            ApprovalPage(state: state, model: model)
         case .finished:
             card(slot: 64, tint: IslandTheme.green) { FinishedActivity(state: state, model: model) }
         case .error:
@@ -131,7 +123,7 @@ struct IslandOpenLayer: View {
         case .quickTask:
             trail(loc("Tâche rapide")) { card(slot: 48, top: true) { QuickTaskActivity() } }
         case .drop:
-            trail(loc("Déposer un fichier")) { card(slot: 56) { DropActivity(state: state) } }
+            DropPage(state: state)
         }
     }
 
