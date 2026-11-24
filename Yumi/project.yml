@@ -156,6 +156,8 @@ targets:
         NSLocationWhenInUseUsageDescription: "Je regarde où tu es, au kilomètre près, pour te donner le ciel d'ici."
         NSMicrophoneUsageDescription: "Quand tu me touches pour parler, j'écoute ta voix. Rien n'est enregistré."
         NSSpeechRecognitionUsageDescription: "Je transforme ce que tu me dis en texte pour te répondre, sur ton iPhone quand il le peut."
+        NSCameraUsageDescription: "Si tu l'allumes, mes yeux suivent ton visage. Rien n'est enregistré, et la caméra s'arrête dès que je ne suis plus à l'écran."
+        NSMotionUsageDescription: "Mes yeux suivent l'inclinaison de ton iPhone."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.yumi.iphone

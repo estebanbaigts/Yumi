@@ -29,6 +29,8 @@ struct YumiPhoneApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await phone.cameBack() } }
+            // His eyes follow only while the app is in front: the camera stops at once otherwise
+            phone.watcher.setActive(phase == .active, phone: phone)
         }
     }
 }

@@ -1,6 +1,42 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "NSCameraUsageDescription": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you turn it on, my eyes follow your face. Nothing is recorded, and the camera stops as soon as I'm off the screen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si tu l'allumes, mes yeux suivent ton visage. Rien n'est enregistré, et la caméra s'arrête dès que je ne suis plus à l'écran."
+          }
+        }
+      }
+    },
+    "NSMotionUsageDescription": {
+      "comment": "",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My eyes follow the tilt of your iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mes yeux suivent l'inclinaison de ton iPhone."
+          }
+        }
+      }
+    },
     "NSMicrophoneUsageDescription": {
       "comment": "",
       "extractionState": "manual",
