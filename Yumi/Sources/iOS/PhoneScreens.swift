@@ -20,7 +20,7 @@ struct PhoneAgentsView: View {
                                action: loc("Relier mon Mac")) { phone.go(.mac) }
                 } else {
                     let active = sessions.filter { PhoneAgentLook.state($0, waiting: false) != .sleeping }.count
-                    Text(loc("Activité · \(active) actifs")).phoneEyebrow(PhoneTheme.blue).padding(.bottom, u(8))
+                    Text(active == 1 ? loc("Activité · 1 actif") : loc("Activité · \(active) actifs")).phoneEyebrow(PhoneTheme.blue).padding(.bottom, u(8))
                     if sessions.isEmpty {
                         Text(loc("Aucun agent en cours.")).font(.system(size: u(13))).foregroundStyle(PhoneTheme.gray)
                     }

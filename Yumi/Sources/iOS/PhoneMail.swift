@@ -49,7 +49,7 @@ final class PhoneMail {
     init(studio: Bool) {
         self.studio = studio
         if studio {
-            address = "esteban@gmail.com"
+            address = "esteban@exemple.fr"
             mails = PhoneStudio.mails
             state = .ready
         } else if isConnected {

@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Activité · 1 actif": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activity · 1 active"
+          }
+        }
+      }
+    },
     "Taille de la carte": {
       "localizations": {
         "en": {

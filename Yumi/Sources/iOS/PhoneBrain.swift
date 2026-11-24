@@ -89,10 +89,12 @@ enum PhoneBrain: String, CaseIterable, Sendable {
 
     /// The one that answers right now, for the screens: « Mon Mac », « Gemini »…
     @MainActor static var answering: PhoneBrain {
+        // Filming: the Mac answers, as it does once linked
+        if StudioMode.isOn { return current == .auto ? .mac : current }
         switch current {
-        case .auto: macReady ? .mac : (gemini.hasKey ? .gemini : .apple)
-        case .mac: macReady ? .mac : .apple
-        default: current.hasKey ? current : .apple
+        case .auto: return macReady ? .mac : (gemini.hasKey ? .gemini : .apple)
+        case .mac: return macReady ? .mac : .apple
+        default: return current.hasKey ? current : .apple
         }
     }
 

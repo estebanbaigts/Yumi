@@ -13,7 +13,7 @@ struct PhoneSettingsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 section(loc("Yumi")) {
                     link(loc("Voix"), PhoneVoiceChoice.current.phoneLabel, 0xF58AD9) { phone.go(.yumi) }
-                    push(loc("Mémoire"), loc("\(phone.memoryBook.entries.count) souvenirs"), 0x4EE6B0) { PhoneMemoryView(phone: phone) }
+                    push(loc("Mémoire"), loc("\(phone.studio ? 23 : phone.memoryBook.entries.count) souvenirs"), 0x4EE6B0) { PhoneMemoryView(phone: phone) }
                     push(loc("Cerveau"), PhoneBrain.answering.label, 0x8B6CFF) { PhoneBrainView() }
                 }
                 section(loc("Comptes")) {
