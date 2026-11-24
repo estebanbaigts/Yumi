@@ -126,7 +126,12 @@ final class PhoneChat {
                                      : "C'est quoi, et qu'est-ce que je dois en faire ? Si c'est une facture ou un courrier, dis-moi comment y répondre.")
             : asked
         let content = attachment.text.map { question + "\n\n« \(attachment.name) » :\n" + String($0.prefix(30_000)) } ?? question
-        if let remote = PhoneBrain.remote {
+        var chosen = PhoneBrain.remote
+        // The Mac reads text only: a picture goes to Gemini when its key is there
+        if attachment.image != nil, chosen is PhoneMacThinker {
+            chosen = PhoneBrain.gemini.hasKey ? GeminiLLMProvider(apiKey: { PhoneKeychain.get("gemini-api-key") }) : nil
+        }
+        if let remote = chosen {
             let system = AppLanguage.isEnglish
                 ? "You are Yumi, a small friendly character on the person's iPhone. They gave you a file. Say briefly what it is, the useful details (amounts, dates, who), and what to do. Plain sentences, no markdown."
                 : "Tu es Yumi, un petit personnage bienveillant sur l'iPhone de la personne. Elle te donne un fichier. Dis brièvement ce que c'est, les détails utiles (montants, dates, qui), et quoi faire. Phrases simples, sans markdown, en la tutoyant."
@@ -151,6 +156,8 @@ final class PhoneChat {
 
     /// « qu'est-ce que j'ai aujourd'hui », « j'ai quoi de prévu demain », « mon agenda »...
     static func asksAboutTheDay(_ text: String) -> Bool {
+        // « ajoute dans mon agenda… », « mets un rendez-vous… »: something to do, not a question
+        if asksToAdd(text) { return false }
         if ChatRoute.isPersonalAgenda(text) { return true }
         // A short follow-up: « et demain ? », « et aujourd'hui ? »
         let words = text.split(whereSeparator: { !$0.isLetter && $0 != "'" && $0 != "’" })
@@ -159,6 +166,13 @@ final class PhoneChat {
             .replacingOccurrences(of: "’", with: "'") + " "
         let asks = ["de prevu", "j'ai quoi", "ma journee", "mes rappels", "mon programme", "what's on", "my day"]
         return asks.contains(where: folded.contains)
+    }
+
+    /// « ajoute », « mets », « crée », « note », « rappelle-moi », « programme »…
+    static func asksToAdd(_ text: String) -> Bool {
+        let folded = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "fr_FR"))
+        return ["ajoute", "rajoute", "mets ", "met un", "cree", "planifie", "programme ", "note ", "rappelle-moi", "rappelle moi",
+                "add ", "schedule", "remind me", "put "].contains(where: folded.contains)
     }
 
     /// « efface mes rappels », « supprime le rendez-vous », « coche tout »...
@@ -226,6 +240,7 @@ final class PhoneChat {
             let answer = try await remote.complete(LLMRequest(system: system, messages: history, expectsJSON: false, maxOutputTokens: 700))
             return VoiceRules.withoutLongDashes(MemoryNotes.extract(from: answer.text).visible)
         } catch {
+            if remote is PhoneMacThinker { return loc("Ton Mac n'a pas répondu. Vérifie qu'il est allumé et que Claude Code y marche.") }
             return loc("Je n'arrive pas à joindre \(PhoneBrain.current.label). Vérifie ta clé dans Réglages › Cerveau, ou ta connexion.")
         }
     }

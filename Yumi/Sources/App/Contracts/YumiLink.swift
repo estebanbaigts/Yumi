@@ -48,6 +48,29 @@ struct LinkSnapshot: Codable, Equatable, Sendable {
     var approvals: [LinkApproval] = []
     /// One line per recent GitHub event: « PR #30 fusionnée ».
     var github: [String] = []
+    /// What the Mac can think with for the iPhone (`LinkAsk`): "claude-code". Nil from an older Mac.
+    var thinks: [String]? = nil
+}
+
+/// A question of the iPhone that the Mac answers with the person's own Claude Code: the
+/// conversation only, never a tool, a file or an action. Nothing more leaves the iPhone.
+struct LinkAsk: Codable, Equatable, Sendable, Identifiable {
+    struct Line: Codable, Equatable, Sendable {
+        var fromPerson: Bool
+        var text: String
+    }
+    var id: String
+    var system: String
+    var lines: [Line]
+    var sentAt: Date
+}
+
+/// The Mac's answer to a `LinkAsk`, taken once by the iPhone.
+struct LinkAnswer: Codable, Equatable, Sendable {
+    var askID: String
+    /// Nil when the Mac could not answer (`failure` says why, in plain words).
+    var text: String?
+    var failure: String?
 }
 
 /// An answer given on the other device, from a tap of the person.
@@ -125,6 +148,21 @@ protocol YumiLink: Sendable {
     func send(_ reply: LinkReply) async throws
     /// The Mac: the answers that came, taken once.
     func takeReplies() async throws -> [LinkReply]
+    /// The iPhone: a question for the Mac to think about.
+    func ask(_ ask: LinkAsk) async throws
+    /// The Mac: the questions that came, taken once.
+    func takeAsks() async throws -> [LinkAsk]
+    /// The Mac: the answer to a question.
+    func answer(_ answer: LinkAnswer) async throws
+    /// The iPhone: the answer to its question once there (taken once), nil until then.
+    func takeAnswer(for askID: String) async throws -> LinkAnswer?
+}
+
+extension YumiLink {
+    func ask(_ ask: LinkAsk) async throws {}
+    func takeAsks() async throws -> [LinkAsk] { [] }
+    func answer(_ answer: LinkAnswer) async throws {}
+    func takeAnswer(for askID: String) async throws -> LinkAnswer? { nil }
 }
 
 /// The link turned off: every device on its own.

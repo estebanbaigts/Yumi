@@ -14,7 +14,7 @@ struct PhoneSettingsView: View {
                 section(loc("Yumi")) {
                     link(loc("Voix"), PhoneVoiceChoice.current.phoneLabel, 0xF58AD9) { phone.go(.yumi) }
                     push(loc("Mémoire"), loc("\(phone.memoryBook.entries.count) souvenirs"), 0x4EE6B0) { PhoneMemoryView(phone: phone) }
-                    push(loc("Cerveau"), PhoneBrain.remote != nil ? PhoneBrain.current.label : loc("Modèle d'Apple"), 0x8B6CFF) { PhoneBrainView() }
+                    push(loc("Cerveau"), PhoneBrain.answering.label, 0x8B6CFF) { PhoneBrainView() }
                 }
                 section(loc("Comptes")) {
                     if phone.mail.isConnected {
@@ -203,7 +203,7 @@ struct PhoneBrainView: View {
                                 .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: u(11), style: .continuous))
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(choice.label).font(.system(size: u(14), weight: .semibold))
-                                Text(choice.hasKey || choice == .apple ? choice.detail : loc("Clé à ajouter"))
+                                Text(choice.keyName == nil || choice.hasKey ? choice.detail : loc("Clé à ajouter"))
                                     .font(.system(size: u(12))).foregroundStyle(PhoneTheme.gray)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -227,10 +227,13 @@ struct PhoneBrainView: View {
                     Text(loc("Crée-la sur \(brain.keyHelp). Elle reste dans le trousseau de cet iPhone ; seule la conversation part chez ce service."))
                         .font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray)
                 }
+                if brain == .auto || brain == .mac {
+                    Text(loc("En ce moment : \(PhoneBrain.answering.label)")).font(.system(size: u(12))).foregroundStyle(PhoneTheme.gray).padding(.top, u(8))
+                }
                 if brain == .apple, let why = PhoneChat.whyNoModel(AppleModelAvailability.current) {
                     Text(why).font(.system(size: u(12))).foregroundStyle(PhoneTheme.gray).padding(.top, u(8))
                 }
-                Text(loc("Codex et Claude Code tournent sur ton Mac : ils passeront par la liaison avec le Mac."))
+                Text(loc("« Mon Mac » utilise ton abonnement Claude Code, sans clé : ta question passe par ton iCloud et ton Mac répond. Gemini propose une clé gratuite."))
                     .font(.system(size: u(11))).foregroundStyle(PhoneTheme.gray).padding(.top, u(12))
             }
             .padding(.horizontal, u(14)).padding(.top, u(8)).padding(.bottom, u(40))
@@ -242,6 +245,8 @@ struct PhoneBrainView: View {
 
     private static func symbol(_ brain: PhoneBrain) -> String {
         switch brain.service {
+        case .auto: "wand.and.stars"
+        case .mac: "laptopcomputer"
         case .apple: "apple.logo"
         case .anthropic: "sparkle"
         case .openai: "circle.hexagongrid"
@@ -251,6 +256,8 @@ struct PhoneBrainView: View {
 
     private static func color(_ brain: PhoneBrain) -> Color {
         switch brain.service {
+        case .auto: PhoneTheme.violet
+        case .mac: PhoneTheme.blue
         case .apple: .white
         case .anthropic: YumiRGB(hex: 0xD97757).color
         case .openai: YumiRGB(hex: 0x10A37F).color

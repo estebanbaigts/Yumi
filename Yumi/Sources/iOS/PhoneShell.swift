@@ -31,6 +31,8 @@ enum PhonePage: String, Hashable {
 struct PhoneRootView: View {
     @Bindable var phone: Phone
     @State private var menuOpen = false
+    /// The connection already celebrated (once per connection).
+    @State private var celebrated: Date?
 
     var body: some View {
         NavigationStack {
@@ -46,6 +48,11 @@ struct PhoneRootView: View {
                 }
                 if phone.page != .talk { PhoneOrb(phone: phone).opacity(phone.orbShown ? 1 : 0) }
                 if menuOpen { menu }
+                if let at = PhoneLink.shared.connectedAt, celebrated != at, let mac = phone.mac {
+                    PhoneLinkCelebration(macName: mac.deviceName) { celebrated = at }
+                        .zIndex(3)
+                        .transition(.opacity)
+                }
             }
             // Swipe right: the screen before; swipe left: back where one was
             .simultaneousGesture(DragGesture(minimumDistance: 24).onEnded { drag in

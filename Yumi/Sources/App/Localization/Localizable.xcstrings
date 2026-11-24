@@ -1,6 +1,106 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Claude Code n'a pas pu répondre sur ton Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code could not answer on your Mac."
+          }
+        }
+      }
+    },
+    "Claude Code n'est pas installé sur ton Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code is not installed on your Mac."
+          }
+        }
+      }
+    },
+    "Mon Mac · Claude Code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Mac · Claude Code"
+          }
+        }
+      }
+    },
+    "Ton Mac s'il est allumé, sinon Gemini, sinon Apple": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Mac when it's on, else Gemini, else Apple"
+          }
+        }
+      }
+    },
+    "Ton abonnement Claude Code, par ton Mac": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Claude Code subscription, through your Mac"
+          }
+        }
+      }
+    },
+    "Clé Google AI Studio gratuite": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free Google AI Studio key"
+          }
+        }
+      }
+    },
+    "Ton Mac n'a pas répondu. Vérifie qu'il est allumé et que Claude Code y marche.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Mac didn't answer. Check that it's on and Claude Code works there."
+          }
+        }
+      }
+    },
+    "En ce moment : %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right now: %@"
+          }
+        }
+      }
+    },
+    "« Mon Mac » utilise ton abonnement Claude Code, sans clé : ta question passe par ton iCloud et ton Mac répond. Gemini propose une clé gratuite.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“My Mac” uses your Claude Code subscription, no key: your question goes through your iCloud and your Mac answers. Gemini offers a free key."
+          }
+        }
+      }
+    },
+    "Ton iPhone et %@ se parlent, par ton iCloud.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iPhone and %@ talk to each other, through your iCloud."
+          }
+        }
+      }
+    },
     "C'est bon, on est connectés": {
       "localizations": {
         "en": {

@@ -65,10 +65,15 @@ final class PhoneLink: NSObject {
     /// told the iPhone is there (a « hello » it shows on its island, never acted on).
     private(set) var connectedAt: Date?
 
+    #if DEBUG
+    /// `-YumiCelebrate YES`: the celebration at launch, to look at it.
+    func celebrateForTesting() { connectedAt = Date() }
+    #endif
+
     private func connected(_ mac: LinkSnapshot) async {
-        connectedAt = Date()
         let key = "phoneLinkGreeted"
         guard UserDefaults.standard.string(forKey: key) != mac.deviceName else { return }
+        connectedAt = Date()
         UserDefaults.standard.set(mac.deviceName, forKey: key)
         await LinkAnswers.send(approvalID: LinkHello.id, fingerprint: UIDevice.current.name, allow: true)
         let content = UNMutableNotificationContent()

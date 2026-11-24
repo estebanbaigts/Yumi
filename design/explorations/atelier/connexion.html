@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Atelier Yumi · Connexion iPhone ↔ Mac</title>
+<!-- Maquette de l'animation « on est connectés ». Le personnage vient tel quel de yumi.js / yumi.css. -->
+<link rel="stylesheet" href="yumi.css">
+<style>
+body{margin:0;background:#0b0b0f;color:#fff;font:14px -apple-system,system-ui;display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
+h1{font:700 20px -apple-system;margin:0}
+.row{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.cap{color:#8E8E93;text-align:center;margin-top:8px;font-size:12px}
+button{font:600 13px -apple-system;color:#000;background:#F5F5F7;border:0;border-radius:99px;height:32px;padding:0 16px;cursor:pointer}
+/* iPhone */
+.phone{width:300px;height:640px;border-radius:46px;background:#000;position:relative;overflow:hidden;box-shadow:0 0 0 10px #1c1c1f,0 30px 80px #000}
+.dyn{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:92px;height:27px;border-radius:20px;background:#000;z-index:9}
+.title{position:absolute;top:52px;left:18px;font:700 26px -apple-system;transition:opacity .4s}
+.icons{position:absolute;top:150px;left:0;right:0;height:60px;display:flex;align-items:center;justify-content:center;gap:14px;transition:gap .9s cubic-bezier(.3,1.3,.4,1)}
+.dev{display:flex;flex-direction:column;align-items:center;transition:filter .6s}.iph{width:22px;height:40px;border:2px solid #F5F5F7;border-radius:6px}.lap{width:52px;height:33px;border:2px solid #F5F5F7;border-radius:4px}.base{width:66px;height:3px;background:#F5F5F7;border-radius:2px;margin-top:1px}
+.wire{position:relative;width:90px;height:2px;background:linear-gradient(90deg,#5B8CFF,#F58AD9);opacity:.35;transition:all .6s}
+.p{position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 8px #fff,0 0 16px #C77DFF;top:-2px}
+.flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,#8B6CFF88,transparent 60%);opacity:0;transition:opacity .5s;pointer-events:none}
+.ring{position:absolute;left:50%;top:46%;width:40px;height:40px;margin:-20px;border-radius:50%;border:2px solid #fff;opacity:0}
+.ring.go{animation:ring 1.1s cubic-bezier(.1,.7,.3,1) forwards}
+@keyframes ring{0%{opacity:1;transform:scale(.3);border-color:#F58AD9}100%{opacity:0;transform:scale(9);border-color:#5B8CFF}}
+.star{position:absolute;width:46px;height:1.5px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff 70%,#C9B8FF);opacity:0}
+.star::after{content:"";position:absolute;right:-1px;top:-1.5px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff,0 0 12px #B49BFF}
+.yw{position:absolute;left:50%;transform:translate(-50%,-50%);transition:all .8s cubic-bezier(.3,1.4,.45,1);z-index:5}
+.orb{position:absolute;left:50%;bottom:22px;width:68px;height:68px;margin-left:-34px;border-radius:50%;background:#000;box-shadow:0 0 0 1px #ffffff1f,0 0 26px #8B6CFF55;transition:opacity .4s}
+.msg{position:absolute;left:0;right:0;top:63%;text-align:center;opacity:0;transform:scale(.8);transition:all .6s cubic-bezier(.3,1.5,.4,1)}
+.msg b{display:block;font:700 22px -apple-system;color:#fff}
+.msg span{display:block;color:#B9BCC8;font-size:13px;margin-top:6px}
+/* Mac */
+.mac{width:560px;height:340px;border-radius:14px;background:linear-gradient(160deg,#1B2A4A,#3A2650 60%,#11131B);position:relative;overflow:hidden;box-shadow:0 0 0 8px #1c1c1f,0 30px 80px #000}
+.isl{position:absolute;top:0;left:50%;transform:translateX(-50%);width:184px;height:32px;border-radius:0 0 12px 12px;background:#000;overflow:hidden;transition:all .7s cubic-bezier(.32,1.22,.42,1);z-index:3}
+.isl .glow{position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1.5px transparent;transition:box-shadow .5s}
+.isl.lit .glow{box-shadow:inset 0 0 0 1.5px #B49BFF,inset 0 0 30px #8B6CFF66}
+.myw{position:absolute;left:50%;top:16px;transform:translate(-50%,-50%) scale(.34);transition:all .7s cubic-bezier(.32,1.22,.42,1)}
+.mtxt{position:absolute;left:0;right:0;bottom:22px;text-align:center;opacity:0;transition:opacity .5s}
+.mtxt b{font:700 17px -apple-system}.mtxt span{display:block;color:#B9BCC8;font-size:12px;margin-top:3px}
+.mp{position:absolute;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 8px #fff,0 0 14px #C77DFF;z-index:4}
+.mstars{position:absolute;inset:0;opacity:0;transition:opacity .5s}
+</style>
+</head>
+<body>
+<h1>Connexion iPhone ↔ Mac · « on est connectés »</h1>
+<button id="again">↻ Rejouer</button>
+<div class="row">
+ <div><div class="phone" id="ph">
+  <div class="dyn"></div><div class="title">Mon Mac ⌄</div>
+  <div class="flash"></div><div class="ring"></div>
+  <div class="icons"><span class="dev ph"><i class="iph"></i></span><div class="wire"></div><span class="dev lapdev"><i class="lap"></i><i class="base"></i></span></div>
+  <div class="orb"></div>
+  <div class="yw" id="py" style="top:calc(100% - 56px)"><span class="ys" data-s="46"></span></div>
+  <div class="msg"><b>C'est bon, on est connectés</b><span>Ton iPhone et MacBook Pro se parlent, par ton iCloud.</span></div>
+ </div><div class="cap">iPhone · écran Mon Mac</div></div>
+ <div><div class="mac" id="mc">
+  <div class="isl"><div class="mstars"></div><div class="glow"></div><div class="myw"><span class="ys" data-s="80"></span></div>
+   <div class="mtxt"><b>On est connectés</b><span>avec l'iPhone d'Esteban</span></div></div>
+ </div><div class="cap">Mac · l'île</div></div>
+</div>
+<p class="cap" style="max-width:640px">0 s : l'iPhone cherche (deux points qui partent vers le Mac). 0,8 s : le Mac répond, un flot de données dans les deux sens. 1,6 s : les deux appareils se rapprochent, Yumi saute du rond du bas au milieu. 2,4 s : onde de choc, étoiles filantes, Yumi fait la fête. 3,2 s : « C'est bon, on est connectés ». En même temps sur le Mac : l'île s'ouvre, les données montent de l'iPhone jusqu'à Yumi, éclat et étoiles, « On est connectés ».</p>
+<script src="yumi.js"></script>
+<script>
+const $=(r,s)=>r.querySelector(s);
+function mountY(root){root.querySelectorAll(".ys").forEach(s=>{const sz=+s.dataset.s;s.innerHTML=yumi({size:sz,mood:"neutre",rim:"calm",rimW:2.6});new Blob(s.firstElementChild)})}
+let timers=[],raf=0;
+const at=(ms,f)=>timers.push(setTimeout(f,ms));
+function stars(box,n){box.innerHTML="";for(let i=0;i<n;i++){const s=document.createElement("i");s.className="star";const x=(i*53+20)%100,y=(i*37+8)%85;s.style.cssText=`left:${x}%;top:${y}%;transform:rotate(28deg)`;box.appendChild(s);
+ s.animate([{opacity:0,transform:"rotate(28deg) translateX(-30px)"},{opacity:1,offset:.15},{opacity:.9,offset:.7},{opacity:0,transform:"rotate(28deg) translateX(140px)"}],{duration:1400+(i%4)*350,delay:(i*.47%2.6)*1000,iterations:Infinity})}}
+function play(){
+ timers.forEach(clearTimeout);timers=[];cancelAnimationFrame(raf);
+ const ph=$(document,"#ph"),mc=$(document,"#mc");
+ ph.querySelectorAll(".p,.star").forEach(x=>x.remove());mc.querySelectorAll(".mp").forEach(x=>x.remove());
+ ph.innerHTML=ph.innerHTML;mc.innerHTML=mc.innerHTML;mountY(ph);mountY(mc);
+ const wire=$(ph,".wire"),py=$(ph,"#py"),pyS=()=>$(py,"svg"),isl=$(mc,".isl"),my=$(mc,".myw"),myS=()=>$(my,"svg");
+ setMood(pyS(),"curieux","calm");setMood(myS(),"sommeil","calm");
+ // particles on the wire
+ let mode="search";const parts=[];for(let i=0;i<8;i++){const p=document.createElement("i");p.className="p";wire.appendChild(p);parts.push(p)}
+ const t0=performance.now();
+ const loop=now=>{const t=(now-t0)/1000;const n=mode==="search"?2:mode==="burst"?8:3,sp=mode==="search"?.6:mode==="burst"?2.4:.5;
+  parts.forEach((p,i)=>{if(i>=n){p.style.opacity=0;return}let q=(t*sp+i/n)%1;if(mode!=="search"&&i%2)q=1-q;p.style.opacity=1;p.style.left=(q*100)+"%"});
+  raf=requestAnimationFrame(loop)};raf=requestAnimationFrame(loop);
+ // Mac: particles rising into the island
+ const rise=()=>{for(let i=0;i<14;i++){const p=document.createElement("i");p.className="mp";p.style.left=(46+Math.random()*8)+"%";p.style.top="100%";mc.appendChild(p);
+  p.animate([{top:"100%",opacity:0,transform:`translateX(${(Math.random()-.5)*160}px)`},{opacity:1,offset:.2},{top:"30px",opacity:.9,transform:"translateX(0)"}],{duration:900,delay:i*70,easing:"cubic-bezier(.4,0,.6,1)",fill:"forwards"}).onfinish=()=>p.remove()}};
+ at(800,()=>{mode="burst";wire.style.opacity=1;wire.style.boxShadow="0 0 12px #C77DFF";setMood(pyS(),"surpris","calm");
+  isl.style.cssText+="width:300px;height:150px;border-radius:0 0 50px 50px";my.style.top="70px";my.style.transform="translate(-50%,-50%) scale(1)";setMood(myS(),"surpris","calm");playPose(myS(),"pop");rise()});
+ at(1500,()=>rise());
+ at(1600,()=>{$(ph,".title").style.opacity=.2;$(ph,".orb").style.opacity=0;$(ph,".icons").style.gap="4px";
+  py.style.top="44%";py.style.transform="translate(-50%,-50%) scale(2.2)";playPose(pyS(),"saut");setMood(pyS(),"heureux","joy")});
+ at(2400,()=>{$(ph,".ring").classList.add("go");$(ph,".flash").style.opacity=1;stars(ph.appendChild(Object.assign(document.createElement("div"),{style:"position:absolute;inset:0"})),12);
+  playPose(pyS(),"celebrer");isl.classList.add("lit");$(mc,".mstars").style.opacity=1;stars($(mc,".mstars"),12);setMood(myS(),"heureux","joy");playPose(myS(),"celebrer");
+  $(ph,".dev.ph").style.filter="drop-shadow(0 0 14px #5B8CFF)";$(ph,".dev.lapdev").style.filter="drop-shadow(0 0 14px #F58AD9)"});
+ at(3200,()=>{const m=$(ph,".msg");m.style.opacity=1;m.style.transform="scale(1)";$(mc,".mtxt").style.opacity=1;my.style.top="56px";my.style.transform="translate(-50%,-50%) scale(.8)"});
+ at(4200,()=>{mode="flow";$(ph,".flash").style.opacity=.35;playPose(pyS(),"salut");playPose(myS(),"salut")});
+ at(5600,()=>setMood(myS(),"clin","calm"));
+}
+document.getElementById("again").onclick=play;play();
+</script>
+</body>
+</html>

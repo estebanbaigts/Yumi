@@ -17,6 +17,8 @@ final class CloudKitLink: YumiLink, @unchecked Sendable {
     private let lock = NSLock()
     private var zoneReady = false
     private var changeToken: CKServerChangeToken?
+    /// Questions met while reading the zone for replies, until `takeAsks`.
+    private var pendingAsks: [LinkAsk] = []
 
     init(containerID: String) {
         container = CKContainer(identifier: containerID)
@@ -53,6 +55,14 @@ final class CloudKitLink: YumiLink, @unchecked Sendable {
     }
 
     func takeReplies() async throws -> [LinkReply] {
+        let fresh = try await readZone()
+        return lock.withLock {
+            defer { heldReplies = [] }
+            return heldReplies + fresh
+        }
+    }
+
+    private func readZone() async throws -> [LinkReply] {
         let token = lock.withLock { changeToken }
         let changes: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, any Error>],
                       deletions: [CKDatabase.RecordZoneChange.Deletion], changeToken: CKServerChangeToken, moreComing: Bool)
@@ -68,6 +78,14 @@ final class CloudKitLink: YumiLink, @unchecked Sendable {
         var replies: [LinkReply] = []
         var taken: [CKRecord.ID] = []
         for (id, result) in changes.modificationResultsByID {
+            if case .success(let modification) = result, modification.record.recordType == "Ask" {
+                taken.append(id)
+                if let data = modification.record.encryptedValues["payload"] as? Data,
+                   let ask = try? JSONDecoder.link.decode(LinkAsk.self, from: data) {
+                    lock.withLock { pendingAsks.append(ask) }
+                }
+                continue
+            }
             guard case .success(let modification) = result, modification.record.recordType == "Reply" else { continue }
             taken.append(id)
             if let data = modification.record.encryptedValues["payload"] as? Data,
@@ -77,6 +95,51 @@ final class CloudKitLink: YumiLink, @unchecked Sendable {
         }
         // Read once: an answer is never applied twice, even after a restart
         if !taken.isEmpty { _ = try? await database.modifyRecords(saving: [], deleting: taken) }
+        return replies
+    }
+
+    func ask(_ ask: LinkAsk) async throws {
+        try await ensureZone()
+        let record = CKRecord(recordType: "Ask", recordID: CKRecord.ID(recordName: "ask-" + ask.id, zoneID: Self.zoneID))
+        record.encryptedValues["payload"] = try JSONEncoder.link.encode(ask)
+        _ = try await database.modifyRecords(saving: [record], deleting: [])
+    }
+
+    func takeAsks() async throws -> [LinkAsk] {
+        // The zone is read with the replies: asks met there wait here
+        _ = try await takeRepliesKeepingThem()
+        return lock.withLock {
+            defer { pendingAsks = [] }
+            // A question older than two minutes is no longer waited for
+            return pendingAsks.filter { Date().timeIntervalSince($0.sentAt) < 120 }
+        }
+    }
+
+    func answer(_ answer: LinkAnswer) async throws {
+        try await ensureZone()
+        let record = CKRecord(recordType: "Answer", recordID: CKRecord.ID(recordName: "answer-" + answer.askID, zoneID: Self.zoneID))
+        record.encryptedValues["payload"] = try JSONEncoder.link.encode(answer)
+        _ = try await database.modifyRecords(saving: [record], deleting: [])
+    }
+
+    func takeAnswer(for askID: String) async throws -> LinkAnswer? {
+        let id = CKRecord.ID(recordName: "answer-" + askID, zoneID: Self.zoneID)
+        do {
+            let record = try await database.record(for: id)
+            _ = try? await database.modifyRecords(saving: [], deleting: [id])
+            guard let data = record.encryptedValues["payload"] as? Data else { return nil }
+            return try JSONDecoder.link.decode(LinkAnswer.self, from: data)
+        } catch let error as CKError where error.code == .unknownItem || error.code == .zoneNotFound {
+            return nil
+        }
+    }
+
+    /// The replies read with the asks are kept for the next `takeReplies`.
+    private var heldReplies: [LinkReply] = []
+
+    private func takeRepliesKeepingThem() async throws -> [LinkReply] {
+        let replies = try await readZone()
+        lock.withLock { heldReplies += replies }
         return replies
     }
 
