@@ -17,7 +17,8 @@ struct YumiPhoneApp: App {
                 if opening {
                     PhoneSplash(character: phone.character,
                                 name: { phone.memoryBook.name ?? (phone.studio ? "Esteban" : nil) },
-                                reveal: { phone.revealed = true }) {
+                                reveal: { phone.revealed = true },
+                                landed: { phone.orbShown = true }) {
                         opening = false
                     }
                     // Removed at once: by then it draws nothing
@@ -51,6 +52,8 @@ final class Phone {
     let character = PhoneCharacter()
     /// The home screen's content shows once the opening is over.
     var revealed = false
+    /// The circle at the bottom shows once he landed in it (the opening).
+    var orbShown = false
     /// The screen shown, chosen from the menu of the title.
     var page: PhonePage = .today
     /// Today's cards are being arranged.
@@ -144,9 +147,12 @@ final class Phone {
         }
         permissions?.presenter = approvals
         memory?.start()
-        await today.refresh()
+        // All at once: the Mac's agents do not wait for the calendar, nor the mails
         Task { await mail.refresh() }
-        if linkOn, !studio { await PhoneLink.shared.refresh() }
+        let link = linkOn ? Task { await PhoneLink.shared.refresh() } : nil
+        await today.refresh()
+        updateRemarks()
+        await link?.value
         updateRemarks()
         #if DEBUG
         // As on the Mac: `YUMI_CHAT_PROMPT="a||b"` sends messages at launch and prints the answers
@@ -163,9 +169,10 @@ final class Phone {
     /// Back in front: what changed meanwhile (the Mac's picture first, it may hold a request).
     func cameBack() async {
         guard !studio else { return }
-        if linkOn { await PhoneLink.shared.refresh() }
         widgetsFreshened = false
+        let link = linkOn ? Task { await PhoneLink.shared.refresh() } : nil
         await today.refresh()
+        await link?.value
         Task { await mail.refresh() }
         updateRemarks()
     }

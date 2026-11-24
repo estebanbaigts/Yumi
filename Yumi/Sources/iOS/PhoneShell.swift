@@ -39,7 +39,7 @@ struct PhoneRootView: View {
                     header
                     page.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
-                if phone.page != .talk { PhoneOrb(phone: phone) }
+                if phone.page != .talk { PhoneOrb(phone: phone).opacity(phone.orbShown ? 1 : 0) }
                 if menuOpen { menu }
             }
             .toolbar(.hidden, for: .navigationBar)

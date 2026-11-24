@@ -51,8 +51,9 @@ final class PhoneWatcher: NSObject {
 
     private func startFace() {
         guard session == nil else { return }
-        AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-            Task { @MainActor [weak self] in
+        Task { [weak self] in
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            do {
                 guard granted, let self, self.session == nil, self.active else { return }
                 let session = ARSession()
                 session.delegate = self

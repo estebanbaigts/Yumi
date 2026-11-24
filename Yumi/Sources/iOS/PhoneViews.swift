@@ -63,7 +63,7 @@ extension View {
     func phoneReveal(_ shown: Bool, step: Int) -> some View {
         opacity(shown ? 1 : 0)
             .offset(y: shown ? 0 : 14)
-            .animation(.spring(response: 0.5, dampingFraction: 0.86).delay(Double(step) * 0.06), value: shown)
+            .animation(.easeOut(duration: 0.45).delay(Double(step) * 0.07), value: shown)
     }
 }
 

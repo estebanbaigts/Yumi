@@ -169,7 +169,10 @@ final class PhoneToday {
         if calendarAccess == .granted { loadEvents() }
         if remindersAccess == .granted { await loadReminders() }
         notes = notesStore?.load() ?? []
-        if CLLocationManager().authorizationStatus.isAllowed { await loadWeather() }
+        // The weather waits for the place and the network: it comes on its own, the rest does not wait for it
+        if CLLocationManager().authorizationStatus.isAllowed {
+            Task { await loadWeather(); changed?() }
+        }
     }
 
     // MARK: - Asked from a button
@@ -188,7 +191,8 @@ final class PhoneToday {
 
     func loadWeather() async {
         guard live else { return }
-        weather = .loading
+        // A weather already shown stays while the new one comes
+        if case .ready = weather {} else { weather = .loading }
         // A session asks for "when in use" once, from this tap, and lasts as long as it is kept
         let session = CLServiceSession(authorization: .whenInUse)
         defer { session.invalidate() }

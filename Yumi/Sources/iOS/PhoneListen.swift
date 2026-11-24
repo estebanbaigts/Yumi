@@ -24,9 +24,7 @@ final class PhoneListener {
 
     /// Asked once, at the first launch, with the other permissions.
     func ask() async -> Bool {
-        let speech = await withCheckedContinuation { (done: CheckedContinuation<Bool, Never>) in
-            SFSpeechRecognizer.requestAuthorization { done.resume(returning: $0 == .authorized) }
-        }
+        let speech = await Self.askSpeech()
         let mic = await AVAudioApplication.requestRecordPermission()
         access = speech && mic ? .granted : .denied
         return speech && mic
@@ -50,23 +48,16 @@ final class PhoneListener {
         self.request = request
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else { return }
         input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-            request.append(buffer)
-            let level = Self.level(of: buffer)
-            Task { @MainActor in self?.level = level }
-        }
+        Self.tap(input, format: format, request: request) { [weak self] level in self?.level = level }
         engine.prepare()
         do { try engine.start() } catch { input.removeTap(onBus: 0); return }
         listening = true
-        task = recognizer.recognitionTask(with: request) { [weak self] result, error in
-            let text = result?.bestTranscription.formattedString
-            let over = error != nil || (result?.isFinal ?? false)
-            Task { @MainActor in
-                guard let self else { return }
-                if let text { self.heard = text }
-                if over, self.listening { self.halt() }
-            }
+        task = Self.recognize(recognizer, request) { [weak self] text, over in
+            guard let self else { return }
+            if let text { self.heard = text }
+            if over, self.listening { self.halt() }
         }
     }
 
@@ -89,6 +80,33 @@ final class PhoneListener {
         request = nil
         task = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    // The system calls these back on its own threads: they must not belong to the main actor.
+
+    private nonisolated static func askSpeech() async -> Bool {
+        await withCheckedContinuation { (done: CheckedContinuation<Bool, Never>) in
+            SFSpeechRecognizer.requestAuthorization { done.resume(returning: $0 == .authorized) }
+        }
+    }
+
+    private nonisolated static func tap(_ input: AVAudioInputNode, format: AVAudioFormat,
+                                        request: SFSpeechAudioBufferRecognitionRequest,
+                                        level: @escaping @MainActor @Sendable (Double) -> Void) {
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
+            request.append(buffer)
+            let value = Self.level(of: buffer)
+            Task { @MainActor in level(value) }
+        }
+    }
+
+    private nonisolated static func recognize(_ recognizer: SFSpeechRecognizer, _ request: SFSpeechAudioBufferRecognitionRequest,
+                                              heard: @escaping @MainActor @Sendable (String?, Bool) -> Void) -> SFSpeechRecognitionTask {
+        recognizer.recognitionTask(with: request) { result, error in
+            let text = result?.bestTranscription.formattedString
+            let over = error != nil || (result?.isFinal ?? false)
+            Task { @MainActor in heard(text, over) }
+        }
     }
 
     private nonisolated static func level(of buffer: AVAudioPCMBuffer) -> Double {
