@@ -73,15 +73,14 @@ final class IslandLaunch {
             m.setMood(.curious)   // a new mood frees the gaze: he follows the pointer again
             self?.sound("open")
         }
-        // 4. the light comes on: the rim draws itself round him, the glow blooms, he bounces with joy
+        // 4. the light comes on: the rim draws itself round him, shooting stars cross the island,
+        //    « Bonjour » shows under him, he bounces with joy (`l1`, « Le réveil »)
         after(2200) { [weak self] in
             m.setLit(true)
             m.greeting.lit = true
             m.setMood(.happy)
             m.setRim(.joy)
             m.pose(.boing)
-            m.sparksStart = .now
-            self?.after(1400) { m.sparksStart = nil }
             self?.sound("greet")
         }
         // 5. he waves

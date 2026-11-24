@@ -799,6 +799,8 @@ extension IslandStudio {
                 controller?.expand(to: .choose)
             }),
             ("17d-fin", { state.droppedFile = nil }),
+            ("18-termine", { show(sessions()); controller?.expand(to: .finished) }),
+            ("19-demarrage", { controller?.collapse(); controller?.studioLaunch() }),
             ("07-reglages", { controller?.expand(to: .settings) }),
             ("08-skin-couronne", { wear(.crown, .yumi); show(sessions()); IslandActions.showTab(.work); controller?.expand(to: .overview) }),
             ("09-skin-chat", { wear(.cat, .pink); show(modules(musicPlaying: false)); IslandActions.showTab(.day); controller?.expand(to: .overview) }),

@@ -17,6 +17,11 @@ struct IslandFrameBar: View {
         HStack(spacing: 6) {
             if screen == .talk, voice.active {
                 VoiceTitle()
+            } else if screen == .finished {
+                Text("✓ " + loc("Terminé"))
+                    .font(IslandTheme.text(12, .semibold))
+                    .foregroundStyle(IslandTheme.green)
+                    .padding(.leading, 4)
             } else if screen == .alert {
                 Text(loc("Demande"))
                     .font(IslandTheme.text(12, .semibold))

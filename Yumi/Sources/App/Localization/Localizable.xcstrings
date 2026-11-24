@@ -1,6 +1,46 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Bonjour %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hello %@"
+          }
+        }
+      }
+    },
+    "Terminal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal"
+          }
+        }
+      }
+    },
+    "Tous les agents": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All agents"
+          }
+        }
+      }
+    },
+    "L'île se replie toute seule dans quelques secondes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The island folds by itself in a few seconds"
+          }
+        }
+      }
+    },
     "%@ veut lancer une commande": {
       "localizations": {
         "en": {

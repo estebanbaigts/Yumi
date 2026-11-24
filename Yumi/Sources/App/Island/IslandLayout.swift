@@ -102,7 +102,7 @@ struct IslandLayout: Equatable {
         case .drip:
             return IslandSeat(x: 0, y: 62 * l + notchDelta, scale: 0.42 * l, opacity: 1)
         case .greet:
-            return IslandSeat(x: (130 - IslandConst.greetWidth / 2) * l, y: 84 * l + notchDelta, scale: l, opacity: 1)
+            return IslandSeat(x: (130 - IslandConst.greetWidth / 2) * l, y: 80 * l + notchDelta, scale: l, opacity: 1)
         case .bye:
             return IslandSeat(x: (150 - IslandConst.byeWidth / 2) * l, y: 62 * l + notchDelta, scale: 0.86 * l, opacity: 1)
         }
@@ -149,7 +149,7 @@ enum IslandConst {
     static let dripExtra: CGFloat = 12
     static let dripHeight: CGFloat = 102
     static let greetWidth: CGFloat = 260
-    static let greetHeight: CGFloat = 150
+    static let greetHeight: CGFloat = 170
     /// The goodbye: a little wider, Yumi in the middle.
     static let byeWidth: CGFloat = 300
     static let byeHeight: CGFloat = 132

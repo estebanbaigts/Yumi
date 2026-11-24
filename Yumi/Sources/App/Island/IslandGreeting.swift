@@ -1,8 +1,8 @@
 import SwiftUI
 
-// What surrounds Yumi while he arrives and while he leaves (`.greet` in the mock-up): a halo
-// behind him, and nothing else at launch. No name, no words. Yumi himself is the island's
-// one character, drawn above; this layer only holds the light.
+// What surrounds Yumi while he arrives and while he leaves: at launch, shooting stars and
+// « Bonjour » with the person's name (`l1`, « Le réveil »); at the goodbye, a halo and a few
+// words (`q1`). Yumi himself is the island's one character, drawn above.
 
 struct IslandGreetingLayer: View {
     let phase: IslandModel.GreetingPhase
@@ -12,6 +12,9 @@ struct IslandGreetingLayer: View {
     let size: CGSize
     /// A few words under Yumi: only the goodbye has some.
     var words: String?
+    /// « Bonjour Esteban » at the bottom of the launch (`l1`, « Le réveil »), with shooting
+    /// stars in place of the glow.
+    var hello: String?
 
     private var glowOn: Bool { phase.lit && !phase.bye }
 
@@ -31,9 +34,28 @@ struct IslandGreetingLayer: View {
             .frame(width: 320, height: 240)
             .scaleEffect(phase.lit ? 1 : 0.4)
             .animation(.islandSpring(1), value: phase.lit)
-            .opacity(glowOn ? 1 : 0)
+            .opacity(glowOn && hello == nil ? 1 : 0)
             .animation(.islandEase(phase.bye ? 0.22 : 0.8), value: glowOn)
             .position(center)
+
+            // `STARS(10)`: shooting stars crossing the island while the light is on
+            if hello != nil {
+                ShootingStars(size: size)
+                    .opacity(glowOn ? 1 : 0)
+                    .animation(.islandEase(0.6), value: glowOn)
+            }
+
+            // `.sq-hi`: bottom 14, 16 pt bold rounded
+            if let hello {
+                Text(hello)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(width: size.width)
+                    .position(x: size.width / 2, y: size.height - 14 - 10)
+                    .opacity(glowOn ? 1 : 0)
+                    .offset(y: glowOn ? 0 : 6)
+                    .animation(.islandEase(0.5), value: glowOn)
+            }
 
             // `.g-bye`
             if let words {
@@ -48,6 +70,38 @@ struct IslandGreetingLayer: View {
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .allowsHitTesting(false)
+    }
+}
+
+/// `.sq-stars i`: a 46-point streak with a bright head, at 28°, flying 150 points in 1.4 to 2.5 s.
+private struct ShootingStars: View {
+    let size: CGSize
+
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            Canvas { g, box in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                for i in 0..<10 {
+                    let duration = 1.4 + Double(i % 4) * 0.35
+                    let delay = Double(i * 47 % 260) / 100
+                    let p = ((t + delay) / duration).truncatingRemainder(dividingBy: 1)
+                    let opacity = p < 0.15 ? p / 0.15 : p < 0.7 ? 1 - (p - 0.15) / 0.55 * 0.1 : 0.9 * (1 - (p - 0.7) / 0.3)
+                    let origin = CGPoint(x: box.width * Double((i * 53 + 20) % 100) / 100,
+                                         y: box.height * Double((i * 37 + 8) % 85) / 100)
+                    let shift = -30 + 150 * p
+                    var c = g
+                    c.translateBy(x: origin.x, y: origin.y)
+                    c.rotate(by: .degrees(28))
+                    c.opacity = opacity
+                    let streak = CGRect(x: shift, y: 0, width: 46, height: 1.5)
+                    c.fill(Path(roundedRect: streak, cornerRadius: 1),
+                           with: .linearGradient(Gradient(colors: [.clear, .white, Color(hex: "#C9B8FF")]),
+                                                 startPoint: CGPoint(x: streak.minX, y: 0), endPoint: CGPoint(x: streak.maxX, y: 0)))
+                    c.fill(Path(ellipseIn: CGRect(x: streak.maxX - 3, y: -1.5, width: 4, height: 4)), with: .color(.white))
+                }
+            }
+        }
+        .frame(width: size.width, height: size.height)
     }
 }
 

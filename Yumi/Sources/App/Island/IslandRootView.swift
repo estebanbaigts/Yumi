@@ -9,6 +9,12 @@ struct IslandRootView: View {
     @EnvironmentObject var state: AppState
     @ObservedObject private var model = IslandModel.shared
 
+    /// « Bonjour Esteban » at launch, « Bonjour » without a name.
+    static func hello(_ name: String?) -> String {
+        guard let name = name?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return loc("Bonjour") }
+        return loc("Bonjour \(name)")
+    }
+
     var body: some View {
         IslandScene(state: state, model: model)
             .frame(width: IslandConst.panelWidth, height: IslandConst.panelHeight, alignment: .top)
@@ -81,6 +87,8 @@ struct IslandScene: View {
             strain: macVitals ? state.macStrain : nil)
         let middle = IslandConst.panelWidth / 2
         let launching = model.launchStage != nil
+        let greetingWords: String? = model.leaving ? Voice.goodbye(name: state.userName) : nil
+        let greetingHello: String? = model.leaving ? nil : IslandRootView.hello(state.userName)
 
         ZStack(alignment: .top) {
             Color.clear
@@ -96,11 +104,11 @@ struct IslandScene: View {
                 ZStack(alignment: .topLeading) {
                     // The halo of the launch, or of the goodbye with its few words
                     IslandGreetingLayer(phase: model.greeting,
-                                        center: model.leaving ? CGPoint(x: 150, y: 70 + drop) : CGPoint(x: 130, y: 86 + drop),
+                                        center: model.leaving ? CGPoint(x: 150, y: 70 + drop) : CGPoint(x: 130, y: 80 + drop),
                                         size: model.leaving
                                             ? CGSize(width: IslandConst.byeWidth, height: IslandConst.byeHeight + drop)
                                             : CGSize(width: IslandConst.greetWidth, height: IslandConst.greetHeight + drop),
-                                        words: model.leaving ? Voice.goodbye(name: state.userName) : nil)
+                                        words: greetingWords, hello: greetingHello)
                         .scaleEffect(IslandConst.launchScale, anchor: .topLeading)
                         .modifier(IslandLayer(on: launching))
 

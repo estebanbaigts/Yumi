@@ -27,7 +27,8 @@ struct IslandOpenLayer: View {
         switch screen {
         case .home, .module, .working:            return .tab(.work)  // one size for the home and every module page
         case .alert:                              return .tab(.work)
-        case .finished, .error:                   return .alert
+        case .finished:                           return .tab(.work)
+        case .error:                              return .alert
         case .settings, .apps:                    return .settings
         case .talk:                               return .tab(.work)
         case .drop:                               return .tab(.work)
@@ -94,7 +95,7 @@ struct IslandOpenLayer: View {
         case .alert:
             ApprovalPage(state: state, model: model)
         case .finished:
-            card(slot: 64, tint: IslandTheme.green) { FinishedActivity(state: state, model: model) }
+            FinishedPage(state: state, model: model)
         case .error:
             card(slot: 64, tint: IslandTheme.red) { ErrorActivity(state: state) }
         case .talk:
