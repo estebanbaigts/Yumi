@@ -91,11 +91,12 @@ final class MacLink {
     }
 
     /// The iPhone just found this Mac: the island says so, happy, with a sound.
-    private static func hello(from phone: String) {
+    static func hello(from phone: String) {
         trace("hello from \(phone)")
         let state = AppState.shared
-        let remark = YumiRemark(id: "link-hello-\(Date().timeIntervalSince1970)",
-                                text: loc("C'est bon, on est connectés avec \(phone.isEmpty ? "ton iPhone" : phone)."), mood: .happy, duration: 7)
+        // The filming mode keeps only its own remarks: there, this one is one of them
+        let remark = YumiRemark(id: (StudioMode.isOn ? "studio-" : "") + "link-hello-\(Date().timeIntervalSince1970)",
+                                text: loc("C'est bon, on est connectés !"), mood: .happy, duration: 7)
         state.remark = remark
         SoundEngine.shared.play("love")
         // The celebration of the island: surprised, then joy, confetti and stars, he jumps for it

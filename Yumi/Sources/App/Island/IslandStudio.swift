@@ -50,7 +50,7 @@ enum IslandStudio {
 
     // MARK: - Example data: believable, never personal
 
-    static let name = "Alex"
+    static let name = "Esteban"
 
     static func modules(musicPlaying: Bool = true) -> [ModuleSnapshot] {
         var music = ModuleSnapshot(id: "music", name: loc("Musique"), colorHex: "#F58AD9", status: loc("lecture"),
@@ -340,6 +340,28 @@ enum IslandStudio {
 
         if let folder = ProcessInfo.processInfo.environment["YUMI_STUDIO_SHOTS"] { rehearse(into: folder) }
         if let folder = ProcessInfo.processInfo.environment["YUMI_ISLAND_V2_SHOTS"] { shootIsland(into: folder) }
+        if ProcessInfo.processInfo.environment["YUMI_STUDIO_BACKDROP"] == "1" { coverTheDesk() }
+        // `YUMI_STUDIO_HELLO="l'iPhone d'Esteban"`: the island's celebration of a new iPhone,
+        // after the opening, nothing being linked for real (design/video-beta.md)
+        if let phone = ProcessInfo.processInfo.environment["YUMI_STUDIO_HELLO"] {
+            after(10) { MacLink.hello(from: phone) }
+        }
+    }
+
+    private static var backdrop: NSWindow?
+
+    /// `YUMI_STUDIO_BACKDROP=1`: a black window over the whole screen, under the island and the
+    /// menu bar, so that a capture of the screen shows nothing of the desk or of other windows.
+    private static func coverTheDesk() {
+        guard backdrop == nil, let screen = NSScreen.main else { return }
+        let window = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.backgroundColor = .black
+        window.isOpaque = true
+        window.ignoresMouseEvents = true
+        window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.mainMenuWindow)) - 1)
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        window.orderFrontRegardless()
+        backdrop = window
     }
 
     /// `YUMI_STUDIO_SHOTS=<folder>` plays every shot in turn and saves a picture of the island
@@ -843,7 +865,9 @@ extension IslandStudio {
                 rest()
                 try? await Task.sleep(for: .seconds(1.2))
                 setUp()
-                try? await Task.sleep(for: .seconds(2.6))
+                // `YUMI_ISLAND_V2_HOLD=6`: each shot stays that long, to be filmed rather than photographed
+                let hold = Double(ProcessInfo.processInfo.environment["YUMI_ISLAND_V2_HOLD"] ?? "") ?? 2.6
+                try? await Task.sleep(for: .seconds(hold))
                 save(name)
             }
             for (key, value) in kept { defaults.set(value, forKey: key) }

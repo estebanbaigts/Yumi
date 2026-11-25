@@ -246,7 +246,7 @@ targets:
         CFBundleName: Yumi
         CFBundleDisplayName: Yumi
         CFBundleIdentifier: app.yumi
-        CFBundleVersion: "13"
+        CFBundleVersion: "14"
         CFBundleShortVersionString: "0.1.0"
         YumiDisplayVersion: "0.1.0-beta.1"
         # The Yumi GitHub App (Modules/GitHub/GitHubApp.swift): its public Client ID and its slug,

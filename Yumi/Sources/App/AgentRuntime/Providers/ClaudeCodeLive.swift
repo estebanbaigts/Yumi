@@ -26,7 +26,13 @@ final class ClaudeCodeLive: @unchecked Sendable {
     /// One question at a time.
     private let queue = AsyncSemaphore()
 
-    struct Ended: Error {}
+    struct Ended: Error, CustomStringConvertible {
+        /// The last words of Claude Code on its error output, when it stopped on its own.
+        var reason = ""
+        var description: String { reason.isEmpty ? "the session ended" : reason }
+    }
+    /// What Claude Code last wrote on its error output: said when the session ends by itself.
+    private var lastError = ""
 
     /// Starts the session ahead of a question, if none is open for these arguments.
     func warm(binary: String, arguments: [String], folder: String) {
@@ -75,7 +81,10 @@ final class ClaudeCodeLive: @unchecked Sendable {
            Date().timeIntervalSince(lastUse) < Self.idleLimit {
             return stdin
         }
-        if process?.isRunning == true { process?.terminate() }
+        let replaced = process
+        self.process = nil
+        if replaced?.isRunning == true { replaced?.terminate() }
+        lastError = ""
         try? FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: binary)
@@ -89,13 +98,25 @@ final class ClaudeCodeLive: @unchecked Sendable {
         let input = Pipe(), output = Pipe()
         process.standardInput = input
         process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
-        output.fileHandleForReading.readabilityHandler = { [weak self] handle in
+        let errors = Pipe()
+        process.standardError = errors
+        errors.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
-            if data.isEmpty { handle.readabilityHandler = nil; self?.finish(with: .failure(Ended())); return }
-            self?.received(data)
+            guard let self, !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
+            self.lock.lock(); self.lastError = String((self.lastError + text).suffix(400)); self.lock.unlock()
         }
-        process.terminationHandler = { [weak self] _ in self?.finish(with: .failure(Ended())) }
+        // A session replaced by a newer one ends later: only the current one may end a question,
+        // or the old one's ending would fail the question just sent to the new one
+        output.fileHandleForReading.readabilityHandler = { [weak self, weak process] handle in
+            let data = handle.availableData
+            guard let self, let process, self.isCurrent(process) else { handle.readabilityHandler = nil; return }
+            if data.isEmpty { handle.readabilityHandler = nil; self.finish(with: .failure(Ended(reason: self.lastErrorText))); return }
+            self.received(data)
+        }
+        process.terminationHandler = { [weak self] ended in
+            guard let self, self.isCurrent(ended) else { return }
+            self.finish(with: .failure(Ended(reason: self.lastErrorText)))
+        }
         try process.run()
         self.process = process
         stdin = input.fileHandleForWriting
@@ -104,6 +125,16 @@ final class ClaudeCodeLive: @unchecked Sendable {
         turns = 0
         lastUse = Date()
         return input.fileHandleForWriting
+    }
+
+    private func isCurrent(_ candidate: Process) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return process === candidate
+    }
+
+    private var lastErrorText: String {
+        lock.lock(); defer { lock.unlock() }
+        return lastError.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func received(_ data: Data) {

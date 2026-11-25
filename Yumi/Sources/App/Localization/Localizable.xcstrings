@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "C'est bon, on est connectés !": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All set, we're connected!"
+          }
+        }
+      }
+    },
     "Claude Code veut pousser sur GitHub": {
       "localizations": {
         "en": {

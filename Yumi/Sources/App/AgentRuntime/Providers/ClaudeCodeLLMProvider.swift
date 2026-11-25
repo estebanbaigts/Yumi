@@ -73,7 +73,8 @@ struct ClaudeCodeLLMProvider: LLMProvider {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            throw LLMProviderError.failed("Claude Code did not run")
+            // Its own words, so that the island says why (a login, a version, a path)
+            throw LLMProviderError.failed("Claude Code did not run: \(error)")
         }
         guard let object = (picture && !live) ? Self.resultLine(in: output) : try? JSONSerialization.jsonObject(with: output) as? [String: Any] else {
             throw LLMProviderError.failed("unreadable answer from Claude Code")
@@ -161,17 +162,22 @@ struct ClaudeCodeLLMProvider: LLMProvider {
             environment[key] = nil
         }
         process.environment = environment
-        let stdin = Pipe(), stdout = Pipe()
+        let stdin = Pipe(), stdout = Pipe(), stderr = Pipe()
         process.standardInput = stdin
         process.standardOutput = stdout
-        process.standardError = FileHandle.nullDevice
+        process.standardError = stderr
         try process.run()
         stdin.fileHandleForWriting.write(input)
         try? stdin.fileHandleForWriting.close()
         return try await withTaskCancellationHandler {
+            async let errors = Task.detached { stderr.fileHandleForReading.readDataToEndOfFile() }.value
             let data = await Task.detached { stdout.fileHandleForReading.readDataToEndOfFile() }.value
+            let said = await errors
             process.waitUntilExit()
             try Task.checkCancellation()
+            if data.isEmpty, process.terminationStatus != 0 {
+                throw ClaudeCodeStopped(status: process.terminationStatus, reason: String(decoding: said.suffix(400), as: UTF8.self))
+            }
             return data
         } onCancel: {
             if process.isRunning { process.terminate() }
@@ -180,6 +186,13 @@ struct ClaudeCodeLLMProvider: LLMProvider {
 }
 
 private struct TimedOut: Error {}
+
+/// Claude Code stopped without an answer: its exit status and its last words.
+struct ClaudeCodeStopped: Error, CustomStringConvertible {
+    var status: Int32
+    var reason: String
+    var description: String { "exit \(status) \(reason.trimmingCharacters(in: .whitespacesAndNewlines))" }
+}
 
 /// Asks each provider in turn: the next one is tried only when the previous one is not
 /// configured (`unavailable`). A provider that was reached and failed is not retried
