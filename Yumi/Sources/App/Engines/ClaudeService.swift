@@ -26,7 +26,11 @@ enum Keychain {
             kSecAttrAccessible as String:   kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             kSecAttrSynchronizable as String: kCFBooleanFalse!,
         ]
-        SecItemAdd(item as CFDictionary, nil)
+        // An item another build of Yumi saved may refuse to be deleted: it is then updated in place
+        // (macOS may ask once), rather than the new value silently living only until the next launch
+        if SecItemAdd(item as CFDictionary, nil) == errSecDuplicateItem {
+            SecItemUpdate(lookup as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        }
     }
 
     static func load(key: String) -> String? {
@@ -70,6 +74,8 @@ final class KeychainStore: @unchecked Sendable {
         // Not "notion-api-key": that old name is erased once at launch.
         "notion-integration-key",
         "gmail-app-password",
+        // Yumi's ElevenLabs voice (AgentRuntime/ShowMe/YumiVoice.swift): kept across launches
+        "elevenlabs-api-key",
     ]
 
     /// Keys of the old integrations, removed from Yumi: erased once.
