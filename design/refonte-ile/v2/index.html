@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yumi · Île et Workspace</title>
+<link rel="stylesheet" href="../yumi.css">
+<style>
+:root {
+  --desk: #0E1018;          /* fond du bureau simulé */
+  --bg: #151823;            /* fond principal : noir légèrement bleuté */
+  --side: #1B1E2A;          /* sidebar : gris très foncé */
+  --card: #242838;          /* cartes : anthracite */
+  --raise: #2F3447;         /* surfaces secondaires */
+  --hover: #383E54;
+  --line: rgba(255,255,255,.08);
+  --fg: #F4F5F8;            /* texte principal */
+  --fg2: #BCC1D3;           /* gris secondaire 1 */
+  --fg3: #A2A8BD;           /* gris secondaire 2 */
+  --blue: #5B8CFF; --violet: #8B6CFF; --pink: #F58AD9; --amber: #FFB547; --red: #FF5D6C; --green: #3DDC97;
+  --grad: linear-gradient(120deg, #5B8CFF, #8B6CFF 55%, #F58AD9);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --r: 14px;
+}
+* { box-sizing: border-box }
+html, body { height: 100% }
+body { margin: 0; background: var(--desk); color: var(--fg); font: 15px/1.45 var(--font); -webkit-font-smoothing: antialiased; overflow: hidden }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0 }
+input { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px }
+
+/* ---------- Bureau simulé ---------- */
+.desk { position: fixed; inset: 0; background:
+  radial-gradient(900px 500px at 15% 110%, rgba(139,108,255,.18), transparent 60%),
+  radial-gradient(800px 500px at 95% 0%, rgba(91,140,255,.14), transparent 60%), var(--desk) }
+.menubar { position: fixed; top: 0; left: 0; right: 0; height: 30px; display: flex; align-items: center; gap: 18px; padding: 0 16px; font-size: 13px; color: var(--fg2); z-index: 5 }
+.menubar b { color: var(--fg) }
+.menubar .r { margin-left: auto; display: flex; gap: 14px; align-items: center }
+.demo { position: fixed; left: 16px; bottom: 16px; z-index: 30; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; max-width: calc(100% - 32px);
+  background: rgba(36,40,56,.92); border: 1px solid var(--line); border-radius: 12px; padding: 6px 8px; backdrop-filter: blur(12px); font-size: 13px }
+.demo .tag { color: var(--amber); padding: 0 6px; font-weight: 600 }
+.demo button { padding: 5px 10px; border-radius: 8px; color: var(--fg2) }
+.demo button:hover { background: var(--raise); color: var(--fg) }
+.demo button[aria-pressed="true"] { background: var(--fg); color: #0B0C12 }
+.demo .sep { width: 1px; height: 18px; background: var(--line); margin: 0 2px }
+
+/* ---------- L'île ---------- */
+.island { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 40; width: 560px; max-width: calc(100% - 24px);
+  background: #000; border-radius: 0 0 28px 28px; box-shadow: 0 18px 50px rgba(0,0,0,.55);
+  transition: width .45s cubic-bezier(.3,1.3,.5,1), height .45s cubic-bezier(.3,1.3,.5,1), border-radius .3s; overflow: hidden; height: var(--ih, 190px) }
+.island.folded { width: 300px; height: 34px; border-radius: 0 0 16px 16px; cursor: pointer }
+.island .notch { height: 32px }
+.island .wing { position: absolute; top: 4px; height: 26px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg2); opacity: 0; transition: opacity .2s }
+.island.folded .wing { opacity: 1 }
+.island .wing.l { left: 14px } .island .wing.r { right: 14px }
+.island .wing .yumi { width: 30px; height: 25px }
+.ibody { display: flex; gap: 14px; padding: 0 20px 16px 18px; transition: opacity .2s }
+.island.folded .ibody { opacity: 0; pointer-events: none }
+.seat { flex: 0 0 76px; height: 64px; margin-top: 4px }
+.seat .yumi { width: 76px; height: 64px }
+.icontent { flex: 1; min-width: 0 }
+.lead { font-size: 18px; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; margin: 4px 0 2px }
+.sub { color: var(--fg2); font-size: 14px; margin: 0 }
+.irow { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px 10px; border-radius: 12px; background: #15171F; width: 100%; text-align: left }
+.irow:hover { background: #1F2231 }
+.irow .t { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.irow .t small { color: var(--fg3); font-size: 13px; margin-left: 6px }
+.irow .go { color: var(--fg3); font-size: 13px }
+.iacts { display: flex; gap: 8px; margin-top: 12px }
+.ibtn { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 11px; background: #1F2231; color: var(--fg); font-size: 14px; font-weight: 500 }
+.ibtn:hover { background: #2A2E42 }
+.ibtn.primary { background: var(--fg); color: #0B0C12 }
+.ibtn.primary:hover { background: #fff }
+.ibtn.apps { margin-left: auto; background: linear-gradient(#1F2231,#1F2231) padding-box, var(--grad) border-box; border: 1.5px solid transparent }
+.ibtn svg { width: 16px; height: 16px; flex: 0 0 auto } .ibtn span { max-width: 120px; overflow: hidden; text-overflow: ellipsis } .iacts { flex-wrap: nowrap; min-width: 0 }
+.mini { width: 26px; height: 26px; border-radius: 7px; flex: 0 0 auto }
+.ichat { max-height: 150px; overflow-y: auto; margin-top: 4px; display: flex; flex-direction: column; gap: 8px }
+.me { align-self: flex-end; background: #23263A; padding: 7px 12px; border-radius: 14px 14px 4px 14px; font-size: 14px; max-width: 85% }
+.yu { font-size: 15px; color: var(--fg); max-width: 92% }
+.ifield { display: flex; gap: 8px; margin-top: 10px }
+.ifield input { flex: 1; min-width: 0; height: 36px; border-radius: 11px; border: 1px solid #2A2E42; background: #15171F; padding: 0 12px; font-size: 14px; outline: none }
+.ifield input:focus { border-color: var(--blue) }
+.dots { display: inline-flex; gap: 4px } .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--fg3); animation: dot 1s infinite } .dots i:nth-child(2) { animation-delay: .15s } .dots i:nth-child(3) { animation-delay: .3s }
+@keyframes dot { 50% { opacity: .3; transform: translateY(-2px) } }
+.ikind { font-size: 13px; color: var(--fg2); display: flex; align-items: center; gap: 6px; margin-top: 4px }
+.risk { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: rgba(255,181,71,.15); color: var(--amber) }
+
+/* ---------- Fenêtre Workspace ---------- */
+.win { position: fixed; top: 210px; left: 50%; transform: translateX(-50%); width: min(1180px, calc(100% - 32px)); height: calc(100% - 280px); min-height: 460px;
+  display: grid; grid-template-columns: 236px 1fr; background: var(--bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--line);
+  box-shadow: 0 30px 80px rgba(0,0,0,.5); z-index: 20; transition: opacity .25s, transform .25s }
+.win.closed { opacity: 0; transform: translateX(-50%) translateY(20px) scale(.98); pointer-events: none }
+.side { background: var(--side); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 12px 10px; min-height: 0 }
+.lights { display: flex; gap: 8px; padding: 2px 6px 14px } .lights button { width: 12px; height: 12px; border-radius: 50% }
+.lights .c { background: #FF5F57 } .lights .m { background: #FEBC2E } .lights .z { background: #28C840 }
+.who { display: flex; align-items: center; gap: 10px; padding: 4px 8px 14px }
+.who .yumi { width: 44px; height: 37px }
+.who b { display: block; font-size: 16px } .who span { font-size: 13px; color: var(--fg3) }
+.nav { display: flex; flex-direction: column; gap: 2px }
+.nav button, .pins button { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 9px; color: var(--fg2); font-size: 14px; text-align: left; width: 100% }
+.nav button:hover, .pins button:hover { background: var(--card); color: var(--fg) }
+.nav button[aria-current="page"] { background: var(--raise); color: var(--fg); font-weight: 600 }
+.nav svg { width: 18px; height: 18px; flex: 0 0 auto; opacity: .9 }
+.nav .badge { margin-left: auto; font-size: 12px; font-weight: 600; min-width: 20px; height: 20px; border-radius: 10px; display: grid; place-items: center; background: var(--blue); color: #fff; padding: 0 6px }
+.side h4 { font-size: 13px; color: var(--fg3); font-weight: 500; margin: 18px 10px 6px }
+.pins { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0 }
+.pins .mini { width: 22px; height: 22px; border-radius: 6px }
+.side .foot { margin-top: auto; padding: 10px; font-size: 12px; color: var(--fg3); border-top: 1px solid var(--line) }
+
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0 }
+.bar { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 22px; border-bottom: 1px solid var(--line); flex: 0 0 auto }
+.crumb { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg3); min-width: 0 }
+.crumb button { color: var(--fg3); padding: 6px 10px; border-radius: 7px } .crumb button:hover { background: var(--card); color: var(--fg) }
+.crumb b { color: var(--fg); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.bar .grow { flex: 1 }
+.qsearch { display: flex; align-items: center; gap: 8px; height: 34px; width: 260px; border-radius: 10px; background: var(--card); padding: 0 12px; color: var(--fg3); font-size: 14px }
+.qsearch:hover { background: var(--raise) }
+.close { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: var(--fg2); font-size: 18px } .close:hover { background: var(--card); color: var(--fg) }
+.content { flex: 1; overflow-y: auto; padding: 26px 28px 40px; min-height: 0 }
+.content > * { animation: in .22s ease-out }
+@keyframes in { from { opacity: 0; transform: translateY(6px) } }
+h1 { font-size: 26px; letter-spacing: -.02em; margin: 0 0 4px; line-height: 1.25 }
+h2 { font-size: 18px; letter-spacing: -.01em; margin: 0 0 12px }
+h3 { font-size: 16px; margin: 0 0 4px }
+.lede { color: var(--fg2); font-size: 16px; margin: 0 0 24px }
+.muted { color: var(--fg3) } .soft { color: var(--fg2) }
+.grid2 { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 18px; align-items: start }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px }
+.card { background: var(--card); border-radius: var(--r); padding: 18px; border: 1px solid var(--line) }
+.card + .card { margin-top: 18px }
+.list { display: flex; flex-direction: column }
+.li { display: flex; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 10px; text-align: left; width: 100%; min-width: 0 }
+button.li:hover, .li.link:hover { background: var(--raise) }
+.li .t { flex: 1; min-width: 0 }
+.li .t b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.li .t span { display: block; font-size: 13px; color: var(--fg3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.li .r { font-size: 13px; color: var(--fg3); white-space: nowrap }
+.li.sel { background: var(--raise) }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; padding: 5px 10px; border-radius: 8px; background: var(--raise); color: var(--fg2); white-space: nowrap }
+.pill.blue { background: rgba(91,140,255,.16); color: #9DB8FF } .pill.green { background: rgba(61,220,151,.14); color: #7FE8B8 } .pill.amber { background: rgba(255,181,71,.15); color: #FFCB7D } .pill.red { background: rgba(255,93,108,.15); color: #FF9AA4 } .pill.violet { background: rgba(139,108,255,.18); color: #BBA8FF }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 10px; background: var(--raise); font-size: 14px; font-weight: 500 }
+.btn:hover { background: var(--hover) }
+.btn.primary { background: var(--fg); color: #0B0C12 } .btn.primary:hover { background: #fff }
+.btn.danger { color: #FF9AA4 }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
+.tabs { display: flex; gap: 4px; margin: 0 0 18px; flex-wrap: wrap }
+.tabs button { height: 34px; padding: 0 14px; border-radius: 9px; color: var(--fg2); font-size: 14px }
+.tabs button:hover { background: var(--card); color: var(--fg) }
+.tabs button[aria-pressed="true"] { background: var(--raise); color: var(--fg); font-weight: 600 }
+.split { display: grid; grid-template-columns: 330px minmax(0,1fr); gap: 18px; align-items: start }
+.field { display: flex; align-items: center; gap: 10px; height: 42px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); padding: 0 14px; margin-bottom: 18px }
+.field input { flex: 1; min-width: 0; background: none; border: 0; outline: none; font-size: 15px }
+.field:focus-within { border-color: var(--blue) }
+.empty { padding: 30px; text-align: center; color: var(--fg3) }
+
+/* Accueil du Workspace */
+.hello { display: flex; gap: 18px; align-items: center; margin-bottom: 24px }
+.hello .yumi { width: 70px; height: 59px }
+.hello h1 { margin: 0 }
+.now { background: linear-gradient(135deg, rgba(91,140,255,.16), rgba(139,108,255,.12) 50%, rgba(245,138,217,.1)); border: 1px solid rgba(139,108,255,.25) }
+.now h2 { font-size: 20px; margin-bottom: 6px }
+
+/* Applications */
+.apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(208px, 1fr)); gap: 14px }
+.app { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); text-align: left; transition: transform .15s, background .15s, border-color .15s; min-width: 0 }
+.app:hover { background: var(--raise); transform: translateY(-2px); border-color: rgba(255,255,255,.14) }
+.app .ico { width: 52px; height: 52px; border-radius: 13px }
+.app b { font-size: 16px }
+.app p { margin: 0; font-size: 14px; color: var(--fg3); line-height: 1.4 }
+.app .state { font-size: 13px; color: var(--fg2); display: flex; align-items: center; gap: 6px; margin-top: auto }
+.app .fav { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--fg3); font-size: 16px }
+.app .fav:hover { background: var(--hover); color: var(--fg) }
+.app .fav[aria-pressed="true"] { color: var(--amber) }
+.recent { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 26px }
+.recent button { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); font-size: 14px }
+.recent button:hover { background: var(--raise) }
+.recent .mini { width: 30px; height: 30px; border-radius: 8px }
+.cat { margin: 0 0 12px; font-size: 16px; color: var(--fg2); font-weight: 600 }
+.catblock + .catblock { margin-top: 26px }
+
+/* Icônes d'application : dessinées ici, pas copiées */
+.ico, .mini { display: grid; place-items: center; color: #fff }
+.ico svg { width: 28px; height: 28px } .mini svg { width: 60%; height: 60% }
+.i-claude { background: linear-gradient(140deg, #3F7BFF, #7FD0FF) }
+.i-github { background: linear-gradient(140deg, #2B3045, #4A5170) }
+.i-devact { background: linear-gradient(140deg, #22C98A, #4FA0FF) }
+.i-mail { background: linear-gradient(140deg, #5B8CFF, #8B6CFF) }
+.i-chat { background: linear-gradient(140deg, #8B6CFF, #F58AD9) }
+.i-agenda { background: linear-gradient(140deg, #FF5D6C, #FF9A3D) }
+.i-tasks { background: linear-gradient(140deg, #FFB547, #FFD37A); color: #3A2A00 }
+.i-files { background: linear-gradient(140deg, #4FA0FF, #7FD0FF) }
+.i-music { background: linear-gradient(140deg, #F58AD9, #B07BFF) }
+.i-day { background: linear-gradient(140deg, #FFB3E6, #FFB547); color: #3A1F00 }
+.i-memory { background: linear-gradient(140deg, #7B5CFF, #C9A8FF) }
+.i-assistant { background: radial-gradient(circle at 30% 30%, #8B6CFF, #3F2A8F) }
+
+/* GitHub */
+.heat { display: grid; grid-template-rows: repeat(7, 11px); grid-auto-flow: column; grid-auto-columns: 11px; gap: 3px; overflow: hidden }
+.heat i { border-radius: 3px; background: var(--raise) }
+.heat i.l1 { background: #23476E } .heat i.l2 { background: #2F6FC0 } .heat i.l3 { background: #5B8CFF } .heat i.l4 { background: #A9C2FF }
+.ev { display: flex; gap: 12px; padding: 12px 10px; border-radius: 10px; width: 100%; text-align: left }
+.ev:hover { background: var(--raise) }
+.ev .evi { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: 0 0 auto; background: var(--raise); font-size: 15px }
+.ev .t { flex: 1; min-width: 0 } .ev .t b { font-weight: 500 } .ev .t span { display: block; font-size: 13px; color: var(--fg3) }
+.ev .r { font-size: 13px; color: var(--fg3); white-space: nowrap }
+.daylabel { font-size: 13px; color: var(--fg3); margin: 16px 10px 4px; font-weight: 600 }
+.check { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--line) }
+.check:last-child { border: 0 }
+.file { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px }
+.add { color: var(--green) } .del { color: var(--red) }
+.code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; background: #11131B; border-radius: 10px; padding: 12px 14px; color: #D6DAEA; white-space: pre-wrap; margin: 10px 0 0; overflow-x: auto }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px }
+.stat b { display: block; font-size: 24px; letter-spacing: -.02em } .stat span { font-size: 13px; color: var(--fg3) }
+
+/* Claude Code */
+.tl { position: relative; padding-left: 22px } .tl::before { content: ''; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 2px; background: var(--raise) }
+.tl .step { position: relative; padding: 6px 0 10px; font-size: 14px } .tl .step::before { content: ''; position: absolute; left: -20px; top: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--raise); border: 2px solid var(--bg) }
+.tl .step.ok::before { background: var(--green) } .tl .step.wait::before { background: var(--amber) } .tl .step.run::before { background: var(--blue) }
+.tl .step span { color: var(--fg3); font-size: 13px; display: block }
+.ask { border: 1px solid rgba(255,181,71,.35); background: linear-gradient(rgba(255,181,71,.07), rgba(255,181,71,.03)) }
+.progress { height: 6px; border-radius: 3px; background: var(--raise); overflow: hidden } .progress i { display: block; height: 100%; background: var(--grad); border-radius: 3px }
+
+/* Mail */
+.mailbox { display: grid; grid-template-columns: 170px 320px 1fr; gap: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; min-height: 460px }
+.mailbox > div { min-width: 0 }
+.folders { padding: 10px; border-right: 1px solid var(--line); background: #1F2231 }
+.folders button { display: flex; width: 100%; justify-content: space-between; padding: 8px 10px; border-radius: 8px; font-size: 14px; color: var(--fg2) }
+.folders button:hover { background: var(--raise) } .folders button[aria-pressed="true"] { background: var(--raise); color: var(--fg); font-weight: 600 }
+.mlist { border-right: 1px solid var(--line); overflow-y: auto; max-height: 560px }
+.mi { display: block; width: 100%; text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line) }
+.mi:hover { background: var(--raise) } .mi.sel { background: var(--raise) }
+.mi .h { display: flex; justify-content: space-between; gap: 8px; font-size: 14px } .mi .h b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.mi .h span { color: var(--fg3); font-size: 13px; white-space: nowrap }
+.mi .s { font-size: 14px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.mi .p { font-size: 13px; color: var(--fg3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.mi.unread .h b::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); margin-right: 7px; vertical-align: 1px }
+.reader { padding: 22px 26px }
+.reader h2 { font-size: 20px; margin-bottom: 6px } .reader .from { font-size: 14px; color: var(--fg2); margin-bottom: 18px }
+.reader p { font-size: 15px; color: var(--fg); line-height: 1.6; margin: 0 0 12px }
+
+/* Musique */
+.player { display: grid; grid-template-columns: 260px 1fr; gap: 28px; align-items: center }
+.cover { width: 260px; height: 260px; border-radius: 18px; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.4) }
+.cover::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 70% 30%, rgba(255,255,255,.35), transparent 40%) }
+.mcover { width: 40px; height: 40px; border-radius: 8px; flex: 0 0 auto }
+.ctl { display: flex; gap: 14px; align-items: center; margin-top: 18px }
+.ctl button { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--raise) } .ctl button:hover { background: var(--hover) }
+.ctl button.play { width: 60px; height: 60px; background: var(--fg); color: #0B0C12 }
+.ctl svg { width: 20px; height: 20px }
+.scrub { height: 6px; background: var(--raise); border-radius: 3px; margin-top: 22px; position: relative; overflow: hidden } .scrub i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--fg); border-radius: 3px }
+.times { display: flex; justify-content: space-between; font-size: 13px; color: var(--fg3); margin-top: 6px }
+
+/* Agenda */
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px }
+.cal .h { font-size: 13px; color: var(--fg3); text-align: center; padding-bottom: 4px }
+.cal button { aspect-ratio: 1.25; border-radius: 9px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--fg2) }
+.cal button:hover { background: var(--raise) } .cal button.today { background: var(--blue); color: #fff; font-weight: 600 } .cal button.sel { outline: 2px solid var(--fg) }
+.cal button.out { opacity: .35 }
+.cal button i { width: 5px; height: 5px; border-radius: 50%; background: var(--pink) }
+.evt { display: flex; gap: 14px; padding: 12px; border-radius: 12px; width: 100%; text-align: left } .evt:hover, .evt.sel { background: var(--raise) }
+.evt .time { width: 58px; font-weight: 600; font-size: 15px } .evt .bar2 { width: 4px; border-radius: 2px; align-self: stretch }
+
+/* Tâches */
+.task { display: flex; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 10px }
+.task:hover { background: var(--raise) }
+.task .box { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--fg3); display: grid; place-items: center; flex: 0 0 auto; color: #0B0C12; font-size: 13px; font-weight: 700 }
+.task.done .box { background: var(--green); border-color: var(--green) } .task.done .t b { text-decoration: line-through; color: var(--fg3) }
+.task .t { flex: 1; min-width: 0 } .task .t b { font-weight: 500 } .task .t span { display: block; font-size: 13px; color: var(--fg3) }
+
+/* Conversations */
+.thread { display: flex; flex-direction: column; gap: 14px; padding: 6px 0 }
+.thread .me { font-size: 15px }
+.thread .yu { display: flex; gap: 10px; align-items: flex-start }
+.thread .yu .av { width: 28px; height: 28px; border-radius: 50%; background: var(--grad); flex: 0 0 auto }
+.compose { display: flex; gap: 10px; margin-top: 18px }
+.compose input { flex: 1; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--raise); padding: 0 14px; outline: none; font-size: 15px }
+.compose input:focus { border-color: var(--blue) }
+.from-island { font-size: 12px; font-weight: 600; color: #BBA8FF }
+
+/* Mémoire */
+.mem { display: flex; align-items: center; gap: 12px; padding: 12px 10px; border-radius: 10px }
+.mem:hover { background: var(--raise) }
+.mem .t { flex: 1; min-width: 0 } .mem .t span { display: block; font-size: 13px; color: var(--fg3) }
+.mem .acts { display: flex; gap: 4px; opacity: 0; transition: opacity .15s } .mem:hover .acts, .mem:focus-within .acts { opacity: 1 }
+.mem .acts button { padding: 4px 10px; border-radius: 7px; font-size: 13px; color: var(--fg2) } .mem .acts button:hover { background: var(--hover); color: var(--fg) }
+.mem input { width: 100%; background: var(--bg); border: 1px solid var(--blue); border-radius: 8px; padding: 6px 10px; outline: none; font-size: 15px }
+
+/* Paramètres */
+.set { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line) }
+.set:last-child { border: 0 } .set .t { flex: 1 } .set .t span { display: block; font-size: 13px; color: var(--fg3) }
+.sw { width: 44px; height: 26px; border-radius: 13px; background: var(--hover); position: relative; flex: 0 0 auto; transition: background .2s }
+.sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s }
+.sw[aria-checked="true"] { background: var(--green) } .sw[aria-checked="true"]::after { transform: translateX(18px) }
+
+.toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: #0B0C12; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; opacity: 0; transition: .25s; z-index: 60; pointer-events: none }
+.toast.on { opacity: 1; transform: translateX(-50%) }
+
+@media (max-width: 900px) {
+  .win { grid-template-columns: 1fr; top: 200px } .side { display: none }
+  .grid2, .split, .player, .mailbox { grid-template-columns: 1fr } .grid3, .stats { grid-template-columns: 1fr 1fr } .qsearch { width: auto }
+  .cover { width: 180px; height: 180px }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
+</style>
+</head>
+<body>
+<div class="desk"></div>
+<div class="menubar"><b>Yumi</b><span>Fichier</span><span>Fenêtre</span><div class="r"><span id="clock">mer. 18 nov. 10:24</span></div></div>
+
+<!-- L'île : l'expérience rapide -->
+<div class="island" id="island" role="region" aria-label="Île de Yumi">
+  <div class="notch"></div>
+  <div class="wing l" id="wingL"></div>
+  <div class="wing r" id="wingR"></div>
+  <div class="ibody"><div class="seat" id="seat"></div><div class="icontent" id="icontent"></div></div>
+</div>
+
+<!-- Le Workspace : l'expérience complète -->
+<div class="win" id="win" role="application" aria-label="Yumi Workspace">
+  <aside class="side">
+    <div class="lights"><button class="c" data-act="closeWin" aria-label="Fermer la fenêtre"></button><button class="m" aria-label="Réduire"></button><button class="z" aria-label="Agrandir"></button></div>
+    <div class="who"><span id="sideYumi"></span><div><b>Yumi</b><span id="sideState">À ton écoute</span></div></div>
+    <nav class="nav" id="nav"></nav>
+    <h4>Raccourcis</h4>
+    <div class="pins" id="pins"></div>
+    <div class="foot">Tout reste sur ce Mac. Données de démonstration.</div>
+  </aside>
+  <section class="main">
+    <div class="bar"><div class="crumb" id="crumb"></div><div class="grow"></div>
+      <button class="qsearch" data-go="recherche"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Rechercher dans Yumi<span style="margin-left:auto">⌘K</span></button>
+      <span id="closeApp"></span></div>
+    <div class="content" id="content"></div>
+  </section>
+</div>
+
+<div class="demo" id="demo"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="../yumi.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+/* ---------- Icônes ---------- */
+const P = (d, w = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const GLYPH = {
+  claude: P('<path d="m5 8 4 4-4 4"/><path d="M12 17h7"/>', 2.4),
+  github: P('<circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="8" r="2.4"/><path d="M6 8.4v7.2"/><path d="M18 10.4c0 4-6 3-11 6"/>'),
+  devact: P('<path d="M3 12h4l3-7 4 14 3-7h4"/>'),
+  mail: P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>'),
+  chat: P('<path d="M5 18.5 3.5 21l.8-4A8 8 0 1 1 8 20"/><path d="M8.5 11h7M8.5 14.5h4"/>'),
+  agenda: P('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
+  tasks: P('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.5 12 2.5 2.5 4.5-5"/>', 2.4),
+  files: P('<path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2h5.5A2.5 2.5 0 0 1 20 9.5v7a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5Z"/>'),
+  music: P('<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
+  day: P('<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>'),
+  memory: P('<path d="M12 4a5 5 0 0 0-5 5c0 1.5.6 2.6 1.5 3.5.8.8 1.5 1.8 1.5 3V17h4v-1.5c0-1.2.7-2.2 1.5-3 .9-.9 1.5-2 1.5-3.5a5 5 0 0 0-5-5Z"/><path d="M10 20h4"/>'),
+  assistant: P('<path d="M12 4c4.5 0 8 3.3 8 7.5S16.5 19 12 19s-8-3.3-8-7.5S7.5 4 12 4Z"/><circle cx="9.3" cy="11" r="1.2" fill="currentColor"/><circle cx="14.7" cy="11" r="1.2" fill="currentColor"/>'),
+  home: P('<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1Z"/>'),
+  grid: P('<rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/>'),
+  search: P('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+  gear: P('<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M4.2 7.5l2 1.2M17.8 15.3l2 1.2M4.2 16.5l2-1.2M17.8 8.7l2-1.2"/>'),
+  mic: P('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>'),
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5Z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg>',
+  prev: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 6.5v11a1 1 0 0 1-1.5.8L8 13v4.5H6v-11h2V11l7.5-5.3a1 1 0 0 1 1.5.8Z"/></svg>',
+  next: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 6.5v11a1 1 0 0 0 1.5.8L16 13v4.5h2v-11h-2V11L8.5 5.7A1 1 0 0 0 7 6.5Z"/></svg>',
+};
+const ico = (k, cls = 'ico') => `<span class="${cls} i-${k}" aria-hidden="true">${GLYPH[k]}</span>`;
+
+/* ---------- Données de démonstration ---------- */
+const PROFILES = {
+  dev: { label: 'Développeur', apps: ['claude', 'github', 'devact', 'chat', 'music'],
+    lead: 'Tu as deux PR en attente de relecture.', sub: 'Et une session Claude Code t’attend sur yumi.',
+    rows: [['github', 'PR 31 · Le Workspace de Yumi', 'relecture demandée', 'github/pr/31'], ['claude', 'yumi · Claude Code attend ton accord', 'il y a 2 min', 'claude/s1']] },
+  etudiant: { label: 'Étudiant', apps: ['agenda', 'tasks', 'chat', 'music', 'files'],
+    lead: 'Tu as cours à 14 h.', sub: 'Droit des contrats, amphi B. Le TD 4 est à rendre vendredi.',
+    rows: [['agenda', 'Droit des contrats · amphi B', '14 h', 'agenda/e2'], ['tasks', 'Rendre le TD 4', 'vendredi', 'tasks']] },
+  classique: { label: 'Utilisateur classique', apps: ['mail', 'music', 'agenda', 'tasks', 'day'],
+    lead: 'Tu as reçu trois nouveaux mails.', sub: 'Dont un de ta banque, et la confirmation du dentiste.',
+    rows: [['mail', 'Cabinet Dr Martin · Rendez-vous confirmé', '9 h 12', 'mail/m2'], ['music', 'Lumière douce · Nuit Calme', 'en pause', 'music']] },
+};
+const APPS = {
+  claude: { name: 'Claude Code', cat: 'Développement', desc: 'Suis tes sessions et réponds à leurs demandes.', state: () => `${SESS.filter(s => s.status !== 'done').length} sessions actives`, dot: 'var(--blue)' },
+  github: { name: 'GitHub', cat: 'Développement', desc: 'PR, issues, commits et activité de tes dépôts.', state: () => `${PRS.filter(p => p.review).length} PR à examiner`, dot: 'var(--violet)' },
+  devact: { name: 'Activité développeur', cat: 'Développement', desc: 'Tout ce qui s’est passé dans ton code, au même endroit.', state: () => `${GH_EVENTS.length} événements aujourd’hui`, dot: 'var(--green)' },
+  mail: { name: 'Mail', cat: 'Communication', desc: 'Ta boîte de réception, triée et lisible.', state: () => `${MAILS.filter(m => m.unread).length} nouveaux messages`, dot: 'var(--blue)' },
+  chat: { name: 'Conversations', cat: 'Communication', desc: 'Toutes tes discussions avec Yumi, à reprendre.', state: () => `${CONVS.length} conversations`, dot: 'var(--pink)' },
+  agenda: { name: 'Agenda', cat: 'Organisation', desc: 'Ton calendrier et tes prochains rendez-vous.', state: () => 'Prochain rendez-vous à 14 h', dot: 'var(--red)' },
+  tasks: { name: 'Tâches et rappels', cat: 'Organisation', desc: 'Ce qu’il reste à faire, avec ses échéances.', state: () => `${TASKS.filter(t => !t.done).length} à faire`, dot: 'var(--amber)' },
+  files: { name: 'Fichiers', cat: 'Organisation', desc: 'Ce que tu as déposé dans l’île, retrouvé ici.', state: () => `${FILES.length} fichiers déposés`, dot: 'var(--blue)' },
+  music: { name: 'Musique', cat: 'Vie quotidienne', desc: 'Ce qui joue, et les titres d’avant.', state: () => MUSIC.playing ? 'Lecture en cours' : 'En pause', dot: 'var(--pink)' },
+  day: { name: 'Résumé de journée', cat: 'Vie quotidienne', desc: 'Ta journée en quelques lignes, le matin et le soir.', state: () => 'Prêt pour ce matin', dot: 'var(--amber)' },
+  memory: { name: 'Mémoire', cat: 'Intelligence', desc: 'Ce que Yumi sait de toi, que tu peux corriger.', state: () => `${MEMORY.length} choses retenues`, dot: 'var(--violet)' },
+  assistant: { name: 'Assistant Yumi', cat: 'Intelligence', desc: 'Parle à Yumi en grand, avec tes fichiers.', state: () => 'Prêt', dot: 'var(--green)' },
+};
+const CATS = ['Développement', 'Communication', 'Organisation', 'Vie quotidienne', 'Intelligence'];
+
+const PRS = [
+  { n: 31, title: 'Le Workspace de Yumi', repo: 'estebanbaigts/Yumi', by: 'Léa Moreau', review: true, state: 'open', branch: 'yumi/workspace', when: 'il y a 1 h', add: 1240, del: 86, checks: [['ok', 'Build et tests'], ['ok', 'Build App Store'], ['run', 'Notarisation']], files: [['Sources/App/Workspace/WorkspaceView.swift', 412, 0], ['Sources/App/Workspace/AppCenter.swift', 288, 0], ['Sources/App/Island/IslandView.swift', 64, 52]], commits: ['La grille des applications', 'La navigation latérale', 'L’île ouvre le Workspace'] },
+  { n: 29, title: 'Premier lancement : les profils', repo: 'estebanbaigts/Yumi', by: 'toi', review: false, state: 'open', branch: 'yumi/premier-lancement', when: 'hier', add: 418, del: 37, checks: [['ok', 'Build et tests'], ['ok', 'Build App Store']], files: [['Sources/App/Modules/WorkProfiles.swift', 134, 0], ['Tests/Modules/WorkProfilesTests.swift', 62, 0]], commits: ['Demander ce que la personne fait', 'Choisir les modules qui vont avec'] },
+  { n: 30, title: 'Corrige le repli de l’île en plein écran', repo: 'estebanbaigts/Yumi', by: 'Sam Petit', review: true, state: 'open', branch: 'fix/repli', when: 'il y a 3 h', add: 22, del: 9, checks: [['fail', 'Build et tests'], ['ok', 'Build App Store']], files: [['Sources/App/Island/IslandWindow.swift', 22, 9]], commits: ['Replie l’île quand une app passe en plein écran'] },
+  { n: 27, title: 'Les hooks Codex et Gemini', repo: 'estebanbaigts/Yumi', by: 'toi', review: false, state: 'merged', branch: 'yumi/hooks-agents', when: 'lundi', add: 356, del: 41, checks: [['ok', 'Build et tests']], files: [['Sources/App/Settings/AgentHooksSettings.swift', 210, 12]], commits: ['Installer les hooks Codex', 'Installer les hooks Gemini CLI'] },
+];
+const ISSUES = [
+  { n: 33, title: 'L’île ne se replie pas sur un deuxième écran', label: ['bug', 'red'], by: 'Sam Petit', when: 'il y a 2 h', comments: 3 },
+  { n: 32, title: 'Proposer Yumi sur iPhone', label: ['idée', 'violet'], by: 'toi', when: 'hier', comments: 7 },
+  { n: 28, title: 'Le son de fin de session est trop fort', label: ['réglage', 'amber'], by: 'Léa Moreau', when: 'il y a 3 jours', comments: 1 },
+];
+const GH_EVENTS = [
+  { day: 'Aujourd’hui', i: '👀', c: 'var(--violet)', t: '<b>Léa Moreau</b> te demande une relecture sur <b>PR 31 · Le Workspace de Yumi</b>', s: 'estebanbaigts/Yumi · yumi/workspace', when: '10:02', go: 'github/pr/31' },
+  { day: 'Aujourd’hui', i: '✕', c: 'var(--red)', t: 'Les tests échouent sur <b>PR 30 · Corrige le repli de l’île</b>', s: 'Build et tests · 2 tests en échec', when: '09:41', go: 'github/pr/30' },
+  { day: 'Aujourd’hui', i: '↑', c: 'var(--blue)', t: 'Tu as poussé <b>3 commits</b> sur <b>yumi/premier-lancement</b>', s: 'Demander ce que la personne fait · +2 autres', when: '09:15', go: 'github/commits' },
+  { day: 'Aujourd’hui', i: '!', c: 'var(--amber)', t: '<b>Sam Petit</b> a ouvert <b>issue 33 · L’île ne se replie pas sur un deuxième écran</b>', s: 'estebanbaigts/Yumi · bug', when: '08:30', go: 'github/issues' },
+  { day: 'Aujourd’hui', i: '💬', c: 'var(--fg3)', t: '<b>Léa Moreau</b> a commenté <b>issue 32 · Proposer Yumi sur iPhone</b>', s: '« Je peux prendre la partie réseau. »', when: '08:05', go: 'github/issues' },
+  { day: 'Hier', i: '⑂', c: 'var(--green)', t: '<b>PR 27 · Les hooks Codex et Gemini</b> a été fusionnée dans <b>main</b>', s: 'estebanbaigts/Yumi', when: '18:20', go: 'github/pr/27' },
+  { day: 'Hier', i: '🏷', c: 'var(--pink)', t: 'Nouvelle version <b>0.1.0-beta.1</b> publiée', s: 'Brouillon de release · notarisée', when: '16:47', go: 'github/repos' },
+  { day: 'Hier', i: '★', c: 'var(--amber)', t: '<b>4 nouvelles étoiles</b> sur Yumi', s: '128 au total', when: '12:10', go: 'github/repos' },
+];
+const COMMITS = [
+  ['Choisir les modules qui vont avec', 'yumi/premier-lancement', 'toi', '09:15', '32bf381'],
+  ['Demander ce que la personne fait', 'yumi/premier-lancement', 'toi', '09:02', 'a81c0d2'],
+  ['Écrire les tests des profils', 'yumi/premier-lancement', 'toi', '08:58', '5e77b10'],
+  ['Le garde-fou explique chaque demande', 'main', 'toi', 'hier', 'c7c21cd'],
+  ['Installer les hooks Codex et Gemini', 'main', 'toi', 'lundi', 'c778a62'],
+];
+const REPOS = [['estebanbaigts/Yumi', 'Swift', '128 ★', '3 PR ouvertes', true], ['estebanbaigts/yumi-site', 'HTML', '12 ★', 'à jour', false], ['estebanbaigts/notch-kit', 'Swift', '41 ★', '1 issue', false]];
+const SESS = [
+  { id: 's1', repo: 'yumi', agent: 'Claude Code', status: 'ask', task: 'Brancher la grille des applications', when: 'il y a 2 min', progress: 62,
+    ask: { what: 'Lancer les tests de l’app', cmd: 'cd Yumi && xcodebuild -scheme Yumi test CODE_SIGNING_ALLOWED=NO', change: 'Rien n’est modifié : ça construit et lance les tests.', undo: 'Sans risque', risk: 'sans risque' },
+    steps: [['ok', 'A lu le plan du Workspace', '10:12'], ['ok', 'A créé AppCenter.swift', '10:15'], ['ok', 'A modifié IslandView.swift', '10:18'], ['wait', 'Attend ton accord pour lancer les tests', '10:22']] },
+  { id: 's2', repo: 'yumi-site', agent: 'Codex', status: 'run', task: 'Mettre la page d’accueil en anglais', when: 'en cours', progress: 35,
+    steps: [['ok', 'A lu index.html', '10:05'], ['run', 'Traduit les sections', '10:20']] },
+  { id: 's3', repo: 'yumi', agent: 'Claude Code', status: 'done', task: 'Les profils du premier lancement', when: 'ce matin', progress: 100, result: '2 fichiers créés, 12 tests ajoutés, tous verts.',
+    steps: [['ok', 'A écrit WorkProfiles.swift', '08:40'], ['ok', 'A ajouté 12 tests', '08:52'], ['ok', 'Tests réussis', '08:58']] },
+  { id: 's4', repo: 'notch-kit', agent: 'Gemini CLI', status: 'done', task: 'Nettoyer le README', when: 'hier', progress: 100, result: 'README réécrit, 1 fichier modifié.', steps: [['ok', 'A réécrit README.md', 'hier']] },
+];
+const MAILS = [
+  { id: 'm1', box: 'inbox', from: 'Banque Lumen', subject: 'Votre relevé de novembre est disponible', prev: 'Bonjour, votre relevé mensuel est disponible dans votre espace.', when: '9 h 40', unread: true, cat: 'Important', body: ['Bonjour,', 'Votre relevé de novembre est disponible dans votre espace client.', 'Bonne journée,', 'Le service client'] },
+  { id: 'm2', box: 'inbox', from: 'Cabinet Dr Martin', subject: 'Rendez-vous confirmé jeudi à 15 h', prev: 'Nous vous confirmons votre rendez-vous de jeudi 20 novembre.', when: '9 h 12', unread: true, cat: 'Important', body: ['Bonjour,', 'Nous vous confirmons votre rendez-vous du jeudi 20 novembre à 15 h.', 'Merci d’arriver cinq minutes en avance.', 'Le cabinet'] },
+  { id: 'm3', box: 'inbox', from: 'Léa Moreau', subject: 'Photos du week-end', prev: 'Je t’envoie les photos de samedi, il y en a des super !', when: '8 h 03', unread: true, cat: 'Personnel', body: ['Hello !', 'Je t’envoie les photos de samedi, il y en a des super.', 'On se refait ça bientôt ?', 'Léa'] },
+  { id: 'm4', box: 'inbox', from: 'La Poste', subject: 'Votre colis arrive demain', prev: 'Votre colis sera livré demain entre 9 h et 13 h.', when: 'hier', unread: false, cat: 'Suivis', body: ['Bonjour,', 'Votre colis sera livré demain entre 9 h et 13 h.'] },
+  { id: 'm5', box: 'inbox', from: 'Newsletter Cuisine', subject: 'Cinq soupes pour l’hiver', prev: 'Courge, lentilles, poireaux : nos recettes préférées.', when: 'lundi', unread: false, cat: 'Promotions', body: ['Courge, lentilles, poireaux : nos recettes préférées de la saison.'] },
+  { id: 'm6', box: 'sent', from: 'Toi → Léa Moreau', subject: 'Re: Dîner samedi', prev: 'Ça marche pour 20 h !', when: 'vendredi', unread: false, cat: 'Personnel', body: ['Ça marche pour 20 h !'] },
+];
+const MUSIC = { playing: true, i: 0, pos: 74, tracks: [
+  ['Lumière douce', 'Nuit Calme', 'Rivages', 'linear-gradient(135deg,#F58AD9,#8B6CFF 60%,#3F2A8F)', 214],
+  ['Marée basse', 'Les Phares', 'Côte Ouest', 'linear-gradient(135deg,#4FA0FF,#22C98A)', 188],
+  ['Midi pile', 'Orange Sanguine', 'Été', 'linear-gradient(135deg,#FFB547,#FF5D6C)', 202],
+  ['Brume', 'Nuit Calme', 'Rivages', 'linear-gradient(135deg,#7B5CFF,#C9A8FF)', 231],
+  ['Quai 9', 'Les Phares', 'Côte Ouest', 'linear-gradient(135deg,#2B3045,#5B8CFF)', 176] ] };
+const EVENTS = [
+  { id: 'e1', day: 18, time: '10:30', end: '11:00', title: 'Point d’équipe', where: 'Visio', color: 'var(--blue)', note: 'Ordre du jour : la bêta, les retours.' },
+  { id: 'e2', day: 18, time: '14:00', end: '16:00', title: 'Droit des contrats', where: 'Amphi B', color: 'var(--violet)', note: 'Apporter le TD 3 corrigé.' },
+  { id: 'e3', day: 20, time: '15:00', end: '15:30', title: 'Dentiste · Dr Martin', where: '12 rue des Lilas', color: 'var(--pink)', note: 'Confirmé par mail.' },
+  { id: 'e4', day: 22, time: '20:00', end: '23:00', title: 'Dîner chez Léa', where: 'Chez Léa', color: 'var(--amber)', note: 'Apporter le dessert.' },
+  { id: 'e5', day: 25, time: '09:00', end: '12:00', title: 'Examen blanc', where: 'Salle 204', color: 'var(--red)', note: '' },
+];
+let TASKS = [
+  { t: 'Relire la PR 31', due: 'Aujourd’hui', pri: 'haute', list: 'Travail', done: false },
+  { t: 'Rendre le TD 4', due: 'Vendredi', pri: 'haute', list: 'Études', done: false },
+  { t: 'Appeler la banque', due: 'Demain', pri: 'moyenne', list: 'Perso', done: false },
+  { t: 'Acheter le dessert pour samedi', due: 'Samedi', pri: 'basse', list: 'Perso', done: false, reminder: 'Rappel samedi à 17 h' },
+  { t: 'Sauvegarder le certificat Developer ID', due: 'Cette semaine', pri: 'moyenne', list: 'Travail', done: false, reminder: 'Rappel jeudi à 9 h' },
+  { t: 'Envoyer les notes de la bêta', due: 'Hier', pri: 'moyenne', list: 'Travail', done: true },
+  { t: 'Réserver le train', due: 'Lundi', pri: 'basse', list: 'Perso', done: true },
+];
+let CONVS = [
+  { id: 'c1', title: 'Préparer le dîner de samedi', when: 'Aujourd’hui', island: true, msgs: [['me', 'Une idée de dessert facile pour six ?'], ['yu', 'Une tarte aux pommes fine : une pâte feuilletée, quatre pommes, du beurre et du sucre. Trente minutes au four.']] },
+  { id: 'c2', title: 'Résumé de la PR 31', when: 'Aujourd’hui', island: false, msgs: [['me', 'Résume-moi la PR 31'], ['yu', 'Elle ajoute le Workspace : une grille d’applications, une navigation latérale, et l’île qui l’ouvre. Trois fichiers, 1 240 lignes ajoutées. Les tests passent, la notarisation tourne encore.']] },
+  { id: 'c3', title: 'Plan de révision du partiel', when: 'Hier', island: true, msgs: [['me', 'Aide-moi à réviser le droit des contrats en une semaine'], ['yu', 'Lundi la formation du contrat, mardi les vices du consentement, mercredi l’exécution, jeudi la responsabilité, vendredi un sujet blanc.']] },
+  { id: 'c4', title: 'Écrire au propriétaire', when: 'Lundi', island: false, msgs: [['me', 'Aide-moi à écrire au propriétaire pour le radiateur'], ['yu', 'Voici un brouillon court et poli, à relire avant de l’envoyer.']] },
+];
+let MEMORY = [
+  { g: 'Toi', t: 'Tu t’appelles Esteban.', src: 'Premier lancement' },
+  { g: 'Toi', t: 'Tu codes, surtout en Swift.', src: 'Premier lancement' },
+  { g: 'Tes préférences', t: 'Tu préfères des réponses courtes.', src: 'Conversation du 12 novembre' },
+  { g: 'Tes préférences', t: 'Tu écoutes de la musique calme pour te concentrer.', src: 'Musique' },
+  { g: 'Ton contexte', t: 'Tu travailles sur Yumi, une app pour Mac.', src: 'Claude Code' },
+  { g: 'Ton contexte', t: 'Ton dîner chez Léa est samedi à 20 h.', src: 'Agenda' },
+];
+const FILES = [['Notes-beta.pdf', 'PDF · 240 Ko', 'Déposé ce matin'], ['capture-ile.png', 'Image · 1,2 Mo', 'Hier'], ['TD4-droit.docx', 'Document · 88 Ko', 'Lundi']];
+
+/* ---------- État ---------- */
+const S = { profile: 'dev', route: 'accueil', win: true, island: 'home', folded: false, chat: [], thinking: false, notif: null, catFilter: 'Toutes', appQuery: '', favs: ['claude', 'github', 'mail', 'music'], recent: ['github', 'claude', 'mail', 'music'], mailBox: 'inbox', mailCat: 'Tout', ghTab: 'activite', taskTab: 'todo', calDay: 18, memEdit: null, convQuery: '', search: '', settings: { sounds: true, harmless: false, fold: true, summary: true } };
+const prof = () => PROFILES[S.profile];
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2200) }
+
+/* ---------- Yumi, le même que dans l'app ---------- */
+$('seat').innerHTML = yumi({ size: 76 }); const Y = $('seat').querySelector('.yumi'); new Blob(Y);
+$('wingL').innerHTML = yumi({ size: 30, rimW: 3.2 }); const FY = $('wingL').querySelector('.yumi'); new Blob(FY);
+$('sideYumi').innerHTML = yumi({ size: 44, rimW: 3 }); const SY = $('sideYumi').querySelector('.yumi'); new Blob(SY);
+function mood(m, rim = 'calm', scene) { for (const el of [Y, FY, SY]) { setMood(el, m, rim); el._blob.setScene(SCENES[scene] ? scene : null) } if (POSE_MS[scene]) playPose(Y, scene) }
+
+/* ---------- Île ---------- */
+function renderIsland() {
+  const isl = $('island'), c = $('icontent');
+  isl.classList.toggle('folded', S.folded);
+  const p = prof();
+  if (S.island === 'home') {
+    c.innerHTML = `<p class="lead">${esc(p.lead)}</p><p class="sub">${esc(p.sub)}</p>
+      ${p.rows.map(([a, t, r, go]) => `<button class="irow" data-go="${go}" data-open="1">${ico(a, 'mini')}<span class="t">${esc(t)}<small>${esc(r)}</small></span><span class="go">Ouvrir ›</span></button>`).join('')}
+      ${MUSIC.playing && S.profile !== 'classique' ? '' : ''}
+      <div class="iacts"><button class="ibtn primary" data-act="talk">${GLYPH.mic}Parler</button>
+        <button class="ibtn" data-act="musicToggle" aria-label="${MUSIC.playing ? 'Mettre en pause' : 'Lire'}">${MUSIC.playing ? GLYPH.pause : GLYPH.play}<span>${esc(MUSIC.tracks[MUSIC.i][0])}</span></button>
+        <button class="ibtn apps" data-act="openApps">${GLYPH.grid}Applications</button></div>`;
+  } else if (S.island === 'talk') {
+    c.innerHTML = `<div class="ichat" id="ichat">${S.chat.length ? S.chat.map(([w, t]) => `<div class="${w}">${esc(t)}</div>`).join('') : `<p class="lead">Je t’écoute.</p><p class="sub">Demande-moi ce que tu veux, ou dis « ouvre mes mails ».</p>`}
+      ${S.thinking ? '<div class="yu"><span class="dots"><i></i><i></i><i></i></span></div>' : ''}</div>
+      <form class="ifield" data-form="ichat"><input id="iinput" placeholder="Écris à Yumi…" autocomplete="off" aria-label="Message à Yumi"><button class="ibtn primary" type="submit">Envoyer</button></form>
+      <div class="iacts"><button class="ibtn" data-act="islandHome">‹ Accueil</button>${S.chat.length ? `<button class="ibtn" data-act="chatToWs">Continuer dans Conversations</button>` : ''}<button class="ibtn apps" data-act="openApps">${GLYPH.grid}Applications</button></div>`;
+  } else if (S.island === 'notif') {
+    const n = S.notif;
+    if (n.kind === 'ask') {
+      c.innerHTML = `<p class="ikind">${ico('claude', 'mini')} Claude Code · ${esc(n.s.repo)} <span class="risk">${esc(n.s.ask.risk)}</span></p>
+        <p class="lead">${esc(n.s.ask.what)} ?</p><p class="sub">${esc(n.s.ask.change)}</p>
+        <div class="iacts"><button class="ibtn primary" data-act="allow">Autoriser</button><button class="ibtn" data-act="deny">Refuser</button><button class="ibtn apps" data-go="claude/${n.s.id}" data-open="1">Voir la session ›</button></div>`;
+    } else if (n.kind === 'done') {
+      c.innerHTML = `<p class="ikind">${ico(n.app, 'mini')} ${esc(n.title)}</p><p class="lead">${esc(n.lead)}</p><p class="sub">${esc(n.sub)}</p>
+        <div class="iacts"><button class="ibtn" data-act="islandHome">‹ Accueil</button><button class="ibtn apps" data-go="${n.go}" data-open="1">Ouvrir ›</button></div>`;
+    } else {
+      c.innerHTML = `<p class="ikind">${ico(n.app, 'mini')} ${esc(APPS[n.app].name)} · à l’instant</p><p class="lead">${esc(n.lead)}</p><p class="sub">${esc(n.sub)}</p>
+        <div class="iacts"><button class="ibtn primary" data-go="${n.go}" data-open="1">Ouvrir dans ${esc(APPS[n.app].name)}</button><button class="ibtn" data-act="islandHome">Plus tard</button></div>`;
+    }
+  }
+  $('wingR').textContent = S.notif ? 'Une chose pour toi' : (MUSIC.playing ? '♪ ' + MUSIC.tracks[MUSIC.i][0] : 'Tout va bien');
+  requestAnimationFrame(() => { if (!S.folded) isl.style.setProperty('--ih', (32 + $('island').querySelector('.ibody').offsetHeight) + 'px') });
+  const ch = $('ichat'); if (ch) ch.scrollTop = ch.scrollHeight;
+}
+
+/* ---------- Workspace : navigation ---------- */
+const NAV = [['accueil', 'Accueil', 'home'], ['apps', 'Applications', 'grid'], ['conversations', 'Conversations', 'chat'], ['memoire', 'Mémoire', 'memory'], ['recherche', 'Recherche', 'search'], ['reglages', 'Paramètres', 'gear']];
+const APP_ROUTE = { claude: 'claude', github: 'github', devact: 'github', mail: 'mail', chat: 'conversations', agenda: 'agenda', tasks: 'tasks', files: 'files', music: 'music', day: 'day', memory: 'memoire', assistant: 'conversations' };
+const ROUTE_APP = { claude: 'claude', github: 'github', mail: 'mail', agenda: 'agenda', tasks: 'tasks', files: 'files', music: 'music', day: 'day' };
+function sectionOf(r) { const top = r.split('/')[0]; return ROUTE_APP[top] ? 'apps' : top }
+function renderSide() {
+  const sec = sectionOf(S.route), pend = SESS.filter(s => s.status === 'ask').length + PRS.filter(p => p.review).length;
+  $('nav').innerHTML = NAV.map(([k, l, g]) => `<button data-go="${k}" ${sec === k ? 'aria-current="page"' : ''}>${GLYPH[g]}${l}${k === 'accueil' && pend ? `<span class="badge">${pend}</span>` : ''}</button>`).join('');
+  $('pins').innerHTML = S.favs.map(a => `<button data-app="${a}">${ico(a, 'mini')}${esc(APPS[a].name)}</button>`).join('');
+}
+function crumbs() {
+  const [top, sub, id] = S.route.split('/'), out = [`<button data-go="accueil">Accueil</button>`];
+  const label = { apps: 'Applications', conversations: 'Conversations', memoire: 'Mémoire', recherche: 'Recherche', reglages: 'Paramètres' };
+  if (top === 'accueil') return '<b>Accueil</b>';
+  if (ROUTE_APP[top]) { out.push(`<button data-go="apps">Applications</button>`); const n = APPS[ROUTE_APP[top]].name; if (sub) { out.push(`<button data-go="${top}">${n}</button>`); out.push(`<b>${esc(subTitle(top, sub, id))}</b>`) } else out.push(`<b>${n}</b>`) }
+  else if (sub) { out.push(`<button data-go="${top}">${label[top]}</button>`); out.push(`<b>${esc(subTitle(top, sub, id))}</b>`) }
+  else out.push(`<b>${label[top]}</b>`);
+  return out.join('<span aria-hidden="true">›</span>');
+}
+function subTitle(top, sub, id) {
+  if (top === 'github' && sub === 'pr') return 'PR ' + id;
+  if (top === 'github') return { activite: 'Activité', prs: 'Pull requests', issues: 'Issues', commits: 'Commits', repos: 'Dépôts' }[sub] || sub;
+  if (top === 'claude') return SESS.find(s => s.id === sub)?.task || 'Session';
+  if (top === 'mail') return MAILS.find(m => m.id === sub)?.subject || 'Message';
+  if (top === 'conversations') return CONVS.find(c => c.id === sub)?.title || 'Nouvelle conversation';
+  if (top === 'agenda') return EVENTS.find(e => e.id === sub)?.title || 'Agenda';
+  return sub;
+}
+function go(route, fromIsland) {
+  S.route = route; const top = route.split('/')[0];
+  if (ROUTE_APP[top]) { const a = ROUTE_APP[top]; S.recent = [a, ...S.recent.filter(x => x !== a)].slice(0, 5) }
+  if (top === 'github' && route.split('/')[1] && route.split('/')[1] !== 'pr') S.ghTab = route.split('/')[1];
+  if (!S.win) { S.win = true }
+  if (fromIsland && S.island !== 'talk') { S.island = 'home'; S.notif = null }
+  render();
+}
+function render() {
+  $('win').classList.toggle('closed', !S.win);
+  renderSide(); $('crumb').innerHTML = crumbs();
+  const top = S.route.split('/')[0];
+  $('closeApp').innerHTML = ROUTE_APP[top] ? `<button class="close" data-go="apps" aria-label="Fermer l’application" title="Fermer l’application">✕</button>` : '';
+  $('content').innerHTML = (VIEWS[top] || VIEWS.accueil)(...S.route.split('/').slice(1));
+  $('content').scrollTop = 0;
+  renderIsland(); renderDemo();
+}
+
+/* ---------- Vues ---------- */
+const rowsHTML = (items) => `<div class="list">${items.join('')}</div>`;
+const li = ({ go, lead = '', t, s = '', r = '', sel = false, attrs = '' }) => `<button class="li ${sel ? 'sel' : ''}" ${go ? `data-go="${go}"` : ''} ${attrs}>${lead}<span class="t"><b>${t}</b>${s ? `<span>${s}</span>` : ''}</span>${r ? `<span class="r">${r}</span>` : ''}</button>`;
+const dot = (c) => `<span class="dot" style="background:${c}"></span>`;
+const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+const VIEWS = {
+  accueil() {
+    const p = prof(), ask = SESS.find(s => s.status === 'ask');
+    const pending = [];
+    if (ask) pending.push(li({ go: 'claude/' + ask.id, lead: ico('claude', 'mini'), t: esc(ask.ask.what), s: `Claude Code · ${ask.repo} · attend ton accord`, r: '<span class="pill amber">À valider</span>' }));
+    PRS.filter(x => x.review).forEach(x => pending.push(li({ go: 'github/pr/' + x.n, lead: ico('github', 'mini'), t: `PR ${x.n} · ${esc(x.title)}`, s: `${x.by} te demande une relecture`, r: '<span class="pill violet">Relecture</span>' })));
+    TASKS.filter(t => !t.done && t.due === 'Aujourd’hui').forEach(t => pending.push(li({ go: 'tasks', lead: ico('tasks', 'mini'), t: esc(t.t), s: 'Tâche du jour', r: '<span class="pill">Aujourd’hui</span>' })));
+    const notifs = [
+      li({ go: 'mail/m2', lead: ico('mail', 'mini'), t: 'Cabinet Dr Martin · Rendez-vous confirmé', s: 'Mail · 9 h 12', r: dot('var(--blue)') }),
+      li({ go: 'github/activite', lead: ico('github', 'mini'), t: 'Les tests échouent sur PR 30', s: 'GitHub · 09:41', r: dot('var(--red)') }),
+      li({ go: 'agenda/e2', lead: ico('agenda', 'mini'), t: 'Droit des contrats à 14 h', s: 'Agenda · amphi B', r: '' }),
+    ];
+    const recent = [
+      li({ go: 'conversations/c1', lead: ico('chat', 'mini'), t: 'Préparer le dîner de samedi', s: 'Conversation commencée dans l’île', r: 'Aujourd’hui' }),
+      li({ go: 'claude/s3', lead: ico('claude', 'mini'), t: 'Les profils du premier lancement', s: 'Session terminée · 12 tests ajoutés', r: 'ce matin' }),
+      li({ go: 'github/commits', lead: ico('github', 'mini'), t: '3 commits sur yumi/premier-lancement', s: 'GitHub', r: '09:15' }),
+    ];
+    return `<div class="hello">${''}<div><h1>Bonjour Esteban.</h1><p class="lede" style="margin:4px 0 0">${esc(p.lead)} ${esc(p.sub)}</p></div></div>
+      <div class="grid2"><div>
+        <div class="card now"><h2>En attente de toi</h2><p class="soft" style="margin:0 0 10px">Ce qui ne peut pas avancer sans ta réponse.</p>${pending.length ? rowsHTML(pending) : '<p class="empty">Rien ne t’attend. Profite.</p>'}</div>
+        <div class="card"><h2>Activité récente</h2>${rowsHTML(recent)}</div>
+      </div><div>
+        <div class="card"><h2>Notifications</h2>${rowsHTML(notifs)}</div>
+        <div class="card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Tes applications</h2><button class="btn" data-go="apps">Tout voir</button></div>
+          <div class="grid3">${p.apps.slice(0, 6).map(a => `<button class="app" data-app="${a}" style="padding:14px;gap:8px">${ico(a)}<b style="font-size:14px">${esc(APPS[a].name)}</b></button>`).join('')}<button class="app" data-go="apps" style="padding:14px;gap:8px"><span class="ico" style="background:var(--raise)">${GLYPH.grid}</span><b style="font-size:14px">Toutes</b></button></div></div>
+        ${musicCard()}
+      </div></div>`;
+  },
+  apps() {
+    const q = S.appQuery.trim().toLowerCase();
+    const match = (k) => !q || (APPS[k].name + ' ' + APPS[k].desc + ' ' + APPS[k].cat).toLowerCase().includes(q);
+    const card = (k) => `<div class="app" role="button" tabindex="0" data-app="${k}">${ico(k)}<b>${esc(APPS[k].name)}</b><p>${esc(APPS[k].desc)}</p><span class="state">${dot(APPS[k].dot)}${esc(APPS[k].state())}</span>
+      <button class="fav" data-fav="${k}" aria-pressed="${S.favs.includes(k)}" aria-label="${S.favs.includes(k) ? 'Retirer des raccourcis' : 'Ajouter aux raccourcis'}" title="${S.favs.includes(k) ? 'Retirer des raccourcis' : 'Ajouter aux raccourcis'}">${S.favs.includes(k) ? '★' : '☆'}</button></div>`;
+    const cats = S.catFilter === 'Toutes' ? CATS : [S.catFilter];
+    const blocks = cats.map(c => { const ks = Object.keys(APPS).filter(k => APPS[k].cat === c && match(k)); return ks.length ? `<div class="catblock"><p class="cat">${c}</p><div class="apps">${ks.map(card).join('')}</div></div>` : '' }).join('');
+    return `<h1>Applications</h1><p class="lede">Tout ce que Yumi sait faire. Ouvre une application, ou ajoute-la à tes raccourcis avec l’étoile.</p>
+      <label class="field">${GLYPH.search.replace('<svg', '<svg width="18" height="18"')}<input id="appq" placeholder="Chercher une application : mail, PR, musique…" value="${esc(S.appQuery)}" aria-label="Chercher une application"></label>
+      ${q ? '' : `<p class="cat">Récemment utilisées</p><div class="recent">${S.recent.map(a => `<button data-app="${a}">${ico(a, 'mini')}${esc(APPS[a].name)}</button>`).join('')}</div>`}
+      <div class="tabs">${['Toutes', ...CATS].map(c => `<button data-cat="${c}" aria-pressed="${S.catFilter === c}">${c}</button>`).join('')}</div>
+      <div id="appblocks">${blocks || `<p class="empty">Aucune application ne correspond à « ${esc(S.appQuery)} ». Essaie un autre mot, ou <button class="btn" data-go="recherche">cherche partout</button>.</p>`}</div>`;
+  },
+  github(sub, id) {
+    if (sub === 'pr') return prView(PRS.find(p => String(p.n) === id) || PRS[0]);
+    const tab = sub || S.ghTab;
+    const tabs = `<div class="tabs">${[['activite', 'Activité'], ['prs', 'Pull requests'], ['issues', 'Issues'], ['commits', 'Commits'], ['repos', 'Dépôts']].map(([k, l]) => `<button data-go="github/${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>`;
+    const head = `<div class="row" style="margin-bottom:18px">${ico('github')}<div><h1 style="margin:0">GitHub</h1><p class="soft" style="margin:0">estebanbaigts · 3 dépôts suivis · mis à jour à l’instant</p></div></div>
+      <div class="stats"><div class="stat"><b>${PRS.filter(p => p.review).length}</b><span>PR à relire</span></div><div class="stat"><b>${PRS.filter(p => p.state === 'open').length}</b><span>PR ouvertes</span></div><div class="stat"><b>${ISSUES.length}</b><span>Issues ouvertes</span></div><div class="stat"><b>214</b><span>Contributions cette année</span></div></div>`;
+    let body = '';
+    if (tab === 'activite') {
+      let last = ''; const evs = GH_EVENTS.map(e => { const h = e.day !== last ? `<p class="daylabel">${e.day}</p>` : ''; last = e.day; return h + `<button class="ev" data-go="${e.go}"><span class="evi" style="color:${e.c}">${e.i}</span><span class="t">${e.t}<span>${e.s}</span></span><span class="r">${e.when}</span></button>` }).join('');
+      body = `<div class="grid2"><div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Activité récente</h2><span class="pill green">● En direct</span></div>${evs}</div>
+        <div><div class="card"><h2>Tes contributions</h2>${heat()}<p class="muted" style="margin:10px 0 0;font-size:13px">214 contributions sur les 26 dernières semaines · 9 jours d’affilée</p></div>
+        <div class="card"><h2>À regarder en premier</h2>${rowsHTML([li({ go: 'github/pr/31', lead: dot('var(--violet)'), t: 'Relire la PR 31', s: 'Léa Moreau attend ton avis' }), li({ go: 'github/pr/30', lead: dot('var(--red)'), t: 'Les tests échouent sur la PR 30', s: '2 tests en échec · Build et tests' }), li({ go: 'github/issues', lead: dot('var(--amber)'), t: 'Une nouvelle issue : bug', s: 'L’île ne se replie pas sur un deuxième écran' })])}</div></div></div>`;
+    } else if (tab === 'prs') {
+      body = `<div class="card">${rowsHTML(PRS.map(p => li({ go: 'github/pr/' + p.n, lead: dot(p.state === 'merged' ? 'var(--violet)' : p.checks.some(c => c[0] === 'fail') ? 'var(--red)' : 'var(--green)'), t: `PR ${p.n} · ${esc(p.title)}`, s: `${p.repo} · ${p.branch} · par ${p.by} · ${p.when}`, r: p.state === 'merged' ? '<span class="pill violet">Fusionnée</span>' : p.review ? '<span class="pill amber">Relecture demandée</span>' : '<span class="pill green">Ouverte</span>' })))}</div>`;
+    } else if (tab === 'issues') {
+      body = `<div class="card">${rowsHTML(ISSUES.map(i => li({ lead: dot('var(--green)'), t: `Issue ${i.n} · ${esc(i.title)}`, s: `ouverte par ${i.by} · ${i.when} · ${i.comments} commentaires`, r: `<span class="pill ${i.label[1]}">${i.label[0]}</span>`, attrs: 'data-act="toastIssue"' })))}</div>`;
+    } else if (tab === 'commits') {
+      body = `<div class="card">${rowsHTML(COMMITS.map(c => li({ lead: `<span class="pill file">${c[4]}</span>`, t: esc(c[0]), s: `${c[1]} · ${c[2]}`, r: c[3], attrs: 'data-act="toastCommit"' })))}</div>`;
+    } else {
+      body = `<div class="card">${rowsHTML(REPOS.map(r => li({ lead: ico('github', 'mini'), t: r[0], s: `${r[1]} · ${r[2]}`, r: `<span class="pill">${r[3]}</span>` })))}<p class="muted" style="margin:12px 10px 0;font-size:13px">Les dépôts suivis se choisissent dans Paramètres › GitHub.</p></div>`;
+    }
+    return head + tabs + body;
+  },
+  claude(id) {
+    if (id) return sessView(SESS.find(s => s.id === id) || SESS[0]);
+    const act = SESS.filter(s => s.status !== 'done'), done = SESS.filter(s => s.status === 'done');
+    const card = (s) => li({ go: 'claude/' + s.id, lead: dot(s.status === 'ask' ? 'var(--amber)' : s.status === 'run' ? 'var(--blue)' : 'var(--green)'), t: esc(s.task), s: `${s.agent} · ${s.repo} · ${s.when}`, r: s.status === 'ask' ? '<span class="pill amber">Attend ton accord</span>' : s.status === 'run' ? `<span class="pill blue">${s.progress} %</span>` : '<span class="pill green">Terminée</span>' });
+    return `<div class="row" style="margin-bottom:18px">${ico('claude')}<div><h1 style="margin:0">Claude Code</h1><p class="soft" style="margin:0">Et les autres agents : Codex, Gemini CLI. Chaque demande passe par toi.</p></div></div>
+      <div class="stats"><div class="stat"><b>${act.length}</b><span>Sessions actives</span></div><div class="stat"><b>${SESS.filter(s => s.status === 'ask').length}</b><span>Demandes d’accord</span></div><div class="stat"><b>${done.length}</b><span>Terminées aujourd’hui</span></div><div class="stat"><b>12</b><span>Tests ajoutés</span></div></div>
+      <div class="grid2"><div><div class="card"><h2>Sessions actives</h2>${rowsHTML(act.map(card))}</div><div class="card"><h2>Sessions terminées</h2>${rowsHTML(done.map(card))}</div></div>
+      <div class="card"><h2>Activité récente</h2><div class="tl">${SESS.flatMap(s => s.steps.slice(-1).map(st => `<div class="step ${st[0]}">${esc(st[1])}<span>${s.repo} · ${st[2]}</span></div>`)).join('')}</div></div></div>`;
+  },
+  mail(id) {
+    const boxes = [['inbox', 'Réception'], ['sent', 'Envoyés']], cats = ['Tout', 'Important', 'Personnel', 'Suivis', 'Promotions'];
+    const list = MAILS.filter(m => m.box === S.mailBox && (S.mailCat === 'Tout' || m.cat === S.mailCat));
+    const cur = MAILS.find(m => m.id === id);
+    if (cur && cur.unread) cur.unread = false;
+    const idx = list.indexOf(cur);
+    return `<div class="row" style="margin-bottom:18px">${ico('mail')}<div><h1 style="margin:0">Mail</h1><p class="soft" style="margin:0">${MAILS.filter(m => m.unread).length} non lus · Gmail</p></div></div>
+      <div class="tabs">${cats.map(c => `<button data-mailcat="${c}" aria-pressed="${S.mailCat === c}">${c}</button>`).join('')}</div>
+      <div class="mailbox"><div class="folders">${boxes.map(([k, l]) => `<button data-mailbox="${k}" aria-pressed="${S.mailBox === k}">${l}<span class="muted">${MAILS.filter(m => m.box === k && m.unread).length || ''}</span></button>`).join('')}</div>
+      <div class="mlist">${list.map(m => `<button class="mi ${m.unread ? 'unread' : ''} ${cur === m ? 'sel' : ''}" data-go="mail/${m.id}"><div class="h"><b>${esc(m.from)}</b><span>${m.when}</span></div><div class="s">${esc(m.subject)}</div><div class="p">${esc(m.prev)}</div></button>`).join('') || '<p class="empty">Rien ici.</p>'}</div>
+      <div class="reader">${cur ? `<div class="row" style="justify-content:space-between;margin-bottom:14px"><span class="pill">${cur.cat}</span><span class="row"><button class="btn" ${idx > 0 ? `data-go="mail/${list[idx - 1].id}"` : 'disabled style="opacity:.4"'}>‹ Précédent</button><button class="btn" ${idx >= 0 && idx < list.length - 1 ? `data-go="mail/${list[idx + 1].id}"` : 'disabled style="opacity:.4"'}>Suivant ›</button></span></div>
+        <h2>${esc(cur.subject)}</h2><p class="from">${esc(cur.from)} · ${cur.when}</p>${cur.body.map(b => `<p>${esc(b)}</p>`).join('')}
+        <div class="row" style="margin-top:22px"><button class="btn primary" data-act="draftReply">Préparer une réponse avec Yumi</button><button class="btn" data-act="toastArchive">Archiver</button></div>
+        <p class="muted" style="font-size:13px;margin-top:10px">Yumi prépare un brouillon. Rien ne part sans ton clic.</p>` : `<div class="empty" style="padding-top:120px">Choisis un message à gauche pour le lire.</div>`}</div></div>`;
+  },
+  music() {
+    const [t, a, al, cov, len] = MUSIC.tracks[MUSIC.i];
+    return `<div class="row" style="margin-bottom:22px">${ico('music')}<div><h1 style="margin:0">Musique</h1><p class="soft" style="margin:0">Musique · ce qui joue sur ton Mac</p></div></div>
+      <div class="card"><div class="player"><div class="cover" style="background:${cov}"></div><div>
+        <p class="muted" style="margin:0 0 6px">${MUSIC.playing ? 'Lecture en cours' : 'En pause'}</p><h1 style="font-size:32px">${esc(t)}</h1><p class="soft" style="font-size:17px;margin:0">${esc(a)} · ${esc(al)}</p>
+        <div class="scrub"><i style="width:${(MUSIC.pos / len * 100).toFixed(1)}%"></i></div><div class="times"><span>${fmt(MUSIC.pos)}</span><span>${fmt(len)}</span></div>
+        <div class="ctl"><button data-act="prev" aria-label="Titre précédent">${GLYPH.prev}</button><button class="play" data-act="musicToggle" aria-label="${MUSIC.playing ? 'Pause' : 'Lecture'}">${MUSIC.playing ? GLYPH.pause : GLYPH.play}</button><button data-act="next" aria-label="Titre suivant">${GLYPH.next}</button></div>
+      </div></div></div>
+      <div class="card"><h2>À suivre et déjà écoutés</h2>${rowsHTML(MUSIC.tracks.map((x, i) => li({ lead: `<span class="mcover" style="background:${x[3]}"></span>`, t: esc(x[0]), s: `${esc(x[1])} · ${esc(x[2])}`, r: i === MUSIC.i ? '<span class="pill blue">En cours</span>' : fmt(x[4]), sel: i === MUSIC.i, attrs: `data-track="${i}"` })))}</div>`;
+  },
+  agenda(id) {
+    const sel = EVENTS.find(e => e.id === id) || null; if (sel) S.calDay = sel.day;
+    const days = [];
+    for (let i = 0; i < 35; i++) { const d = i - 5; days.push(d < 1 || d > 30 ? `<button class="out" tabindex="-1">${d < 1 ? 26 + d + 5 : d - 30}</button>` : `<button data-day="${d}" class="${d === 18 ? 'today' : ''} ${d === S.calDay && d !== 18 ? 'sel' : ''}">${d}${EVENTS.some(e => e.day === d) ? '<i></i>' : ''}</button>`) }
+    const dayEvts = EVENTS.filter(e => e.day === S.calDay);
+    return `<div class="row" style="margin-bottom:18px">${ico('agenda')}<div><h1 style="margin:0">Agenda</h1><p class="soft" style="margin:0">Novembre 2026 · Calendrier du Mac</p></div></div>
+      <div class="grid2"><div class="card"><h2>Novembre</h2><div class="cal">${['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'].map(d => `<span class="h">${d}</span>`).join('')}${days.join('')}</div></div>
+      <div><div class="card"><h2>${S.calDay === 18 ? 'Aujourd’hui' : S.calDay + ' novembre'}</h2>${dayEvts.length ? dayEvts.map(e => `<button class="evt ${sel === e ? 'sel' : ''}" data-go="agenda/${e.id}"><span class="time">${e.time}</span><span class="bar2" style="background:${e.color}"></span><span><b>${esc(e.title)}</b><span class="muted" style="display:block;font-size:13px">${e.time} – ${e.end} · ${esc(e.where)}</span></span></button>`).join('') : '<p class="empty">Rien ce jour-là.</p>'}</div>
+      ${sel ? `<div class="card"><p class="pill" style="margin:0 0 10px">Détails</p><h2>${esc(sel.title)}</h2><p class="soft" style="margin:0">${sel.day} novembre · ${sel.time} – ${sel.end}<br>${esc(sel.where)}</p>${sel.note ? `<p style="margin:12px 0 0">${esc(sel.note)}</p>` : ''}<div class="row" style="margin-top:14px"><button class="btn" data-act="toastRemind">Me le rappeler 30 min avant</button></div></div>` : ''}
+      <div class="card"><h2>Prochains rendez-vous</h2>${EVENTS.filter(e => e.day >= 18).map(e => `<button class="evt" data-go="agenda/${e.id}"><span class="time">${e.day === 18 ? e.time : e.day + '/11'}</span><span class="bar2" style="background:${e.color}"></span><span><b>${esc(e.title)}</b><span class="muted" style="display:block;font-size:13px">${esc(e.where)}</span></span></button>`).join('')}</div></div></div>`;
+  },
+  tasks() {
+    const pri = { haute: 'red', moyenne: 'amber', basse: '' };
+    const list = TASKS.map((t, i) => [t, i]).filter(([t]) => S.taskTab === 'todo' ? !t.done : S.taskTab === 'done' ? t.done : !!t.reminder);
+    return `<div class="row" style="margin-bottom:18px">${ico('tasks')}<div><h1 style="margin:0">Tâches et rappels</h1><p class="soft" style="margin:0">Rappels du Mac · ${TASKS.filter(t => !t.done).length} à faire</p></div></div>
+      <div class="tabs">${[['todo', 'À faire'], ['reminders', 'Rappels'], ['done', 'Terminées']].map(([k, l]) => `<button data-tasktab="${k}" aria-pressed="${S.taskTab === k}">${l}</button>`).join('')}</div>
+      <div class="card">${list.length ? list.map(([t, i]) => `<div class="task ${t.done ? 'done' : ''}"><button class="box" data-task="${i}" role="checkbox" aria-checked="${t.done}" aria-label="${t.done ? 'Remettre à faire' : 'Marquer comme faite'} : ${esc(t.t)}">${t.done ? '✓' : ''}</button><span class="t"><b>${esc(t.t)}</b><span>${esc(t.list)}${t.reminder ? ' · ' + esc(t.reminder) : ''}</span></span><span class="pill ${pri[t.pri]}">${t.pri}</span><span class="pill">${esc(t.due)}</span></div>`).join('') : '<p class="empty">Rien ici.</p>'}
+      <form class="compose" data-form="task"><input id="newtask" placeholder="Ajouter une tâche… (« appeler maman demain »)" aria-label="Nouvelle tâche"><button class="btn primary" type="submit">Ajouter</button></form></div>`;
+  },
+  files() {
+    return `<div class="row" style="margin-bottom:18px">${ico('files')}<div><h1 style="margin:0">Fichiers</h1><p class="soft" style="margin:0">Ce que tu as déposé dans l’île. Yumi ne lit que ce que tu lui donnes.</p></div></div>
+      <div class="card">${rowsHTML(FILES.map(f => li({ lead: ico('files', 'mini'), t: esc(f[0]), s: f[1], r: f[2], attrs: 'data-act="toastFile"' })))}</div>`;
+  },
+  day() {
+    return `<div class="row" style="margin-bottom:18px">${ico('day')}<div><h1 style="margin:0">Résumé de journée</h1><p class="soft" style="margin:0">Mercredi 18 novembre</p></div></div>
+      <div class="card now"><h2>Ce matin</h2><p style="margin:0;font-size:16px;line-height:1.6">Trois nouveaux mails, dont la confirmation du dentiste jeudi. Point d’équipe à 10 h 30, cours à 14 h. Deux PR attendent ta relecture. Il fera 11 °C, prends une veste.</p></div>
+      <div class="card"><h2>Hier soir</h2><p class="soft" style="margin:0;line-height:1.6">Tu as terminé deux tâches, fusionné une PR, et écouté 1 h 40 de musique.</p></div>`;
+  },
+  conversations(id) {
+    const q = S.convQuery.trim().toLowerCase();
+    const list = CONVS.filter(c => !q || (c.title + c.msgs.map(m => m[1]).join(' ')).toLowerCase().includes(q));
+    const cur = id === 'new' ? { id: 'new', title: 'Nouvelle conversation', msgs: [] } : CONVS.find(c => c.id === id) || null;
+    return `<h1>Conversations</h1><p class="lede">Tout ce que tu as dit à Yumi, dans l’île ou ici. Rien ne disparaît.</p>
+      <div class="split"><div><div class="row" style="margin-bottom:12px"><button class="btn primary" data-go="conversations/new">＋ Nouvelle conversation</button></div>
+        <label class="field">${GLYPH.search.replace('<svg', '<svg width="18" height="18"')}<input id="convq" placeholder="Chercher dans les discussions" value="${esc(S.convQuery)}" aria-label="Chercher dans les discussions"></label>
+        <div class="card" style="padding:8px">${list.length ? list.map(c => li({ go: 'conversations/' + c.id, lead: ico('chat', 'mini'), t: esc(c.title), s: `${c.island ? '<span class="from-island">Depuis l’île</span> · ' : ''}${esc(c.msgs[c.msgs.length - 1]?.[1] || '')}`, r: c.when, sel: cur && cur.id === c.id })).join('') : '<p class="empty">Aucune discussion ne contient « ' + esc(S.convQuery) + ' ».</p>'}</div></div>
+      <div class="card" style="min-height:420px">${cur ? `<h2>${esc(cur.title)}</h2><div class="thread" id="thread">${cur.msgs.map(([w, t]) => w === 'me' ? `<div class="me">${esc(t)}</div>` : `<div class="yu"><span class="av"></span><span>${esc(t)}</span></div>`).join('') || '<p class="muted">Pose ta question, Yumi répond ici.</p>'}</div>
+        <form class="compose" data-form="conv" data-id="${cur.id}"><input id="convin" placeholder="Écris à Yumi…" aria-label="Message à Yumi"><button class="btn primary" type="submit">Envoyer</button></form>` : `<div class="empty" style="padding-top:140px">Choisis une conversation pour la reprendre, ou commence-en une nouvelle.</div>`}</div></div>`;
+  },
+  memoire() {
+    const groups = [...new Set(MEMORY.map(m => m.g))];
+    return `<h1>Mémoire</h1><p class="lede">Ce que Yumi sait de toi, et d’où il le tient. Tu peux corriger ou faire oublier chaque ligne.</p>
+      <div class="grid2"><div>${groups.map(g => `<div class="card"><h2>${g}</h2>${MEMORY.map((m, i) => [m, i]).filter(([m]) => m.g === g).map(([m, i]) => S.memEdit === i ? `<form class="mem" data-form="mem" data-i="${i}"><input id="memin" value="${esc(m.t)}" aria-label="Corriger"><button class="btn primary" type="submit">Garder</button></form>` : `<div class="mem"><span class="t">${esc(m.t)}<span>Appris : ${esc(m.src)}</span></span><span class="acts"><button data-memedit="${i}">Corriger</button><button data-memdel="${i}">Oublier</button></span></div>`).join('')}</div>`).join('') || '<div class="card"><p class="empty">Yumi ne sait plus rien de toi. Il réapprendra en t’écoutant.</p></div>'}</div>
+      <div><div class="card"><h2>Ce que Yumi utilise maintenant</h2><p class="soft" style="margin:0 0 10px">Le contexte de ta prochaine question.</p>${rowsHTML([li({ lead: ico('agenda', 'mini'), t: 'Ton agenda du jour', s: '3 événements' }), li({ lead: ico('claude', 'mini'), t: 'La session yumi', s: 'Brancher la grille des applications' }), li({ lead: ico('memory', 'mini'), t: `${MEMORY.length} souvenirs`, s: 'Ceux de gauche' })])}</div>
+      <div class="card"><h2>Tes préférences</h2><div class="set"><span class="t">Réponses courtes<span>Yumi va à l’essentiel.</span></span><button class="sw" role="switch" aria-checked="true" data-sw="short" aria-label="Réponses courtes"></button></div><div class="set"><span class="t">Apprendre de mes conversations<span>Sinon, rien n’est retenu.</span></span><button class="sw" role="switch" aria-checked="true" data-sw="learn" aria-label="Apprendre de mes conversations"></button></div></div>
+      <div class="card"><p class="soft" style="margin:0 0 12px">Tout reste sur ce Mac.</p><button class="btn danger" data-act="forgetAll">Tout oublier…</button></div></div></div>`;
+  },
+  recherche() {
+    const q = S.search.trim().toLowerCase(), hits = [];
+    if (q) {
+      Object.keys(APPS).forEach(k => { if ((APPS[k].name + APPS[k].desc).toLowerCase().includes(q)) hits.push(['Applications', li({ attrs: `data-app="${k}"`, lead: ico(k, 'mini'), t: esc(APPS[k].name), s: esc(APPS[k].desc) })]) });
+      CONVS.forEach(c => { if ((c.title + c.msgs.map(m => m[1]).join(' ')).toLowerCase().includes(q)) hits.push(['Conversations', li({ go: 'conversations/' + c.id, lead: ico('chat', 'mini'), t: esc(c.title), s: c.when })]) });
+      MAILS.forEach(m => { if ((m.from + m.subject + m.prev).toLowerCase().includes(q)) hits.push(['Mails', li({ go: 'mail/' + m.id, lead: ico('mail', 'mini'), t: esc(m.subject), s: esc(m.from) })]) });
+      TASKS.forEach(t => { if (t.t.toLowerCase().includes(q)) hits.push(['Tâches', li({ go: 'tasks', lead: ico('tasks', 'mini'), t: esc(t.t), s: esc(t.due) })]) });
+      FILES.forEach(f => { if (f[0].toLowerCase().includes(q)) hits.push(['Fichiers', li({ go: 'files', lead: ico('files', 'mini'), t: esc(f[0]), s: f[1] })]) });
+      PRS.forEach(p => { if ((p.title + ' pr ' + p.n).toLowerCase().includes(q)) hits.push(['GitHub', li({ go: 'github/pr/' + p.n, lead: ico('github', 'mini'), t: `PR ${p.n} · ${esc(p.title)}`, s: p.repo })]) });
+      EVENTS.forEach(e => { if (e.title.toLowerCase().includes(q)) hits.push(['Agenda', li({ go: 'agenda/' + e.id, lead: ico('agenda', 'mini'), t: esc(e.title), s: `${e.day} novembre · ${e.time}` })]) });
+      MEMORY.forEach(m => { if (m.t.toLowerCase().includes(q)) hits.push(['Mémoire', li({ go: 'memoire', lead: ico('memory', 'mini'), t: esc(m.t), s: m.g })]) });
+    }
+    const groups = [...new Set(hits.map(h => h[0]))];
+    return `<h1>Recherche</h1><p class="lede">Une conversation, un mail, une tâche, un fichier, une application : tout se cherche ici.</p>
+      <label class="field">${GLYPH.search.replace('<svg', '<svg width="18" height="18"')}<input id="gsearch" placeholder="Chercher partout dans Yumi" value="${esc(S.search)}" aria-label="Chercher partout dans Yumi"></label>
+      <div id="results">${!q ? `<p class="cat">Essaie</p><div class="recent">${['dentiste', 'PR', 'dîner', 'TD', 'musique'].map(w => `<button data-q="${w}">${w}</button>`).join('')}</div>` : groups.length ? groups.map(g => `<div class="card"><h2>${g}</h2>${rowsHTML(hits.filter(h => h[0] === g).map(h => h[1]))}</div>`).join('') : `<p class="empty">Rien ne correspond à « ${esc(S.search)} ».</p>`}</div>`;
+  },
+  reglages() {
+    const sw = (k, t, s) => `<div class="set"><span class="t">${t}<span>${s}</span></span><button class="sw" role="switch" aria-checked="${S.settings[k]}" data-set="${k}" aria-label="${t}"></button></div>`;
+    return `<h1>Paramètres</h1><p class="lede">Les réglages de Yumi, et ceux de chaque application.</p>
+      <div class="grid2"><div><div class="card"><h2>Général</h2>${sw('sounds', 'Sons de Yumi', 'Un petit son quand quelque chose t’attend.')}${sw('fold', 'Replier l’île toute seule', 'Après quelques secondes sans rien à dire.')}${sw('summary', 'Résumé à la fin d’une session', 'Ce que l’agent a fait, en une ligne.')}</div>
+      <div class="card"><h2>Claude Code et agents</h2>${sw('harmless', 'Laisser passer les demandes sans risque', 'Lire des fichiers, regarder git, lancer les tests. Supprimer, pousser, installer ou aller sur internet attendent toujours ton clic.')}<div class="set"><span class="t">Hooks installés<span>Claude Code · Codex · Gemini CLI</span></span><button class="btn">Vérifier</button></div></div></div>
+      <div class="card"><h2>Applications</h2>${rowsHTML(Object.keys(APPS).map(k => li({ lead: ico(k, 'mini'), t: esc(APPS[k].name), s: esc(APPS[k].cat), r: k === 'mail' || k === 'github' ? '<span class="pill green">Connecté</span>' : '<span class="pill">Réglages ›</span>', attrs: 'data-act="toastSettings"' })))}</div></div>`;
+  },
+};
+function musicCard() {
+  const [t, a, , cov] = MUSIC.tracks[MUSIC.i];
+  return `<div class="card"><h2>En ce moment</h2><div class="li" style="padding:0"><span class="mcover" style="background:${cov};width:52px;height:52px;border-radius:10px"></span><span class="t"><b>${esc(t)}</b><span>${esc(a)} · ${MUSIC.playing ? 'lecture en cours' : 'en pause'}</span></span>
+    <button class="close" data-act="musicToggle" aria-label="${MUSIC.playing ? 'Pause' : 'Lecture'}" style="width:40px;height:40px">${MUSIC.playing ? GLYPH.pause.replace('<svg', '<svg width="18" height="18"') : GLYPH.play.replace('<svg', '<svg width="18" height="18"')}</button><button class="close" data-go="music" aria-label="Ouvrir Musique">›</button></div></div>`;
+}
+function heat() { let h = '', seed = 7; for (let i = 0; i < 182; i++) { seed = (seed * 9301 + 49297) % 233280; const r = seed / 233280, l = i > 175 ? 4 : r < .35 ? 0 : r < .6 ? 1 : r < .8 ? 2 : r < .93 ? 3 : 4; h += `<i class="${l ? 'l' + l : ''}"></i>` } return `<div class="heat" aria-label="Graphique des contributions">${h}</div>` }
+function prView(p) {
+  const ci = { ok: ['✓', 'var(--green)', 'réussi'], fail: ['✕', 'var(--red)', 'en échec'], run: ['●', 'var(--blue)', 'en cours'] };
+  return `<div class="row" style="margin-bottom:6px"><span class="pill ${p.state === 'merged' ? 'violet' : 'green'}">${p.state === 'merged' ? 'Fusionnée' : 'Ouverte'}</span><span class="muted">${p.repo} · ${p.branch} → main</span></div>
+    <h1>PR ${p.n} · ${esc(p.title)}</h1><p class="lede">Par ${p.by} · ${p.when} · <span class="add">+${p.add}</span> <span class="del">−${p.del}</span></p>
+    <div class="grid2"><div><div class="card"><h2>Ce que Yumi en dit</h2><p style="margin:0;line-height:1.6">${p.n === 30 ? 'Une petite correction sur la fenêtre de l’île. Deux tests échouent : ils attendent l’ancien comportement du plein écran.' : `${p.files.length} fichiers, surtout du nouveau code. ${p.checks.every(c => c[0] === 'ok') ? 'Toutes les vérifications passent.' : 'Une vérification n’est pas encore finie.'}`}</p></div>
+      <div class="card"><h2>Fichiers modifiés</h2>${p.files.map(f => `<div class="check"><span class="file" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f[0])}</span><span class="add file">+${f[1]}</span><span class="del file">−${f[2]}</span></div>`).join('')}</div>
+      <div class="card"><h2>Commits</h2>${p.commits.map(c => `<div class="check">${dot('var(--blue)')}<span>${esc(c)}</span></div>`).join('')}</div></div>
+    <div><div class="card"><h2>Vérifications</h2>${p.checks.map(c => `<div class="check"><span style="color:${ci[c[0]][1]};font-weight:700;width:16px">${ci[c[0]][0]}</span><span style="flex:1">${esc(c[1])}</span><span class="muted">${ci[c[0]][2]}</span></div>`).join('')}</div>
+      ${p.state === 'open' ? `<div class="card"><h2>Ta relecture</h2><div class="row"><button class="btn primary" data-act="approvePR">Approuver</button><button class="btn" data-act="commentPR">Commenter</button></div><p class="muted" style="font-size:13px;margin:10px 0 0">S’ouvre sur GitHub pour que tu confirmes.</p></div>` : ''}
+      <div class="card"><button class="btn" data-go="github/prs">‹ Toutes les PR</button></div></div></div>`;
+}
+function sessView(s) {
+  const pill = s.status === 'ask' ? '<span class="pill amber">Attend ton accord</span>' : s.status === 'run' ? '<span class="pill blue">En cours</span>' : '<span class="pill green">Terminée</span>';
+  return `<div class="row" style="margin-bottom:6px">${pill}<span class="muted">${s.agent} · ${s.repo} · ${s.when}</span></div><h1>${esc(s.task)}</h1>
+    <div class="progress" style="margin:12px 0 22px;max-width:420px"><i style="width:${s.progress}%"></i></div>
+    <div class="grid2"><div>${s.status === 'ask' ? `<div class="card ask"><p class="pill amber" style="margin:0 0 10px">Demande d’autorisation</p><h2>${esc(s.ask.what)} ?</h2><p style="margin:0">${esc(s.ask.change)}</p><p class="soft" style="margin:6px 0 0">${esc(s.ask.undo)}.</p>
+      <details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Voir la commande</summary><div class="code">${esc(s.ask.cmd)}</div></details>
+      <div class="row" style="margin-top:16px"><button class="btn primary" data-act="allow">Autoriser</button><button class="btn" data-act="deny">Refuser</button></div></div>` : ''}
+      ${s.result ? `<div class="card"><h2>Résultat</h2><p style="margin:0">${esc(s.result)}</p></div>` : ''}
+      <div class="card"><h2>Ce que l’agent a fait</h2><div class="tl">${s.steps.map(st => `<div class="step ${st[0]}">${esc(st[1])}<span>${st[2]}</span></div>`).join('')}</div></div></div>
+    <div><div class="card"><h2>État des tâches</h2>${[['Lire le plan', true], ['Créer les fichiers', s.progress > 30], ['Lancer les tests', s.progress === 100], ['Résumer', s.progress === 100]].map(([t, d]) => `<div class="check"><span style="color:${d ? 'var(--green)' : 'var(--fg3)'};width:16px">${d ? '✓' : '○'}</span>${t}</div>`).join('')}</div>
+    <div class="card"><button class="btn" data-go="claude">‹ Toutes les sessions</button></div></div></div>`;
+}
+
+/* ---------- Panneau de démonstration ---------- */
+function renderDemo() {
+  $('demo').innerHTML = `<span class="tag">Démo</span>${Object.entries(PROFILES).map(([k, p]) => `<button data-profile="${k}" aria-pressed="${S.profile === k}">${p.label}</button>`).join('')}<span class="sep"></span>
+    <button data-act="notifGithub">Notification GitHub</button><button data-act="notifMail">Nouveau mail</button><button data-act="notifAsk">Demande de Claude Code</button><button data-act="fold">${S.folded ? 'Déplier l’île' : 'Replier l’île'}</button>${S.win ? '' : '<button data-act="openWin">Rouvrir le Workspace</button>'}`;
+}
+
+/* ---------- Interactions ---------- */
+const REPLIES = [[/mail/i, 'Tu as trois nouveaux mails. Je t’ouvre Mail.', 'mail'], [/pr|github/i, 'Deux PR attendent ta relecture, la 31 et la 30. Je t’ouvre GitHub.', 'github'], [/musique|pause/i, 'C’est fait.', null], [/agenda|cours|rendez/i, 'Tu as cours à 14 h, amphi B.', 'agenda'], [/./, 'D’accord. Je garde ça dans Conversations, tu pourras le reprendre.', null]];
+function islandSend(text) {
+  S.chat.push(['me', text]); S.thinking = true; mood('reflechi', 'think', 'reflechir'); renderIsland();
+  setTimeout(() => {
+    const [, ans, app] = REPLIES.find(([re]) => re.test(text)); S.thinking = false; S.chat.push(['yu', ans]); mood('heureux', 'calm');
+    if (/musique|pause/i.test(text)) MUSIC.playing = !MUSIC.playing;
+    const conv = CONVS.find(c => c.id === 'live') || (CONVS.unshift({ id: 'live', title: text.slice(0, 40), when: 'À l’instant', island: true, msgs: [] }), CONVS[0]);
+    conv.msgs = S.chat.slice(); renderIsland(); if (app) setTimeout(() => go(app, false), 700); else render();
+  }, 900);
+}
+let foldTimer;
+function armFold() { clearTimeout(foldTimer); if (S.settings.fold && S.island === 'home' && !S.notif) foldTimer = setTimeout(() => { S.folded = true; renderIsland(); renderDemo() }, 12000) }
+function notify(n) { S.notif = n; S.island = 'notif'; S.folded = false; mood(n.kind === 'ask' ? 'curieux' : 'surpris', n.kind === 'ask' ? 'warn' : 'joy', null); renderIsland(); renderDemo(); setTimeout(() => mood('neutre', n.kind === 'ask' ? 'warn' : 'calm'), 1200) }
+const ACTS = {
+  talk() { S.island = 'talk'; S.folded = false; mood('curieux', 'calm', 'ecouter'); renderIsland(); setTimeout(() => $('iinput')?.focus(), 60) },
+  islandHome() { S.island = 'home'; S.notif = null; mood('neutre', 'calm'); renderIsland(); armFold() },
+  openApps() { S.win = true; go('apps') },
+  openWin() { S.win = true; render() },
+  closeWin() { S.win = false; render(); toast('Le Workspace est fermé. L’île reste là, « Applications » le rouvre.') },
+  chatToWs() { go('conversations/live') },
+  musicToggle() { MUSIC.playing = !MUSIC.playing; render() },
+  prev() { MUSIC.i = (MUSIC.i + MUSIC.tracks.length - 1) % MUSIC.tracks.length; MUSIC.pos = 0; MUSIC.playing = true; render() },
+  next() { MUSIC.i = (MUSIC.i + 1) % MUSIC.tracks.length; MUSIC.pos = 0; MUSIC.playing = true; render() },
+  fold() { S.folded = !S.folded; renderIsland(); renderDemo() },
+  notifGithub() { notify({ kind: 'info', app: 'github', lead: 'Léa te demande une relecture.', sub: 'PR 31 · Le Workspace de Yumi', go: 'github/pr/31' }) },
+  notifMail() { notify({ kind: 'info', app: 'mail', lead: 'Nouveau mail de Léa Moreau.', sub: 'Photos du week-end', go: 'mail/m3' }) },
+  notifAsk() { const s = SESS.find(x => x.id === 's1'); s.status = 'ask'; s.progress = 62; notify({ kind: 'ask', s }) },
+  allow() { const s = SESS.find(x => x.id === 's1'); if (s.status !== 'ask') return; s.status = 'run'; s.progress = 80; s.steps = s.steps.filter(x => x[0] !== 'wait').concat([['run', 'Lance les tests', '10:23']]); mood('concentre', 'work', 'travailler');
+    S.notif = { kind: 'done', app: 'claude', title: 'Claude Code · yumi', lead: 'Je m’en occupe.', sub: 'Les tests tournent. Je te dis quand c’est fini.', go: 'claude/s1' }; S.island = 'notif'; render();
+    setTimeout(() => { s.status = 'done'; s.progress = 100; s.result = 'Tests réussis : 48 sur 48.'; s.steps = s.steps.filter(x => x[0] !== 'run').concat([['ok', 'Tests réussis : 48 sur 48', '10:24']]); mood('heureux', 'done', 'celebrer');
+      S.notif = { kind: 'done', app: 'claude', title: 'Claude Code · yumi', lead: 'Les tests passent.', sub: '48 sur 48. La session est terminée.', go: 'claude/s1' }; render(); setTimeout(() => { mood('neutre', 'calm'); ACTS.islandHome() }, 5000) }, 2200) },
+  deny() { const s = SESS.find(x => x.id === 's1'); if (s.status !== 'ask') return; s.status = 'run'; s.steps = s.steps.filter(x => x[0] !== 'wait').concat([['ok', 'Tu as refusé : l’agent continue sans lancer les tests', '10:23']]); mood('neutre', 'calm');
+    S.notif = { kind: 'done', app: 'claude', title: 'Claude Code · yumi', lead: 'Refusé.', sub: 'L’agent le sait, il continue sans lancer les tests.', go: 'claude/s1' }; S.island = 'notif'; render(); setTimeout(() => ACTS.islandHome(), 4000) },
+  forgetAll() { if (confirm('Tout oublier ? Yumi ne saura plus rien de toi. Ça ne se défait pas.')) { MEMORY = []; render(); toast('Yumi a tout oublié.') } },
+  draftReply() { toast('Brouillon prêt dans Mail. Rien n’est envoyé.') }, toastArchive() { toast('Message archivé (démo).') }, toastIssue() { toast('S’ouvrirait sur GitHub.') }, toastCommit() { toast('Les fichiers du commit s’ouvriraient ici.') },
+  toastRemind() { toast('Rappel ajouté 30 min avant.') }, toastFile() { toast('Aperçu du fichier (démo).') }, toastSettings() { toast('Les réglages de l’application s’ouvriraient ici.') },
+  approvePR() { toast('GitHub s’ouvre pour confirmer ton approbation.') }, commentPR() { toast('GitHub s’ouvre sur la PR.') },
+};
+document.addEventListener('click', (e) => {
+  const isl = e.target.closest('.island');
+  if (isl && S.folded) { S.folded = false; renderIsland(); renderDemo(); armFold(); return }
+  if (isl) armFold();
+  const t = e.target.closest('[data-act],[data-go],[data-app],[data-fav],[data-cat],[data-profile],[data-mailbox],[data-mailcat],[data-track],[data-day],[data-task],[data-tasktab],[data-memedit],[data-memdel],[data-set],[data-sw],[data-q]');
+  if (!t) return;
+  const d = t.dataset;
+  if (d.fav) { e.stopPropagation(); S.favs = S.favs.includes(d.fav) ? S.favs.filter(x => x !== d.fav) : [...S.favs, d.fav]; render(); toast(S.favs.includes(d.fav) ? 'Ajoutée aux raccourcis.' : 'Retirée des raccourcis.'); return }
+  if (d.act) return ACTS[d.act]?.();
+  if (d.go) return go(d.go, !!d.open || !!isl);
+  if (d.app) return go(APP_ROUTE[d.app], !!isl);
+  if (d.cat) { S.catFilter = d.cat; return render() }
+  if (d.profile) { S.profile = d.profile; S.island = 'home'; S.notif = null; S.folded = false; mood('heureux', 'calm', null); setTimeout(() => mood('neutre', 'calm'), 900); return render() }
+  if (d.mailbox) { S.mailBox = d.mailbox; return go('mail') }
+  if (d.mailcat) { S.mailCat = d.mailcat; return go('mail') }
+  if (d.track) { MUSIC.i = +d.track; MUSIC.pos = 0; MUSIC.playing = true; return render() }
+  if (d.day) { S.calDay = +d.day; return go('agenda') }
+  if (d.task) { TASKS[+d.task].done = !TASKS[+d.task].done; return render() }
+  if (d.tasktab) { S.taskTab = d.tasktab; return render() }
+  if (d.memedit) { S.memEdit = +d.memedit; render(); return $('memin')?.focus() }
+  if (d.memdel) { const m = MEMORY.splice(+d.memdel, 1)[0]; render(); return toast('Oublié : « ' + m.t + ' »') }
+  if (d.set) { S.settings[d.set] = !S.settings[d.set]; if (d.set === 'harmless' && S.settings.harmless) toast('Seules les demandes sans risque passeront seules.'); return render() }
+  if (d.sw) { t.setAttribute('aria-checked', t.getAttribute('aria-checked') !== 'true'); return }
+  if (d.q) { S.search = d.q; render(); return $('gsearch')?.focus() }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.matches('.app[data-app]')) go(APP_ROUTE[e.target.dataset.app]);
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); go('recherche'); setTimeout(() => $('gsearch')?.focus(), 30) }
+  if (e.key === 'Escape' && S.route !== 'accueil') { const top = S.route.split('/')[0]; go(S.route.includes('/') ? top : ROUTE_APP[top] ? 'apps' : 'accueil') }
+});
+document.addEventListener('submit', (e) => {
+  e.preventDefault(); const f = e.target.dataset.form;
+  if (f === 'ichat') { const v = $('iinput').value.trim(); if (v) islandSend(v) }
+  if (f === 'task') { const v = $('newtask').value.trim(); if (v) { TASKS.unshift({ t: v, due: 'Aujourd’hui', pri: 'moyenne', list: 'Perso', done: false }); S.taskTab = 'todo'; render() } }
+  if (f === 'mem') { MEMORY[+e.target.dataset.i].t = $('memin').value.trim() || MEMORY[+e.target.dataset.i].t; S.memEdit = null; render(); toast('Corrigé.') }
+  if (f === 'conv') { const v = $('convin').value.trim(); if (!v) return; let c = CONVS.find(x => x.id === e.target.dataset.id); if (!c) { c = { id: 'c' + Date.now(), title: v.slice(0, 40), when: 'À l’instant', island: false, msgs: [] }; CONVS.unshift(c) }
+    c.msgs.push(['me', v]); go('conversations/' + c.id); setTimeout(() => { c.msgs.push(['yu', 'Bien noté. Je te réponds ici, et tu retrouveras cette discussion depuis l’île.']); if (S.route === 'conversations/' + c.id) { render(); const th = $('thread'); if (th) th.lastElementChild.scrollIntoView({ block: 'nearest' }) } }, 800) }
+});
+const live = (id, key, cb) => document.addEventListener('input', (e) => { if (e.target.id !== id) return; S[key] = e.target.value; const pos = e.target.selectionStart; render(); const el = $(id); el.focus(); el.setSelectionRange(pos, pos); cb && cb() });
+live('appq', 'appQuery'); live('convq', 'convQuery'); live('gsearch', 'search');
+setInterval(() => { if (MUSIC.playing) { MUSIC.pos++; if (MUSIC.pos >= MUSIC.tracks[MUSIC.i][4]) { MUSIC.i = (MUSIC.i + 1) % MUSIC.tracks.length; MUSIC.pos = 0 } const s = document.querySelector('.scrub i'); if (s) { s.style.width = (MUSIC.pos / MUSIC.tracks[MUSIC.i][4] * 100) + '%'; document.querySelector('.times span').textContent = fmt(MUSIC.pos) } } }, 1000);
+
+/* URL : ?profil=dev|etudiant|classique&vue=github/pr/31&ile=talk|notif|repliee */
+const qs = new URLSearchParams(location.search);
+if (PROFILES[qs.get('profil')]) S.profile = qs.get('profil');
+if (qs.get('vue')) S.route = qs.get('vue');
+render();
+if (qs.get('ile') === 'talk') ACTS.talk(); else if (qs.get('ile') === 'notif') ACTS.notifAsk(); else if (qs.get('ile') === 'repliee') { S.folded = true; renderIsland() } else armFold();
+</script>
+</body>
+</html>

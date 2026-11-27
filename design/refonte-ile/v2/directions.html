@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yumi · Huit directions</title>
+<link rel="stylesheet" href="../yumi.css">
+<style>
+:root { --bg: #11131B; --fg: #F4F5F8; --fg2: #BCC1D3; --fg3: #A2A8BD; --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 var(--font); -webkit-font-smoothing: antialiased }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0 }
+header { max-width: 1400px; margin: 0 auto; padding: 40px 28px 10px }
+h1 { font-size: 30px; letter-spacing: -.02em; margin: 0 0 6px }
+header p { color: var(--fg2); max-width: 780px; margin: 0 }
+header a { color: #9DB8FF }
+.gal { max-width: 1400px; margin: 0 auto; padding: 24px 28px 60px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 620px), 1fr)); gap: 26px }
+.dir { background: #1B1E2A; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column }
+.dir.pick { outline: 2px solid #5B8CFF }
+.stage { position: relative; height: 380px; overflow: hidden }
+.info { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 8px }
+.info h2 { margin: 0; font-size: 19px; letter-spacing: -.01em }
+.info h2 span { color: var(--fg3); font-weight: 500; margin-right: 6px }
+.info p { margin: 0; color: var(--fg2) }
+.info ul { margin: 0; padding-left: 18px; color: var(--fg3); font-size: 14px }
+.info .row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap }
+.info .row button { height: 34px; padding: 0 14px; border-radius: 10px; background: #2F3447; font-size: 14px; font-weight: 500 }
+.info .row button:hover { background: #383E54 }
+.info .row button[aria-pressed="true"] { background: var(--fg); color: #0B0C12 }
+.yumi { display: block }
+/* éléments communs aux maquettes */
+.isl { position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: #000; border-radius: 0 0 22px 22px; display: flex; gap: 12px; padding: 26px 16px 14px; box-shadow: 0 14px 40px rgba(0,0,0,.5); z-index: 2 }
+.isl .tx { min-width: 0 }
+.isl b { display: block; font-size: 15px; line-height: 1.3 }
+.isl small { display: block; color: #BCC1D3; font-size: 13px }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 9px; background: #1F2231; font-size: 13px; font-weight: 500; white-space: nowrap }
+.chip.w { background: #F4F5F8; color: #0B0C12 }
+.chips { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap }
+.ic { width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto; display: grid; place-items: center; font-size: 15px; font-weight: 700; color: #fff }
+.g1 { background: linear-gradient(140deg,#3F7BFF,#7FD0FF) } .g2 { background: linear-gradient(140deg,#2B3045,#4A5170) } .g3 { background: linear-gradient(140deg,#5B8CFF,#8B6CFF) }
+.g4 { background: linear-gradient(140deg,#F58AD9,#B07BFF) } .g5 { background: linear-gradient(140deg,#FF5D6C,#FF9A3D) } .g6 { background: linear-gradient(140deg,#FFB547,#FFD37A) }
+.g7 { background: linear-gradient(140deg,#8B6CFF,#F58AD9) } .g8 { background: linear-gradient(140deg,#7B5CFF,#C9A8FF) }
+.line { height: 9px; border-radius: 5px; background: rgba(255,255,255,.12) } .line.s { width: 55% } .line.m { width: 75% }
+.lbl { font-size: 13px; color: #A2A8BD }
+</style>
+</head>
+<body>
+<header>
+  <h1>Huit directions pour Yumi</h1>
+  <p>Huit façons d’organiser l’île et l’espace complet. Même Yumi partout et les mêmes données de démonstration ; seule l’organisation change. Clique « Je prends celle-ci » sur une direction, ou combine-en plusieurs. <a href="index.html">Le prototype V2 navigable →</a></p>
+</header>
+<main class="gal" id="gal"></main>
+<script src="../yumi.js"></script>
+<script>
+const Y = (n, mood = 'neutre', rim = 'calm') => `<span class="ys" data-s="${n}" data-m="${mood}" data-r="${rim}"></span>`;
+const apps = (n, cls = '') => [['g1', '›_', 'Claude Code'], ['g2', '⑂', 'GitHub'], ['g3', '✉', 'Mail'], ['g4', '♪', 'Musique'], ['g5', '31', 'Agenda'], ['g6', '✓', 'Tâches'], ['g7', '…', 'Conversations'], ['g8', '◎', 'Mémoire']].slice(0, n);
+
+const DIRS = [
+  { name: 'Graphite clair', idea: 'La V2 en plus lumineux : surfaces grises, île noire, une seule phrase et un bouton Applications.',
+    pros: ['Le plus proche de macOS', 'Très lisible', 'Simple à construire en SwiftUI'],
+    html: () => `<div style="position:absolute;inset:0;background:linear-gradient(#2A2E3D,#202330)"></div>
+      <div class="isl" style="width:430px">${Y(54)}<div class="tx"><b>Tu as deux PR à relire.</b><small>Et Claude Code t’attend sur yumi.</small><div class="chips"><span class="chip w">Parler</span><span class="chip">♪ Lumière douce</span><span class="chip" style="margin-left:auto;border:1.5px solid #8B6CFF">▦ Applications</span></div></div></div>
+      <div style="position:absolute;left:30px;right:30px;top:150px;bottom:-20px;background:#2C3142;border-radius:14px 14px 0 0;display:grid;grid-template-columns:120px 1fr">
+        <div style="background:#252937;padding:14px;display:flex;flex-direction:column;gap:9px;border-radius:14px 0 0 0">${['Accueil', 'Applications', 'Conversations', 'Mémoire', 'Recherche'].map((x, i) => `<span class="lbl" style="${i ? '' : 'color:#fff;font-weight:600'}">${x}</span>`).join('')}</div>
+        <div style="padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-content:start">${apps(8).map(([g, s, n]) => `<div style="background:#363C51;border-radius:10px;padding:10px"><span class="ic ${g}">${s}</span><div style="font-size:12px;margin-top:6px">${n}</div></div>`).join('')}</div></div>` },
+  { name: 'Verre', idea: 'Île et fenêtre en verre dépoli au-dessus du fond d’écran ; les couleurs de Yumi passent à travers.',
+    pros: ['Très premium', 'Suit le style vitré récent de macOS', 'Moins de noir'],
+    html: () => `<div style="position:absolute;inset:0;background:radial-gradient(400px 260px at 20% 80%,#8B6CFF,transparent),radial-gradient(400px 260px at 85% 30%,#F58AD9,transparent),#2B2F55"></div>
+      <div class="isl" style="width:420px;background:rgba(10,12,20,.55);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15)">${Y(54)}<div class="tx"><b>Tu as reçu trois nouveaux mails.</b><small>Dont la confirmation du dentiste.</small><div class="chips"><span class="chip w">Parler</span><span class="chip" style="background:rgba(255,255,255,.12)">Ouvrir Mail</span><span class="chip" style="background:rgba(255,255,255,.12)">▦ Applications</span></div></div></div>
+      <div style="position:absolute;left:40px;right:40px;top:160px;bottom:-20px;background:rgba(255,255,255,.1);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.18);border-radius:18px 18px 0 0;padding:18px">
+        <b style="font-size:17px">Applications</b><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px">${apps(8).map(([g, s, n]) => `<div style="text-align:center"><span class="ic ${g}" style="width:46px;height:46px;border-radius:12px;margin:0 auto">${s}</span><div style="font-size:12px;margin-top:6px">${n}</div></div>`).join('')}</div></div>` },
+  { name: 'Lanceur', idea: 'Pas de fenêtre au départ : « Applications » ouvre une barre de recherche au centre de l’écran, et on tape ce qu’on veut.',
+    pros: ['Rapide au clavier', 'Rien de caché, tout se cherche', 'Le moins chargé'],
+    html: () => `<div style="position:absolute;inset:0;background:linear-gradient(160deg,#1E2A44,#2A1E3F)"></div>
+      <div class="isl" style="width:300px;padding:24px 14px 10px">${Y(36)}<div class="tx"><b style="font-size:14px">Cours à 14 h</b><small>Droit des contrats</small></div></div>
+      <div style="position:absolute;left:50%;top:120px;transform:translateX(-50%);width:440px;background:#262A3A;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden">
+        <div style="padding:14px 16px;font-size:17px;border-bottom:1px solid rgba(255,255,255,.08)">ag<span style="opacity:.4">enda</span></div>
+        ${[['g5', '31', 'Agenda', 'Prochain : Droit des contrats à 14 h'], ['g6', '✓', 'Tâches et rappels', 'Rendre le TD 4 vendredi'], ['g7', '…', 'Conversation « Plan de révision »', 'Hier']].map(([g, s, n, d], i) => `<div style="display:flex;gap:12px;align-items:center;padding:10px 14px;${i ? '' : 'background:#3A4058'}"><span class="ic ${g}">${s}</span><div><div style="font-weight:600;font-size:14px">${n}</div><div class="lbl">${d}</div></div></div>`).join('')}</div>` },
+  { name: 'Dock sous l’île', idea: 'Les applications favorites pendent sous l’île, en icônes, comme un petit Dock. Un clic ouvre l’app en grand.',
+    pros: ['Accès en un clic', 'Les apps se voient sans chercher', 'Garde l’île au centre'],
+    html: () => `<div style="position:absolute;inset:0;background:linear-gradient(#232838,#1D2030)"></div>
+      <div class="isl" style="width:440px;flex-direction:column;gap:12px"><div style="display:flex;gap:12px">${Y(50)}<div class="tx"><b>Tu as deux PR à relire.</b><small>La 31 et la 30, sur Yumi.</small></div></div>
+        <div style="display:flex;gap:10px;justify-content:center;padding-top:10px;border-top:1px solid #1F2231">${apps(6).map(([g, s], i) => `<span style="position:relative"><span class="ic ${g}" style="width:42px;height:42px;border-radius:12px">${s}</span>${i === 1 ? '<i style="position:absolute;top:-4px;right:-4px;background:#FF5D6C;border-radius:9px;font-size:11px;font-style:normal;padding:1px 6px">2</i>' : ''}</span>`).join('')}<span class="ic" style="width:42px;height:42px;border-radius:12px;background:#2F3447">▦</span></div></div>
+      <div style="position:absolute;left:60px;right:60px;top:200px;bottom:20px;background:#2C3142;border-radius:14px;padding:16px"><div class="lbl">GitHub › PR 31</div><b style="display:block;margin:6px 0 12px">Le Workspace de Yumi</b><div class="line m"></div><div class="line s" style="margin-top:8px"></div></div>` },
+  { name: 'Fil du jour', idea: 'Le Workspace s’ouvre sur une seule colonne chronologique : ce qui s’est passé et ce qui arrive, toutes apps mélangées.',
+    pros: ['On comprend sa journée d’un coup d’œil', 'Chaque ligne ouvre son app', 'Idéal pour un usage classique'],
+    html: () => `<div style="position:absolute;inset:0;background:#202432"></div>
+      <div class="isl" style="width:360px">${Y(46)}<div class="tx"><b>Bonne journée Esteban.</b><small>4 choses aujourd’hui.</small></div></div>
+      <div style="position:absolute;left:50%;transform:translateX(-50%);top:130px;width:430px;display:flex;flex-direction:column;gap:8px">
+        ${[['9:12', 'g3', '✉', 'Dentiste confirmé jeudi 15 h'], ['10:02', 'g2', '⑂', 'Léa te demande une relecture'], ['10:30', 'g5', '31', 'Point d’équipe dans 10 min'], ['14:00', 'g5', '31', 'Droit des contrats · amphi B'], ['Ce soir', 'g6', '✓', 'Acheter le dessert']].map(([t, g, s, n], i) => `<div style="display:flex;gap:12px;align-items:center;background:${i === 2 ? '#3A4058' : '#2C3142'};border-radius:12px;padding:9px 12px"><span class="lbl" style="width:50px">${t}</span><span class="ic ${g}" style="width:28px;height:28px">${s}</span><span style="font-size:14px">${n}</span></div>`).join('')}</div>` },
+  { name: 'Yumi au centre', idea: 'Le Workspace s’ouvre sur Yumi en grand, qui parle ; les applications l’entourent en cercle.',
+    pros: ['Le personnage est le produit', 'Très mémorable', 'Parler reste le geste principal'],
+    html: () => `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,#3A2F6B,#1A1C2A 70%)"></div>
+      <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);text-align:center">${Y(130, 'heureux', 'joy')}<div style="font-size:18px;font-weight:600;margin-top:8px">Qu’est-ce qu’on fait ?</div><div class="lbl">Parle-moi, ou choisis une app.</div></div>
+      ${apps(8).map(([g, s, n], i) => { const a = i / 8 * Math.PI * 2 - Math.PI / 2, x = 50 + Math.cos(a) * 38, y = 52 + Math.sin(a) * 38; return `<span class="ic ${g}" title="${n}" style="position:absolute;left:${x}%;top:${y}%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:13px">${s}</span>` }).join('')}` },
+  { name: 'Panneau latéral', idea: 'Pas de fenêtre séparée : en tirant l’île vers le bas, un grand panneau descend du bord droit de l’écran.',
+    pros: ['Toujours à portée, sans fenêtre à gérer', 'Comme le Centre de notifications', 'L’île et l’espace complet sont un seul objet'],
+    html: () => `<div style="position:absolute;inset:0;background:linear-gradient(120deg,#2A3150,#1F2233)"></div>
+      <div class="isl" style="width:300px;left:38%">${Y(42)}<div class="tx"><b style="font-size:14px">Musique en cours</b><small>Lumière douce</small></div></div>
+      <div style="position:absolute;right:12px;top:12px;bottom:12px;width:280px;background:#2C3142;border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:-10px 0 40px rgba(0,0,0,.35)">
+        <div style="display:flex;gap:10px;align-items:center">${Y(34)}<b>Yumi</b></div>
+        <div style="background:#363C51;border-radius:12px;padding:10px"><div class="lbl">En attente</div><div style="font-size:14px;margin-top:4px">Claude Code veut lancer les tests</div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${apps(8).map(([g, s]) => `<span class="ic ${g}" style="width:100%;aspect-ratio:1;height:auto">${s}</span>`).join('')}</div>
+        <div style="background:#363C51;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center"><span class="ic g4">♪</span><div style="font-size:13px">Lumière douce<br><span class="lbl">Nuit Calme</span></div></div></div>` },
+  { name: 'Espaces par métier', idea: 'Le Workspace a trois espaces en haut : Travail, Journée, Moi. Chacun montre ses apps, ses cartes et son Yumi.',
+    pros: ['Sépare le pro et le perso', 'Suit le profil choisi au premier lancement', 'Moins d’apps à la fois'],
+    html: () => `<div style="position:absolute;inset:0;background:#1F2230"></div>
+      <div class="isl" style="width:380px">${Y(46)}<div class="tx"><b>Espace Travail</b><small>2 PR, 1 session qui t’attend.</small></div></div>
+      <div style="position:absolute;left:30px;right:30px;top:130px;bottom:-10px;background:#2A2E3E;border-radius:14px 14px 0 0;padding:14px">
+        <div style="display:flex;gap:6px;justify-content:center"><span class="chip w">Travail</span><span class="chip">Journée</span><span class="chip">Moi</span></div>
+        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px;margin-top:14px">
+          <div style="background:#363C51;border-radius:12px;padding:12px"><div class="lbl">GitHub</div><b style="font-size:14px;display:block;margin:4px 0 8px">2 PR à relire</b><div class="line m"></div><div class="line s" style="margin-top:6px"></div></div>
+          <div style="background:#363C51;border-radius:12px;padding:12px"><div class="lbl">Claude Code</div><b style="font-size:14px;display:block;margin-top:4px">Attend ton accord</b></div>
+          <div style="grid-column:1/-1;display:flex;gap:10px">${apps(4).map(([g, s, n]) => `<span class="chip"><span class="ic ${g}" style="width:20px;height:20px;border-radius:6px;font-size:10px">${s}</span>${n}</span>`).join('')}</div></div></div>` },
+];
+
+let pick = null;
+function render() {
+  document.getElementById('gal').innerHTML = DIRS.map((d, i) => `<article class="dir ${pick === i ? 'pick' : ''}">
+    <div class="stage" aria-label="Maquette : ${d.name}">${d.html()}</div>
+    <div class="info"><h2><span>${i + 1}.</span>${d.name}</h2><p>${d.idea}</p><ul>${d.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+      <div class="row"><button data-pick="${i}" aria-pressed="${pick === i}">${pick === i ? 'Choisie' : 'Je prends celle-ci'}</button></div></div></article>`).join('');
+  document.querySelectorAll('.ys').forEach(s => { s.innerHTML = yumi({ size: +s.dataset.s, mood: s.dataset.m, rim: s.dataset.r }); new Blob(s.firstElementChild) });
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-pick]'); if (b) { pick = +b.dataset.pick; LIVE.length = 0; render() } });
+render();
+</script>
+</body>
+</html>

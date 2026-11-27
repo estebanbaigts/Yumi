@@ -1,0 +1,57 @@
+/* Extrait de design/maquette/reference.html par outils/extraire-yumi.py. Ne pas modifier à la main. */
+:root { --spring: cubic-bezier(.32,1.22,.42,1) }
+.yumi { display: block; overflow: visible; flex: none }
+.yumi .breath, .yumi .pose { transform-box: fill-box; transform-origin: 50% 100% }
+.yumi .breath { animation: breath 4.2s ease-in-out infinite }
+.yumi.live .breath { animation: none }
+.yumi .tiltg, .yumi .es, .yumi .lidt, .yumi .lidb, .yumi .eyes, .yumi .arm { transform-box: view-box }
+.yumi .tiltg { transform-origin: 50px 76px; transform: rotate(calc(var(--tilt, 0) * 1deg)); transition: transform .4s var(--spring) }
+.yumi .eyes { transform-origin: 50px 45px; transition: transform .25s var(--spring) }
+.yumi .es, .yumi .lidt, .yumi .lidb { transition: transform .26s cubic-bezier(.3,1.3,.5,1) }
+.yumi .eye { transform-box: fill-box; transform-origin: center; animation: blink 5.4s infinite }
+.yumi .pupil { transform: translate(calc(var(--lx, 0) * 2.2px), calc(var(--ly, 0) * 2px)); transition: transform .14s ease-out }
+.yumi[data-fixed] .pupil { transition: transform .3s var(--spring) }
+.yumi .psg { transform-box: fill-box; transform-origin: center; transform: scale(var(--ps, 1)); transition: transform .26s var(--spring) }
+.yumi .shut { transition: opacity .12s ease }
+.yumi stop { transition: stop-color .5s ease }
+.yumi .s1 { stop-color: var(--r1) } .yumi .s2 { stop-color: var(--r2) } .yumi .s3 { stop-color: var(--r3) }
+.yumi .rim { stroke-width: var(--rw, 2.6); stroke-dasharray: 100; stroke-dashoffset: 0; transition: stroke-width .4s ease, stroke-dashoffset .8s cubic-bezier(.6,0,.2,1) }
+.yumi .glow, .yumi .inner, .yumi .floor, .yumi .shine, .yumi .glint { transition: opacity .7s ease }
+.yumi[data-dark] .rim { stroke-dashoffset: 100; transition: none }
+.yumi[data-dark] .glow, .yumi[data-dark] .inner, .yumi[data-dark] .floor, .yumi[data-dark] .shine, .yumi[data-dark] .glint { opacity: 0; transition: none }
+.yumi .glow { stroke-width: calc(var(--rw, 2.6) * 2.2) }
+.yumi[data-alert] .glow { animation: pulse 1.1s ease-in-out infinite }
+.yumi .arm { opacity: 0 } .yumi .arm.l { transform-origin: 17px 52px } .yumi .arm.r { transform-origin: 83px 52px }
+.yumi .zz, .yumi .spark { opacity: 0; transform-box: fill-box; transform-origin: center }
+#actor:hover .eyes { transform: scale(1.09) }
+.yumi .prop { opacity: 0; transition: opacity .25s ease }
+.yumi[data-scene="clope"] .p-clope, .yumi[data-scene="cafe"] .p-cafe, .yumi[data-scene="soleil"] .p-soleil, .yumi[data-scene="siffle"] .p-siffle, .yumi[data-scene="dodo"] .p-dodo, .yumi[data-scene="casque"] .p-casque, .yumi[data-scene="nuage"] .p-nuage { opacity: 1 }
+.yumi .ember { animation: ember 1.8s ease-in-out infinite; transition: r .3s }
+.yumi[data-drag] .ember { r: 3; fill: #FFC04D; animation: none }
+.yumi .cup { transform-box: view-box; transform-origin: 66px 60px; transition: transform .35s var(--spring) }
+.yumi[data-sip] .cup { transform: rotate(-30deg) translate(-3px, -3px) }
+.yumi .shades { transform-box: fill-box; transform-origin: center }
+.yumi[data-scene="soleil"] .shades { animation: shades .55s var(--spring) both }
+.yumi .bubble { transform-box: fill-box; transform-origin: 15% 85% }
+.yumi[data-scene="dodo"] .bubble { animation: bubble 3.2s ease-in-out infinite }
+.yumi[data-scene="dodo"] .zz { animation: p-zz 2.6s ease-in-out infinite } .yumi[data-scene="dodo"] .z2 { animation-delay: .8s } .yumi[data-scene="dodo"] .z3 { animation-delay: 1.6s }
+.yumi[data-scene="nuage"] .rain path { animation: rain .7s linear infinite } .yumi .rain .r2 { animation-delay: .2s !important } .yumi .rain .r3 { animation-delay: .45s !important } .yumi .rain .r4 { animation-delay: .1s !important }
+.yumi .note { opacity: 0; transform-box: fill-box; transform-origin: center }
+.yumi[data-scene="casque"] .note, .yumi[data-scene="siffle"] .note { animation: p-zz 2.2s ease-in-out infinite } .yumi .note.n2 { animation-delay: .7s !important } .yumi .note.n3 { animation-delay: 1.4s !important }
+.yumi[data-pose="celebrer"] .arm.l { animation: p-arml 1.5s ease-in-out } .yumi[data-pose="celebrer"] .arm.r { animation: p-armr 1.5s ease-in-out }
+.yumi[data-pose="celebrer"] .spark { animation: p-spark 1.5s ease-out }
+.yumi[data-pose="celebrer"] .sp2 { animation-delay: .15s } .yumi[data-pose="celebrer"] .sp3 { animation-delay: .3s }
+.yumi[data-pose="salut"] .arm.l { animation: p-arml 1.5s ease-in-out } .yumi[data-pose="salut"] .arm.r { animation: p-armr 1.5s ease-in-out }
+.yumi[data-dark="out"] .rim { transition: stroke-dashoffset .8s cubic-bezier(.6,0,.2,1) }
+.yumi[data-dark="out"] .glow, .yumi[data-dark="out"] .inner, .yumi[data-dark="out"] .floor, .yumi[data-dark="out"] .shine, .yumi[data-dark="out"] .glint { transition: opacity .7s ease }
+@keyframes ember { 50% { opacity: .55 } }
+@keyframes shades { from { transform: translateY(-34px) rotate(-14deg); opacity: 0 } }
+@keyframes bubble { 0% { transform: scale(.15); opacity: 1 } 70% { transform: scale(1); opacity: 1 } 80% { transform: scale(1.25); opacity: 1 } 84%, 100% { transform: scale(1.5); opacity: 0 } }
+@keyframes rain { from { transform: translateY(0); opacity: 1 } to { transform: translateY(9px); opacity: 0 } }
+@keyframes breath { 50% { transform: scale(1.015, .975) } }
+@keyframes blink { 0%, 95.5%, 100% { transform: scaleY(1) } 97.5% { transform: scaleY(.08) } }
+@keyframes pulse { 50% { opacity: .35 } }
+@keyframes p-arml { 0%, 100% { opacity: 0; transform: rotate(45deg) } 10%, 88% { opacity: 1 } 22%, 52%, 80% { transform: rotate(-14deg) } 37%, 66% { transform: rotate(16deg) } }
+@keyframes p-armr { 0%, 100% { opacity: 0; transform: rotate(-45deg) } 10%, 88% { opacity: 1 } 22%, 52%, 80% { transform: rotate(14deg) } 37%, 66% { transform: rotate(-16deg) } }
+@keyframes p-spark { 0% { opacity: 0; transform: scale(.2) } 30% { opacity: 1; transform: scale(1.1) rotate(20deg) } 100% { opacity: 0; transform: scale(.6) translateY(-10px) rotate(60deg) } }
+@keyframes p-zz { 0% { opacity: 0; transform: translate(0, 4px) scale(.6) } 30% { opacity: 1 } 100% { opacity: 0; transform: translate(8px, -14px) scale(1.1) } }

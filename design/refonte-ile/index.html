@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yumi · Refonte de l'île</title>
+<link rel="stylesheet" href="yumi.css">
+<style>
+/* ---------- Tokens: the colours of IslandTheme.swift, two greys only ---------- */
+:root {
+  --ink: #000;
+  --raise: rgba(255,255,255,.065);
+  --raise-hi: rgba(255,255,255,.1);
+  --fg: #F4F5F8;
+  --muted: #8D92A8;
+  --blue: #5B8CFF; --violet: #8B6CFF; --pink: #F58AD9;
+  --amber: #FFB547; --red: #FF5D6C; --green: #3DDC97;
+  --spring: cubic-bezier(.32,1.22,.42,1);
+  --ease: cubic-bezier(.25,.8,.25,1);
+  --w: 660px;          /* IslandConst.expandedWidth × openScale */
+  --seat: 92px;        /* IslandConst.seatColumn */
+  --top: 40px;         /* notch (32) + 8 */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100% }
+body { background: #0B0C12; color: var(--fg); font-family: var(--font); -webkit-font-smoothing: antialiased; overflow-x: hidden }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px }
+
+/* ---------- The desk: a Mac screen with its notch ---------- */
+.desk { position: relative; min-height: 100vh; display: flex; justify-content: center; padding: 0 16px 48px;
+  background: radial-gradient(1200px 600px at 50% -10%, #1C1F33 0%, #0B0C12 60%) }
+.menubar { position: absolute; inset: 0 0 auto; height: 32px; display: flex; justify-content: space-between; align-items: center; padding: 0 18px;
+  font-size: 13px; color: rgba(255,255,255,.75); pointer-events: none }
+.menubar b { font-weight: 600; margin-right: 18px }
+.stage { position: relative; width: var(--w); flex: none }
+.embed .panel, .embed .menubar, .embed .note { display: none }
+.embed .desk { padding-bottom: 0; min-height: 0; background: #0B0C12 }
+
+/* ---------- The island ---------- */
+.island { position: relative; margin: 0 auto; width: var(--w); height: var(--h, 220px); background: var(--ink);
+  border-radius: 0 0 30px 30px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(139,108,255,.28), 0 18px 50px rgba(0,0,0,.45);
+  transition: width .5s var(--spring), height .45s var(--spring), border-radius .4s var(--ease) }
+.island.folded { width: var(--fw, 420px); height: 32px; border-radius: 0 0 16px 16px; box-shadow: 0 0 0 1px rgba(139,108,255,.18); cursor: pointer }
+.island .open { position: absolute; inset: 0; padding-top: var(--top); transition: opacity .25s ease .12s }
+.island.folded .open { opacity: 0; pointer-events: none; transition-delay: 0s }
+.notch { position: absolute; top: 0; left: 50%; width: 184px; height: 32px; transform: translateX(-50%); background: #000;
+  border-radius: 0 0 10px 10px; z-index: 5; pointer-events: none }
+
+/* Folded: Yumi on the left wing, the most important line on the right wing */
+.fold { position: absolute; inset: 0; display: flex; align-items: center; opacity: 0; transition: opacity .2s ease; pointer-events: none }
+.island.folded .fold { opacity: 1; transition-delay: .2s }
+.fold .fy { width: 50px; display: grid; place-items: center }
+.fold .ft { position: absolute; left: calc(50% + 92px + 10px); right: 14px; display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.fold .ft i { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--c, var(--blue)) }
+
+.body { display: grid; grid-template-columns: var(--seat) 1fr; padding: 4px 14px 0 0; min-height: 96px }
+.seat { position: relative; height: 72px; display: grid; place-items: start center; padding-top: 4px }
+.seat .yumi { width: 76px; height: 64px }
+/* Never under the three actions: beyond the island's 380, the text column scrolls above them.
+   Yumi's column does not scroll, so his cloud or his headphones are never cut off. */
+main { min-width: 0; position: relative; max-height: calc(380px - var(--top) - 4px - 52px); overflow-y: auto; overflow-x: hidden;
+  padding: 0 10px 0 12px; margin-left: -12px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent }
+.view { animation: in .32s var(--ease) both }
+@keyframes in { from { opacity: 0; transform: translateY(6px); filter: blur(3px) } }
+
+/* Type: one sentence at 17, text at 14, details at 13, two greys */
+.eyebrow { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); margin: 2px 0 4px }
+.eyebrow i { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--muted)); flex: none }
+.head { font-size: 17px; line-height: 23px; font-weight: 600; letter-spacing: -.01em; margin: 0; text-wrap: pretty }
+.text { font-size: 14px; line-height: 20px; color: var(--muted); margin: 4px 0 0; text-wrap: pretty }
+.text.fg { color: var(--fg) }
+.row-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap }
+.row-actions .left { margin-right: auto }
+
+.btn { height: 32px; padding: 0 15px; border-radius: 999px; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--raise-hi); color: var(--fg); transition: background .15s ease, transform .15s var(--spring) }
+.btn:hover { background: rgba(255,255,255,.15) } .btn:active { transform: scale(.96) }
+.btn.primary { background: var(--fg); color: #06070C } .btn.primary:hover { background: #fff }
+.btn.quiet { background: none; color: var(--muted); padding: 0 6px } .btn.quiet:hover { color: var(--fg) }
+.btn[disabled] { opacity: .45; pointer-events: none }
+
+/* Home: a short list, the first line put forward */
+.list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 2px }
+.item { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 11px; padding: 7px 10px; margin: 0 -10px; border-radius: 12px;
+  font-size: 14px; line-height: 20px; cursor: pointer; transition: background .15s ease }
+.item:hover { background: var(--raise) }
+.item i { width: 8px; height: 8px; border-radius: 50%; background: var(--c) }
+.item .m { font-size: 13px; color: var(--muted); white-space: nowrap }
+.item.lead { background: var(--raise); padding: 10px 10px 10px 12px; margin-bottom: 4px; grid-template-columns: 8px 1fr auto }
+.item.lead .t { font-weight: 600 }
+.item.lead .t small { display: block; font-weight: 400; font-size: 13px; color: var(--muted) }
+.item .t { min-width: 0 }
+
+/* Conversation */
+.chat { display: flex; flex-direction: column; gap: 10px; max-height: 176px; overflow-y: auto; padding: 2px 2px 4px; margin-top: 6px; scroll-behavior: smooth }
+.me { align-self: flex-end; max-width: 78%; background: #23263A; padding: 8px 12px; border-radius: 16px 16px 4px 16px; font-size: 14px; line-height: 20px }
+.yu { max-width: 92%; font-size: 14px; line-height: 20px }
+.yu.dim { color: var(--muted) }
+.dots { display: inline-flex; gap: 4px; vertical-align: middle; margin-left: 4px }
+.dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); animation: dot 1s infinite }
+.dots span:nth-child(2) { animation-delay: .15s } .dots span:nth-child(3) { animation-delay: .3s }
+@keyframes dot { 50% { opacity: .25; transform: translateY(-2px) } }
+.wave { display: inline-flex; gap: 3px; align-items: center; height: 16px; margin-left: 6px; vertical-align: middle }
+.wave span { width: 3px; height: 4px; border-radius: 2px; background: var(--violet); animation: wv .9s ease-in-out infinite }
+.wave span:nth-child(2) { animation-delay: .12s } .wave span:nth-child(3) { animation-delay: .24s } .wave span:nth-child(4) { animation-delay: .36s }
+@keyframes wv { 50% { height: 15px } }
+.ask { display: flex; align-items: center; gap: 6px; margin-top: 10px; background: var(--raise); border-radius: 20px; padding: 4px 4px 4px 14px }
+.ask input { flex: 1; min-width: 0; background: none; border: 0; color: var(--fg); font: 14px var(--font); height: 30px; outline: none }
+.ask input::placeholder { color: var(--muted) }
+.round { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--raise-hi); flex: none; transition: background .15s }
+.round.white { background: var(--fg); color: #06070C }
+.round.on { background: var(--violet); color: #fff }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px }
+.chip { font-size: 13px; padding: 5px 11px; border-radius: 999px; background: var(--raise); color: var(--fg) } .chip:hover { background: var(--raise-hi) }
+
+/* Approval: what will change, said plainly */
+.what { margin-top: 10px; display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; background: var(--raise); border-radius: 14px; padding: 10px 12px }
+.what .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,181,71,.16); color: var(--amber) }
+.what .t1 { font-size: 14px; font-weight: 600 } .what .t2 { font-size: 13px; color: var(--muted) }
+details { margin-top: 8px; font-size: 13px; color: var(--muted) }
+details summary { cursor: pointer; list-style: none; display: inline-flex; gap: 6px; align-items: center }
+details summary::-webkit-details-marker { display: none }
+details summary::before { content: "›"; transition: transform .2s; display: inline-block }
+details[open] summary::before { transform: rotate(90deg) }
+.code { font: 12.5px/18px var(--mono); color: #D6DAEA; background: rgba(255,255,255,.05); border-radius: 10px; padding: 8px 10px; margin-top: 6px; white-space: pre-wrap; word-break: break-word }
+.progress { height: 3px; border-radius: 2px; background: var(--raise-hi); overflow: hidden; margin-top: 12px }
+.progress span { display: block; height: 100%; width: 40%; background: linear-gradient(90deg, var(--blue), var(--violet)); border-radius: 2px; animation: run 1.1s var(--ease) infinite }
+@keyframes run { from { transform: translateX(-100%) } to { transform: translateX(260%) } }
+
+/* Tasks */
+.tasks { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 2px }
+.task { display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 20px; padding: 5px 0; cursor: pointer }
+.box { width: 18px; height: 18px; border-radius: 6px; box-shadow: inset 0 0 0 1.5px var(--muted); display: grid; place-items: center; flex: none; transition: background .2s, box-shadow .2s }
+.task.done .box { background: var(--green); box-shadow: none }
+.task.done .box::after { content: ""; width: 9px; height: 5px; border: 2px solid #06070C; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px,-1px) }
+.task.done span { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(141,146,168,.6) }
+.meter { height: 4px; border-radius: 2px; background: var(--raise-hi); margin-top: 10px; overflow: hidden }
+.meter span { display: block; height: 100%; background: var(--green); border-radius: 2px; transition: width .4s var(--ease) }
+.session { display: grid; grid-template-columns: 8px 1fr auto; gap: 11px; align-items: center; padding: 7px 0; font-size: 14px }
+.session i { width: 8px; height: 8px; border-radius: 50%; background: var(--c) }
+.quote { margin-top: 8px; font-size: 14px; line-height: 20px; color: var(--fg); padding-left: 12px; box-shadow: inset 2px 0 0 var(--amber) }
+
+/* Memory */
+.mem { margin-top: 8px }
+.mem h4 { margin: 10px 0 2px; font-size: 13px; font-weight: 500; color: var(--muted) }
+.mem h4:first-child { margin-top: 0 }
+.fact { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; padding: 5px 8px; margin: 0 -8px; border-radius: 10px }
+.fact:hover { background: var(--raise) }
+.fact span { flex: 1; min-width: 0 }
+.fact .x { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); opacity: 0; transition: opacity .15s }
+.fact:hover .x, .fact .x:focus-visible { opacity: 1 } .fact .x:hover { color: var(--fg); background: var(--raise-hi) }
+.fact input { flex: 1; background: var(--raise-hi); border: 0; border-radius: 8px; color: var(--fg); font: 14px var(--font); padding: 3px 8px }
+
+/* Drop */
+.drop { margin-top: 10px; border-radius: 16px; background: var(--raise); padding: 18px; display: flex; align-items: center; gap: 14px; transition: background .2s, box-shadow .2s }
+.drop.over { background: rgba(91,140,255,.14); box-shadow: inset 0 0 0 1.5px rgba(91,140,255,.6) }
+.drop .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(91,140,255,.16); color: var(--blue); flex: none }
+.file { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; background: var(--raise); border-radius: 12px; padding: 8px 12px; font-size: 14px }
+.file .ic { color: var(--blue) }
+
+/* Where you are, and the way back: the same line on every view but the home */
+.crumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin: 0 0 6px; min-height: 22px }
+.crumb .back { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); padding: 4px 10px 4px 6px; margin-left: -4px; border-radius: 8px }
+.crumb .back:hover { color: var(--fg); background: var(--raise) }
+.crumb b { color: var(--fg); font-weight: 600 }
+.crumb .side-act { margin-left: auto; color: var(--muted); padding: 4px 10px; border-radius: 8px } .crumb .side-act:hover { color: var(--fg); background: var(--raise) }
+
+/* Every module, one tap away from the home: name and key figure */
+.mods-title { font-size: 13px; color: var(--muted); margin: 14px 0 6px }
+.mods { display: flex; flex-wrap: wrap; gap: 6px }
+.mod { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px 0 10px; border-radius: 999px; background: var(--raise); font-size: 13px; color: var(--fg) }
+.mod:hover { background: var(--raise-hi) }
+.mod i { width: 7px; height: 7px; border-radius: 50%; background: var(--c) }
+.mod em { font-style: normal; color: var(--muted) }
+.mod.badge em { color: var(--amber) }
+.mod.more { color: var(--muted) }
+.group { font-size: 13px; color: var(--muted); margin: 12px 0 2px }
+.allmods { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px }
+.allmods .mod { justify-content: flex-start; height: 34px; border-radius: 12px }
+.allmods .mod em { margin-left: auto }
+.allmods .mod.off { color: var(--muted) }
+
+/* Music */
+.player { margin-top: 10px; display: flex; align-items: center; gap: 12px }
+.player .bar { flex: 1; height: 4px; border-radius: 2px; background: var(--raise-hi); overflow: hidden }
+.player .bar span { display: block; height: 100%; width: 38%; background: var(--pink); border-radius: 2px }
+.player .time { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums }
+.ctrls { display: flex; gap: 6px }
+.timer { font-size: 44px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin: 6px 0 0 }
+
+/* ---------- The three actions, the same everywhere ---------- */
+.dock { position: absolute; left: 0; right: 0; bottom: 0; height: 52px; display: flex; justify-content: center; align-items: center; gap: 6px }
+.act { height: 34px; padding: 0 14px 0 11px; border-radius: 999px; display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: var(--muted);
+  transition: color .15s, background .15s }
+.act:hover { color: var(--fg); background: var(--raise) }
+.act[aria-current="true"] { color: var(--fg); background: var(--raise-hi) }
+.act svg { width: 17px; height: 17px }
+.act.target { color: var(--blue); background: rgba(91,140,255,.14) }
+
+/* ---------- The control panel, outside the island ---------- */
+.side { position: absolute; left: calc(100% + 32px); top: 56px; width: 236px }
+@media (max-width: 1240px) { .desk { flex-direction: column; align-items: center } .side { position: static; width: var(--w); max-width: 100%; margin-top: 28px } .stage { padding-top: 0 } }
+.panel { background: rgba(20,22,31,.85); border-radius: 18px; padding: 14px; box-shadow: 0 0 0 1px rgba(255,255,255,.06); font-size: 13px }
+.panel h3 { font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 2px 6px; letter-spacing: .01em }
+.panel h3:first-child { margin-top: 0 }
+.panel .grid { display: flex; flex-wrap: wrap; gap: 5px }
+.panel button { padding: 6px 10px; border-radius: 9px; background: rgba(255,255,255,.06); font-size: 12.5px }
+.panel button:hover { background: rgba(255,255,255,.11) }
+.panel button[aria-pressed="true"] { background: var(--fg); color: #06070C }
+.panel .tag { display: inline-block; margin-top: 12px; color: var(--amber); font-size: 12px }
+.panel a { color: var(--blue); text-decoration: none } .panel a:hover { text-decoration: underline }
+.note { max-width: var(--w); margin: 18px auto 0; font-size: 13px; color: var(--muted); line-height: 19px }
+.note b { color: var(--fg); font-weight: 600 }
+@media (max-width: 700px) { :root { --w: calc(100vw - 32px) } .side { width: 100% } }
+@media (prefers-reduced-motion: reduce) { .view { animation: none } .island { transition: none } }
+</style>
+</head>
+<body>
+<div class="desk">
+  <div class="menubar"><span><b></b>Finder&nbsp;&nbsp;Fichier&nbsp;&nbsp;Édition&nbsp;&nbsp;Présentation</span><span>mar. 18 nov.&nbsp;&nbsp;9:41</span></div>
+  <div class="stage">
+    <div id="island" class="island" aria-label="L'île de Yumi">
+      <div class="open">
+        <div class="body">
+          <div class="seat" id="seat"></div>
+          <main id="main"></main>
+        </div>
+        <nav class="dock" aria-label="Actions de Yumi">
+          <button class="act" data-go="accueil"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9 10 3.5 16.5 9v7a1 1 0 0 1-1 1h-3.5v-4.5h-4V17H4.5a1 1 0 0 1-1-1z"/></svg>Accueil</button>
+          <button class="act" data-go="parler"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/></svg>Parler</button>
+          <button class="act" data-go="deposer"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v8.5M6.5 8 10 11.5 13.5 8M3.5 12.5v3a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-3"/></svg>Déposer</button>
+        </nav>
+      </div>
+      <div class="fold" id="fold"><div class="fy" id="foldYumi"></div><div class="ft" id="foldText"></div></div>
+    </div>
+    <div class="notch" aria-hidden="true"></div>
+
+    <aside class="side">
+      <div class="panel">
+        <h3>Vues</h3>
+        <div class="grid" id="pViews"></div>
+        <h3>Profil</h3>
+        <div class="grid" id="pProfiles"></div>
+        <h3>Simuler</h3>
+        <div class="grid" id="pSim"></div>
+        <h3>Tester</h3>
+        <div class="grid" id="pTest"></div>
+        <span class="tag">Données fictives, rien n'est envoyé.</span>
+        <h3>Comparer</h3>
+        <a href="comparaison.html">L'île actuelle et la nouvelle, côte à côte →</a>
+      </div>
+    </aside>
+  </div>
+</div>
+<p class="note" id="hint"></p>
+
+<script src="yumi.js"></script>
+<script>
+/* ---------- Fictitious data, by profile ---------- */
+const C = { agenda: 'var(--blue)', mail: 'var(--violet)', notes: 'var(--amber)', weather: '#7FD0FF', music: 'var(--pink)', agents: 'var(--amber)', github: '#C9CCDA', focus: 'var(--violet)', screen: 'var(--green)' };
+const PROFILES = {
+  boulangere: {
+    label: 'Boulangère', name: 'Camille',
+    greet: 'Bonjour Camille. Voici ta journée.',
+    home: [
+      { c: C.agenda, t: 'Livraison de farine', s: 'Moulin Bertrand, à la boutique', m: 'à 7 h 30', act: 'Voir', go: 'travail' },
+      { c: C.mail, t: 'Mme Martin demande 3 tartes pour samedi', m: 'il y a 20 min', go: 'travail' },
+      { c: C.notes, t: 'Rappel : appeler le comptable', m: 'à 14 h', go: 'travail' },
+      { c: C.weather, t: 'Pluie prévue cet après-midi', m: 'dès 16 h' },
+      { c: C.music, t: 'France Inter', m: 'en écoute' },
+    ],
+    fold: { c: C.agenda, t: 'Livraison de farine · 7 h 30' },
+    work: { kind: 'tasks', eyebrow: "Aujourd'hui", head: 'Il te reste trois choses à faire aujourd\'hui.',
+      tasks: [['Répondre à Mme Martin pour samedi', false], ['Appeler le comptable', false], ['Commander les boîtes à gâteaux', false], ['Préparer la vitrine', true], ['Vérifier la livraison', true]],
+      next: 'Prochain rappel : appeler le comptable à 14 h.' },
+    ask: { head: 'Je voudrais créer un rappel pour demain à 9 h.', icon: 'bell', t1: '« Rappeler Mme Martin pour les tartes »', t2: 'Rappels · demain, 9:00',
+      why: "Rien n'est créé tant que tu ne dis pas oui. Tu pourras l'effacer quand tu veux.",
+      done: 'C\'est fait. Le rappel sonnera demain à 9 h.', doneSub: 'Il est dans ta liste Rappels.' },
+    fail: { head: "Je n'ai pas réussi à envoyer ta réponse à Mme Martin. Tu veux que je réessaie ?", wait: "J'attends que Mail réponde…", ok: 'C\'est parti. Mme Martin a reçu ta réponse.',
+      tech: 'Mail : délai dépassé après 30 s (smtp.orange.fr).\nLe message est resté dans Brouillons.' },
+    chat: { chips: ["Qu'est-ce que j'ai demain ?", 'Écris à Mme Martin que c\'est bon pour samedi'],
+      answers: { "Qu'est-ce que j'ai demain ?": "Demain, la livraison de beurre à 7 h et le marché de 9 h à 13 h. Rien l'après-midi : tu pourras souffler.",
+                 'Écris à Mme Martin que c\'est bon pour samedi': "Voilà ce que je propose : « Bonjour Madame Martin, c'est noté pour vos 3 tartes samedi, elles seront prêtes à 10 h. » Je te montre avant d'envoyer." } },
+    memory: [['Toi', ['Tu t\'appelles Camille.', 'Tu as une boulangerie à Lyon.']], ['Tes habitudes', ['Tu commences à 5 h.', 'Tu préfères les messages courts.']], ['En cours', ['Tu attends la livraison de farine.', 'Mme Martin passe samedi.']]],
+  },
+  dev: {
+    label: 'Développeur', name: 'Alex',
+    greet: 'Bonjour Alex. Codex a besoin de toi.',
+    home: [
+      { c: C.agents, t: 'Codex a une question sur site', s: '« Je supprime aussi les anciennes images ? »', m: 'il y a 2 min', act: 'Répondre', go: 'travail' },
+      { c: 'var(--blue)', t: 'Claude avance sur api', m: '12 min', go: 'travail' },
+      { c: C.agenda, t: 'Point produit avec Sophie', m: 'à 15 h' },
+      { c: C.github, t: 'Deux PR attendent ta relecture', m: '' },
+      { c: C.music, t: 'Daft Punk, Something About Us', m: 'en écoute' },
+    ],
+    fold: { c: C.agents, t: 'Codex t\'attend sur site' },
+    work: { kind: 'agents', eyebrow: 'Agents · 2 sessions', head: 'Codex a une question sur site.', quote: 'Je supprime aussi les anciennes images du dossier public ?',
+      sessions: [['var(--blue)', 'api · Claude', 'lance les tests'], ['var(--green)', 'blog · Gemini', 'a fini il y a 5 min']] },
+    ask: { head: 'Codex veut supprimer build.', icon: 'trash', t1: 'Ça se reconstruit.', t2: 'site · Codex',
+      why: "Codex attend ta réponse. Tant que tu ne dis rien, il ne touche à rien.", cmd: '$ rm -rf build', always: true,
+      done: "C'est fait. Codex a supprimé build.", doneSub: 'Il continue le nettoyage.' },
+    fail: { head: "Je n'ai pas réussi à joindre Codex. Tu veux que je réessaie ?", wait: "J'attends que Codex réponde…", ok: 'Codex répond à nouveau.',
+      tech: "Socket ~/Library/Application Support/Yumi/yumi.sock : connexion refusée.\nLe hook est revenu à l'agent." },
+    chat: { chips: ['Où en est Claude sur api ?', 'Résume-moi la PR 14'],
+      answers: { 'Où en est Claude sur api ?': "Claude lance les tests depuis 12 minutes. Deux fichiers modifiés, aucun échec pour l'instant. Je te préviens s'il bloque.",
+                 'Résume-moi la PR 14': "La PR 14 ajoute le nom de l'agent sur chaque session. Trois fichiers, deux tests, la CI est verte. Rien de risqué." } },
+    memory: [['Toi', ['Tu t\'appelles Alex.', 'Tu codes, surtout en Swift.']], ['Tes projets', ['Yumi, une app Mac dans la notch.', 'Le site de Yumi, sur GitHub Pages.']], ['En cours', ['Tu attends la relecture de la PR 14.']]],
+  },
+  etudiant: {
+    label: 'Étudiant', name: 'Léo',
+    greet: 'Salut Léo. Voici ta journée.',
+    home: [
+      { c: C.agenda, t: 'Droit des contrats', s: 'Amphi B, avec Mme Dupuis', m: 'à 10 h', act: 'Voir', go: 'travail' },
+      { c: C.notes, t: 'TD de droit civil à rendre', m: 'jeudi', go: 'travail' },
+      { c: C.focus, t: 'Une séance de focus prévue', m: '25 min' },
+      { c: C.screen, t: '1 h 40 d\'écran ce matin', m: '' },
+    ],
+    fold: { c: C.agenda, t: 'Droit des contrats · 10 h' },
+    work: { kind: 'tasks', eyebrow: 'Cette semaine', head: 'Deux devoirs à rendre cette semaine.',
+      tasks: [['TD de droit civil, jeudi', false], ['Fiche de lecture, vendredi', false], ['Réviser le chapitre 3', true]],
+      next: 'Prochain cours : droit des contrats à 10 h.' },
+    ask: { head: 'Je voudrais bloquer 25 minutes de focus maintenant.', icon: 'timer', t1: 'Focus · 25 minutes', t2: 'Les notifications attendent la fin',
+      why: 'Tu peux arrêter quand tu veux.', done: "C'est parti pour 25 minutes. Je te préviens à la fin.", doneSub: 'Fin prévue à 10 h 06.' },
+    fail: { head: "Je n'ai pas réussi à lire ton agenda. Tu veux que je réessaie ?", wait: 'J\'attends ton agenda…', ok: 'Ton agenda est à jour.',
+      tech: 'EventKit : accès refusé (autorisation Agenda).\nRéglages Système › Confidentialité › Agenda.' },
+    chat: { chips: ['Fais-moi un planning de révisions', "J'ai quoi demain ?"],
+      answers: { 'Fais-moi un planning de révisions': 'Je te propose 3 séances de 25 minutes par jour jusqu\'à jeudi : chapitre 3 lundi, TD mardi, relecture mercredi. Je les mets dans ton agenda ?',
+                 "J'ai quoi demain ?": 'Demain : cours à 8 h 30 et à 14 h, et la fiche de lecture à avancer. Le soir est libre.' } },
+    memory: [['Toi', ['Tu t\'appelles Léo.', 'Tu es en deuxième année de droit.']], ['Tes habitudes', ['Tu travailles mieux le matin.']], ['En cours', ['Le TD de droit civil est pour jeudi.']]],
+  },
+};
+/* The modules: every one stays reachable from the home, in the profile's order */
+const MODS = {
+  agents: { name: 'Agents', c: 'var(--amber)' }, github: { name: 'GitHub', c: '#C9CCDA' }, mail: { name: 'Mail', c: 'var(--violet)' },
+  music: { name: 'Musique', c: 'var(--pink)' }, agenda: { name: 'Agenda', c: 'var(--blue)' }, notes: { name: 'Tâches et rappels', c: 'var(--amber)' },
+  weather: { name: 'Météo', c: '#7FD0FF' }, focus: { name: 'Focus', c: 'var(--violet)' }, screen: { name: "Temps d'écran", c: 'var(--green)' },
+  notion: { name: 'Notion', c: '#E6E6EA' }, memoire: { name: 'Mémoire', c: 'var(--fg)' },
+};
+PROFILES.dev.mods = { agents: '1 attend', github: '2 PR', mail: '3', music: 'en lecture', agenda: '15 h', notes: '2 tâches', focus: '', weather: '14°' };
+PROFILES.boulangere.mods = { mail: '3', agenda: '7 h 30', notes: '3 à faire', weather: '14°', music: 'en écoute', focus: '', screen: '2 h 10' };
+PROFILES.etudiant.mods = { agenda: '10 h', notes: '2 devoirs', focus: '25 min', music: '', screen: '1 h 40', weather: '12°' };
+const BADGE = { agents: true };
+const MAILS = {
+  boulangere: [['Mme Martin', 'Commande pour samedi', 'il y a 20 min'], ['Moulin Bertrand', 'Livraison confirmée demain', 'il y a 1 h'], ['Cabinet Roux', 'Pièces du mois à envoyer', 'hier']],
+  dev: [['Sophie Martin', 'Ordre du jour du point de 15 h', 'il y a 12 min'], ['GitHub', 'Relecture demandée : PR 14', 'il y a 40 min'], ['Apple Developer', 'Ton app est notarisée', 'hier']],
+  etudiant: [['Mme Dupuis', 'TD de droit civil pour jeudi', 'il y a 2 h'], ['Scolarité', 'Inscriptions aux partiels', 'hier'], ['BU', 'Ton livre est disponible', 'lundi']],
+};
+const AGENDA = {
+  boulangere: [['7 h 30', 'Livraison de farine'], ['10 h', 'Retrait : commande Lefèvre'], ['14 h', 'Appeler le comptable']],
+  dev: [['10 h', 'Standup'], ['15 h', 'Point produit avec Sophie'], ['17 h 30', 'Relire la PR 14']],
+  etudiant: [['10 h', 'Droit des contrats, amphi B'], ['14 h', 'TD de droit civil'], ['18 h', 'Séance de sport']],
+};
+const MUSIC = { boulangere: ['France Inter', 'La matinale', 'direct'], dev: ['Something About Us', 'Daft Punk', '1:24 / 3:51'], etudiant: ['Lofi Girl', 'beats to study to', 'direct'] };
+const HISTORY = {
+  boulangere: [['Réponse à Mme Martin', 'ce matin', [['me', 'Écris à Mme Martin que c\'est bon pour samedi'], ['yu', "Voilà ce que je propose : « Bonjour Madame Martin, c'est noté pour vos 3 tartes samedi. » Je te montre avant d'envoyer."]]],
+               ['Prix de la farine', 'hier', [['me', 'Combien je paie la farine en ce moment ?'], ['yu', 'Ta dernière facture du Moulin Bertrand : 0,92 € le kilo, livraison comprise.']]]],
+  dev: [['Où en est Claude sur api', 'il y a 1 h', [['me', 'Où en est Claude sur api ?'], ['yu', 'Il lance les tests depuis 12 minutes. Aucun échec pour l\'instant.']]],
+        ['Résumé de la PR 12', 'hier', [['me', 'Résume-moi la PR 12'], ['yu', 'La PR 12 explique chaque demande d\'accord en clair. Huit nouveaux tests, CI verte.']]]],
+  etudiant: [['Planning de révisions', 'hier', [['me', 'Fais-moi un planning de révisions'], ['yu', 'Trois séances de 25 minutes par jour jusqu\'à jeudi. Je les ai mises dans ton agenda.']]]],
+};
+const LONG = {
+  head: 'Mme Martin demande si tu peux préparer pour samedi matin trois tartes aux pommes, un fraisier de huit parts et une vingtaine de chouquettes, avec une livraison avant 10 h si possible.',
+  item: 'Commande de la mairie pour le vin d\'honneur du 22 : 120 mini-viennoiseries et 4 grands pains de campagne à livrer avant midi',
+};
+
+/* ---------- State ---------- */
+const S = { view: 'accueil', module: null, playing: true, focusLeft: 0, profile: 'boulangere', step: 'ask', chat: [], chatState: 'idle', long: false, folded: false, memory: null, file: null, tasks: null, errorStep: 'fail' };
+const P = () => PROFILES[S.profile];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+/* ---------- Yumi, the same one as the app ---------- */
+$('seat').innerHTML = yumi({ size: 76, mood: 'neutre', rim: 'calm' });
+const Y = $('seat').querySelector('.yumi'); new Blob(Y);
+$('foldYumi').innerHTML = yumi({ size: 26, mood: 'neutre', rim: 'calm', rimW: 3.2 });
+const FY = $('foldYumi').querySelector('.yumi'); new Blob(FY);
+function mood(m, rim, scene, pose) {
+  setMood(Y, m, rim); setMood(FY, m, rim);
+  Y._blob.setScene(scene || null);
+  if (scene) setMood(Y, Y._blob.scene.face, rim);
+  if (pose) playPose(Y, pose);
+}
+
+/* ---------- Icons ---------- */
+const ICON = {
+  bell: '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"/></svg>',
+  trash: '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h12M8 6V4h4v2M5.5 6l.8 10h7.4l.8-10"/></svg>',
+  timer: '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="11" r="6"/><path d="M10 8v3l2 1.5M8 2.5h4"/></svg>',
+  file: '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 2.5h6.5L15 6v11.5H5z"/><path d="M11.5 2.5V6H15"/></svg>',
+  up: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16V4M5 9l5-5 5 5"/></svg>',
+  mic: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="6" height="10" rx="3"/><path d="M4.5 10a5.5 5.5 0 0 0 11 0M10 15.5V18"/></svg>',
+  x: '<svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l6 6M9 3l-6 6"/></svg>',
+  pen: '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l1-4 8.5-8.5 3 3L8 15z"/></svg>',
+};
+
+/* ---------- Views ---------- */
+const VIEWS = {
+  accueil() {
+    mood('neutre', 'calm');
+    const items = P().home.map((it, i) => (i === 0 && S.long ? { ...it, t: LONG.item, s: '' } : it));
+    const lead = items[0], rest = items.slice(1, 4);
+    const mods = Object.entries(P().mods);
+    return `<p class="head">${esc(P().greet)}</p>
+      <ul class="list">
+        <li class="item lead" style="--c:${lead.c}" data-goto="${lead.go || ''}"><i></i><span class="t">${esc(lead.t)}${lead.s ? `<small>${esc(lead.s)}</small>` : ''}</span>
+          ${lead.act ? `<button class="btn primary" data-goto="${lead.go || ''}">${esc(lead.act)}</button>` : `<span class="m">${esc(lead.m)}</span>`}</li>
+        ${rest.map(it => `<li class="item" style="--c:${it.c}" ${it.go ? `data-goto="${it.go}"` : ''}><i></i><span class="t">${esc(it.t)}</span><span class="m">${esc(it.m)}</span></li>`).join('')}
+      </ul>
+      <div class="mods" style="margin-top:12px" aria-label="Tes modules">${mods.slice(0, 6).map(([id, fig]) => `<button class="mod ${BADGE[id] ? 'badge' : ''}" style="--c:${MODS[id].c}" data-mod="${id}"><i></i>${esc(MODS[id].name)}${fig ? `<em>${esc(fig)}</em>` : ''}</button>`).join('')}
+        <button class="mod more" data-view="modules">Tout voir</button></div>`;
+  },
+  parler() {
+    const st = S.chatState;
+    mood(st === 'thinking' ? 'reflechi' : st === 'listening' ? 'curieux' : st === 'answering' ? 'heureux' : 'neutre', st === 'idle' ? 'calm' : 'think');
+    const msgs = S.chat.map(m => m.me ? `<div class="me">${esc(m.text)}</div>` : `<div class="yu">${esc(m.text)}</div>`).join('');
+    const live = st === 'thinking' ? `<div class="yu dim">Je réfléchis<span class="dots"><span></span><span></span><span></span></span></div>`
+      : st === 'listening' ? `<div class="yu dim">Je t'écoute<span class="wave"><span></span><span></span><span></span><span></span></span></div>` : '';
+    const empty = !S.chat.length && st === 'idle';
+    return `${empty ? `<p class="head">Qu'est-ce que je peux faire pour toi ?</p><p class="text">Une question, un message à écrire, un rappel : dis-le comme tu le dirais à quelqu'un.</p>` : ''}
+      ${S.chat.length || live ? `<div class="chat" id="chat">${msgs}${live}</div>` : ''}
+      ${empty ? `<div class="chips">${P().chat.chips.map(c => `<button class="chip" data-say="${esc(c)}">${esc(c)}</button>`).join('')}</div>` : ''}
+      <form class="ask" id="ask"><input id="q" placeholder="Demande-moi quelque chose" autocomplete="off" aria-label="Ta demande">
+        <button type="button" class="round ${st === 'listening' ? 'on' : ''}" id="mic" aria-label="Parler à voix haute">${ICON.mic}</button>
+        <button class="round white" aria-label="Envoyer">${ICON.up}</button></form>`;
+  },
+  valider() {
+    const a = P().ask, st = S.step;
+    if (st === 'running') { mood('concentre', 'work', 'cafe');
+      return `<div class="eyebrow" style="--c:var(--blue)"><i></i>En cours</div><p class="head">Je m'en occupe…</p><p class="text">${esc(a.t1)}</p><div class="progress"><span></span></div>` }
+    if (st === 'done') { mood('heureux', 'done', null, 'celebrer'); setTimeout(() => { if (S.view === 'valider' && S.step === 'done') Y._blob.setScene('soleil') }, 1500);
+      return `<div class="eyebrow" style="--c:var(--green)"><i></i>Fait</div><p class="head">${esc(a.done)}</p><p class="text">${esc(a.doneSub)}</p>
+        <div class="row-actions"><button class="btn quiet" data-step="ask">Annuler</button><button class="btn primary" data-go="accueil">Merci</button></div>` }
+    if (st === 'refused') { mood('neutre', 'calm');
+      return `<div class="eyebrow"><i></i>Refusé</div><p class="head">D'accord, je n'y touche pas.</p><p class="text">Rien n'a changé. Tu peux me redemander plus tard.</p>
+        <div class="row-actions"><button class="btn" data-step="ask">Revoir la demande</button><button class="btn primary" data-go="accueil">OK</button></div>` }
+    mood('surpris', 'warn', null, 'pop'); Y.dataset.alert = '';
+    return `<div class="eyebrow" style="--c:var(--amber)"><i></i>Demande d'accord</div><p class="head">${esc(a.head)}</p>
+      <div class="what"><div class="ic">${ICON[a.icon]}</div><div><div class="t1">${esc(a.t1)}</div><div class="t2">${esc(a.t2)}</div></div></div>
+      <p class="text">${esc(a.why)}</p>
+      ${a.cmd ? `<details><summary>Voir la commande</summary><div class="code">${esc(a.cmd)}</div></details>` : ''}
+      <div class="row-actions">${a.always ? '<button class="btn quiet left" data-step="running">Toujours autoriser</button>' : ''}<button class="btn" data-step="refused">Refuser</button><button class="btn primary" data-step="running">Autoriser</button></div>`;
+  },
+  travail() {
+    const w = P().work;
+    if (w.kind === 'agents') { mood('curieux', 'warn', 'siffle');
+      return `<div class="eyebrow" style="--c:var(--amber)"><i></i>${esc(w.eyebrow)}</div><p class="head">${esc(w.head)}</p><div class="quote">${esc(w.quote)}</div>
+        <div class="row-actions"><button class="btn quiet left" data-go="valider">Voir une demande d'accord</button><button class="btn primary">Répondre dans le terminal</button></div>
+        <div style="margin-top:8px">${w.sessions.map(([c, t, m]) => `<div class="session" style="--c:${c}"><i></i><span>${esc(t)}</span><span class="text" style="margin:0">${esc(m)}</span></div>`).join('')}</div>` }
+    return tasksView(w);
+  },
+  memoire() {
+    mood('curieux', 'calm');
+    if (!S.memory) S.memory = P().memory.map(([g, f]) => [g, [...f]]);
+    const count = S.memory.reduce((n, [, f]) => n + f.length, 0);
+    if (S.forget === 'confirm') return `<p class="head">Tout oublier ?</p><p class="text">J'effacerai tout ce que je sais de toi, ton prénom compris. Ça ne se défait pas.</p>
+      <div class="row-actions"><button class="btn" data-forget="no">Garder</button><button class="btn primary" data-forget="yes">Tout oublier</button></div>`;
+    if (!count) return `<p class="head">Je ne sais plus rien de toi.</p><p class="text">Je retiendrai ce que tu me diras, et tu pourras toujours le relire ici.</p>`;
+    return `<p class="head">Ce que je sais de toi</p><p class="text">${count} choses, gardées sur ton Mac. Corrige ou efface ce que tu veux.</p>
+      <div class="mem">${S.memory.filter(([, f]) => f.length).map(([g, f]) => `<h4>${esc(g)}</h4>${f.map((t, i) => S.editing === g + i
+        ? `<div class="fact"><input id="edit" value="${esc(t)}" data-g="${esc(g)}" data-i="${i}" aria-label="Corriger"></div>`
+        : `<div class="fact"><span>${esc(t)}</span><button class="x" data-edit="${esc(g)}|${i}" aria-label="Corriger">${ICON.pen}</button><button class="x" data-del="${esc(g)}|${i}" aria-label="Oublier">${ICON.x}</button></div>`).join('')}`).join('')}</div>
+      <div class="row-actions"><button class="btn quiet" data-forget="ask">Tout oublier</button></div>`;
+  },
+  erreur() {
+    const f = P().fail, st = S.errorStep;
+    if (st === 'wait') { mood('neutre', 'calm', 'siffle');
+      return `<div class="eyebrow" style="--c:var(--blue)"><i></i>En attente</div><p class="head">${esc(f.wait)}</p><p class="text">Ça prend plus longtemps que d'habitude. Je continue d'essayer.</p><div class="progress"><span></span></div>
+        <div class="row-actions"><button class="btn quiet" data-err="fail">Arrêter</button></div>` }
+    if (st === 'ok') { mood('heureux', 'done', null, 'celebrer');
+      return `<div class="eyebrow" style="--c:var(--green)"><i></i>Réglé</div><p class="head">${esc(f.ok)}</p><div class="row-actions"><button class="btn primary" data-go="accueil">Super</button></div>` }
+    mood('inquiet', 'error', 'nuage', 'ecraser');
+    return `<div class="eyebrow" style="--c:var(--red)"><i></i>Pas réussi</div><p class="head">${esc(S.long ? LONG.head : f.head)}</p>
+      <details><summary>Voir le détail</summary><div class="code">${esc(f.tech)}</div></details>
+      <div class="row-actions"><button class="btn" data-go="accueil">Plus tard</button><button class="btn primary" data-err="wait">Réessayer</button></div>`;
+  },
+  module() {
+    const id = S.module, p = S.profile;
+    const rows = (list) => `<ul class="list" style="margin-top:8px">${list.map(([c, t, m, go]) => `<li class="item" style="--c:${c}" ${go ? `data-goto="${go}"` : ''}><i></i><span class="t">${esc(t)}</span><span class="m">${esc(m || '')}</span></li>`).join('')}</ul>`;
+    if (id === 'agents') { mood('curieux', 'warn');
+      return `<p class="head">Une session t'attend, une autre avance.</p>
+        ${rows([['var(--amber)', 'site · Codex : une question pour toi', 'il y a 2 min', 'travail'], ['var(--amber)', 'Une demande d\'accord : supprimer build', 'en attente', 'valider'], ['var(--blue)', 'api · Claude lance les tests', '12 min'], ['var(--green)', 'blog · Gemini a fini', 'il y a 5 min']])}
+        <div class="row-actions"><button class="btn primary" data-goto="valider">Voir la demande d'accord</button></div>` }
+    if (id === 'github') { mood('neutre', 'calm');
+      return `<p class="head">Deux PR attendent ta relecture.</p>
+        ${rows([['#C9CCDA', 'PR 14 · Le nom de l\'agent dans les sessions', 'yumi'], ['#C9CCDA', 'PR 12 · Le garde-fou', 'yumi']])}
+        <p class="group">Récent</p>${rows([['var(--green)', 'PR fusionnée sur main', 'il y a 2 h'], ['var(--blue)', '3 commits sur yumi/garde-fou', 'hier'], ['var(--amber)', 'Une étoile de plus sur Yumi', 'hier']])}
+        <div class="row-actions"><button class="btn">Ouvrir sur GitHub</button></div>` }
+    if (id === 'mail') { mood('neutre', 'calm'); const m = MAILS[p];
+      return `<p class="head">${m.length === 1 ? 'Un mail important.' : 'Trois mails importants.'}</p>
+        ${rows(m.map(([from, subj, when]) => ['var(--violet)', `${from} · ${subj}`, when]))}
+        <div class="row-actions"><button class="btn">Ouvrir Mail</button><button class="btn primary" data-say-to="${esc(m[0][0])}">Répondre à ${esc(m[0][0])}</button></div>` }
+    if (id === 'music') { const [t, a, time] = MUSIC[p]; mood('heureux', 'joy', S.playing ? 'casque' : null);
+      return `<p class="head">${esc(t)}</p><p class="text">${esc(a)}${S.playing ? '' : ' · en pause'}</p>
+        <div class="player"><div class="bar"><span></span></div><span class="time">${esc(time)}</span>
+        <div class="ctrls"><button class="round" aria-label="Précédent">‹‹</button><button class="round white" data-play aria-label="${S.playing ? 'Pause' : 'Lecture'}">${S.playing ? '❚❚' : '▶'}</button><button class="round" aria-label="Suivant">››</button></div></div>` }
+    if (id === 'agenda') { mood('neutre', 'calm'); const a = AGENDA[p];
+      return `<p class="head">Ta journée : ${a.length} rendez-vous.</p>${rows(a.map(([h, t]) => ['var(--blue)', t, h]))}<div class="row-actions"><button class="btn">Ouvrir Calendrier</button></div>` }
+    if (id === 'notes') return tasksView(p === 'dev' ? { eyebrow: "Aujourd'hui", head: 'Deux tâches pour aujourd\'hui.', tasks: [['Relire la PR 14', false], ['Répondre à Sophie', false], ['Mettre à jour le README', true]], next: 'Rappel à 17 h 30 : relire la PR 14.' } : P().work);
+    if (id === 'weather') { mood('neutre', 'calm');
+      return `<p class="head">14° et nuageux. Pluie dès 16 h.</p>${rows([['#7FD0FF', '15 h · nuageux', '15°'], ['#7FD0FF', '16 h · pluie', '13°'], ['#7FD0FF', '18 h · pluie fine', '11°']])}` }
+    if (id === 'focus') { const run = S.focusLeft > 0; mood(run ? 'concentre' : 'neutre', run ? 'think' : 'calm');
+      return `<p class="head">${run ? 'Focus en cours. Je garde tes notifications.' : 'Une séance de 25 minutes ?'}</p>
+        <p class="timer">${String(Math.floor((run ? S.focusLeft : 1500) / 60)).padStart(2, '0')}:${String((run ? S.focusLeft : 1500) % 60).padStart(2, '0')}</p>
+        <div class="row-actions">${run ? '<button class="btn" data-focus="stop">Arrêter</button>' : '<button class="btn primary" data-focus="start">Démarrer</button>'}</div>` }
+    if (id === 'screen') { mood('neutre', 'calm');
+      return `<p class="head">${esc(P().mods.screen || '1 h 40')} d'écran depuis ce matin.</p><p class="text">Ton seuil est de 6 h par jour. Je te propose une pause toutes les deux heures.</p>
+        ${rows([['var(--green)', 'Navigateur', '58 min'], ['var(--green)', 'Mail', '24 min'], ['var(--green)', 'Notes', '18 min']])}` }
+    if (id === 'notion') { mood('neutre', 'calm');
+      return `<p class="head">Trois pages modifiées aujourd'hui.</p>${rows([['#E6E6EA', 'Roadmap', 'il y a 1 h'], ['#E6E6EA', 'Idées', 'ce matin'], ['#E6E6EA', 'Notes de réunion', 'hier']])}` }
+    return VIEWS.memoire();
+  },
+  modules() {
+    mood('curieux', 'calm');
+    const mine = Object.keys(P().mods), others = Object.keys(MODS).filter(id => !mine.includes(id) && id !== 'memoire');
+    const chip = (id, off) => `<button class="mod ${off ? 'off' : ''}" style="--c:${MODS[id].c}" data-mod="${id}"><i></i>${esc(MODS[id].name)}<em>${off ? 'ajouter' : esc(P().mods[id] || '')}</em></button>`;
+    return `<p class="head">Tout ce que je sais faire.</p><p class="text">Tes modules d'abord, dans l'ordre de ton profil. Les autres s'ajoutent d'un clic.</p>
+      <div class="allmods">${mine.map(id => chip(id)).join('')}${chip('memoire')}</div>
+      ${others.length ? `<p class="group">À ajouter</p><div class="allmods">${others.map(id => chip(id, true)).join('')}</div>` : ''}`;
+  },
+  historique() {
+    mood('neutre', 'calm');
+    return `<p class="head">Vos conversations</p><p class="text">Gardées sur ton Mac. Reprends-en une là où vous en étiez.</p>
+      <ul class="list" style="margin-top:8px">${HISTORY[S.profile].map(([t, when], i) => `<li class="item" style="--c:var(--violet)" data-hist="${i}"><i></i><span class="t">${esc(t)}</span><span class="m">${esc(when)}</span></li>`).join('')}</ul>
+      <div class="row-actions"><button class="btn" data-newchat>Nouvelle conversation</button></div>`;
+  },
+  deposer() {
+    if (S.file) { mood('heureux', 'calm');
+      return `<div class="eyebrow" style="--c:var(--blue)"><i></i>Bien reçu</div><p class="head">J'en fais quoi ?</p>
+        <div class="file"><span class="ic">${ICON.file}</span>${esc(S.file)}</div>
+        <div class="row-actions"><button class="btn" data-file="resume">Le résumer</button><button class="btn" data-file="send">L'envoyer</button><button class="btn primary" data-file="store">Le ranger</button></div>` }
+    mood('curieux', 'calm');
+    return `<p class="head">Donne-moi un fichier.</p><p class="text">Je peux le résumer, l'envoyer ou le ranger. Rien ne part sans ton accord.</p>
+      <div class="drop" id="drop"><div class="ic">${ICON.file}</div><div style="flex:1"><div style="font-size:14px;font-weight:600">Glisse-le ici</div><div class="text" style="margin:0">ou prends un exemple pour voir</div></div>
+      <button class="btn" data-sample>Prendre un exemple</button></div>`;
+  },
+};
+
+function tasksView(w) {
+  if (!S.tasks || S.tasksFor !== w.head) { S.tasks = w.tasks.map(t => [...t]); S.tasksFor = w.head }
+  const done = S.tasks.filter(t => t[1]).length, left = S.tasks.length - done;
+  mood(left ? 'concentre' : 'heureux', left ? 'calm' : 'done', left ? null : 'soleil');
+  const head = left === 0 ? 'Tout est fait. Bravo.' : left === 1 ? 'Plus qu\'une chose à faire.' : w.head;
+  return `<div class="eyebrow" style="--c:var(--green)"><i></i>${esc(w.eyebrow)} · ${done} sur ${S.tasks.length}</div><p class="head">${esc(head)}</p>
+    <div class="meter"><span style="width:${(done / S.tasks.length) * 100}%"></span></div>
+    <ul class="tasks">${S.tasks.map(([t, d], i) => `<li class="task ${d ? 'done' : ''}" data-task="${i}" role="checkbox" aria-checked="${d}" tabindex="0"><span class="box"></span><span>${esc(t)}</span></li>`).join('')}</ul>
+    <p class="text">${esc(w.next)}</p>`;
+}
+
+/* Where each view sits: the trail at its top, and where "back" leads */
+function crumb() {
+  const v = S.view;
+  if (v === 'accueil') return '';
+  const back = v === 'historique' ? ['parler', 'Conversation'] : ['accueil', 'Accueil'];
+  const here = { parler: 'Conversation', valider: "Demande d'accord", travail: P().work.kind === 'agents' ? 'Agents' : 'Tâches et rappels', memoire: 'Mémoire',
+    erreur: 'Envoi du mail', deposer: 'Déposer', modules: 'Tous les modules', historique: 'Historique', module: MODS[S.module]?.name }[v];
+  const side = v === 'parler' ? '<button class="side-act" data-view="historique">Historique</button>' : '';
+  return `<div class="crumb"><button class="back" data-${back[0] === 'parler' ? 'view' : 'go'}="${back[0]}" aria-label="Revenir à ${back[1]}">‹ ${back[1]}</button><span>·</span><b>${esc(here || '')}</b>${side}</div>`;
+}
+
+/* ---------- Rendering, with the island's height following its content ---------- */
+const DOCK = { accueil: 'accueil', travail: 'accueil', valider: 'accueil', memoire: 'accueil', erreur: 'accueil', module: 'accueil', modules: 'accueil', parler: 'parler', historique: 'parler', deposer: 'deposer' };
+function render() {
+  delete Y.dataset.alert;
+  $('main').innerHTML = `<div class="view">${crumb()}${VIEWS[S.view]()}</div>`;
+  document.querySelectorAll('.act').forEach(b => b.setAttribute('aria-current', String(DOCK[S.view] === b.dataset.go)));
+  const f = S.view === 'valider' && S.step === 'ask' ? { c: 'var(--amber)', t: 'Une demande t\'attend' } : S.view === 'erreur' && S.errorStep === 'fail' ? { c: 'var(--red)', t: 'Pas réussi, tu veux réessayer ?' } : P().fold;
+  $('foldText').innerHTML = `<i style="--c:${f.c}"></i>${esc(f.t)}`;
+  panel(); fit(); hint();
+  const chat = $('chat'); if (chat) chat.scrollTop = chat.scrollHeight;
+}
+function fit() {
+  const island = $('island');
+  if (S.folded) { island.classList.add('folded'); return }
+  island.classList.remove('folded');
+  requestAnimationFrame(() => {
+    const h = Math.max(150, Math.min(380, 40 + 4 + $('main').firstElementChild.offsetHeight + 12 + 52)); // offsetHeight: the layout, without the entry animation's shift
+    island.style.setProperty('--h', h + 'px');
+  });
+}
+function go(view) { S.view = view; S.folded = false; if (view === 'valider') S.step = 'ask'; if (view === 'erreur') S.errorStep = 'fail'; if (view === 'deposer') S.file = null; S.forget = null; S.editing = null; render() }
+
+/* ---------- Conversation (fictitious answers) ---------- */
+function say(text) {
+  text = text.trim(); if (!text || S.chatState === 'thinking' || S.chatState === 'answering') return;
+  S.chat.push({ me: true, text }); S.chatState = 'thinking'; render();
+  setTimeout(() => {
+    const answer = P().chat.answers[text] || "C'est un prototype : je n'ai pas de vraie réponse ici. Dans Yumi, je te répondrais avec tes données, sur ton Mac.";
+    const msg = { text: '' }; S.chat.push(msg); S.chatState = 'answering';
+    let i = 0; const tick = () => { msg.text = answer.slice(0, i += 3); render(); if (i < answer.length) setTimeout(tick, 22); else { S.chatState = 'idle'; render() } }; tick();
+  }, 1100);
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('click', (e) => {
+  // Folded: a click anywhere on the island opens it
+  if (S.folded && e.target.closest('.island')) { S.folded = false; render(); return }
+  const t = e.target.closest('button, [data-goto], [data-task], [data-hist]');
+  if (!t) { if (!e.target.closest('.island, .side') && !S.folded && !document.body.classList.contains('embed')) { S.folded = true; render() } return }
+  const d = t.dataset;
+  if (t.closest('.island') && S.folded) { S.folded = false; render(); return }
+  if (d.mod) { if (d.mod === 'memoire') return go('memoire'); S.module = d.mod; return go('module') }
+  if (d.hist !== undefined) { S.chat = HISTORY[S.profile][+d.hist][2].map(([w, t]) => (w === 'me' ? { me: true, text: t } : { text: t })); S.chatState = 'idle'; return go('parler') }
+  if (d.newchat !== undefined) { S.chat = []; S.chatState = 'idle'; return go('parler') }
+  if (d.play !== undefined) { S.playing = !S.playing; return render() }
+  if (d.focus) { if (d.focus === 'start') { S.focusLeft = 1500; const tick = () => { if (S.focusLeft > 0) { S.focusLeft -= 1; if (S.view === 'module' && S.module === 'focus') render(); setTimeout(tick, 1000) } }; setTimeout(tick, 1000) } else S.focusLeft = 0; return render() }
+  if (d.sayTo) { S.chat = []; S.chatState = 'idle'; go('parler'); return say(`Réponds à ${d.sayTo}`) }
+  if (d.go) return go(d.go);
+  if (d.goto) return d.goto && go(d.goto);
+  if (d.say) return say(d.say);
+  if (t.id === 'mic') { S.chatState = S.chatState === 'listening' ? 'idle' : 'listening'; render();
+    if (S.chatState === 'listening') setTimeout(() => { if (S.chatState === 'listening') { S.chatState = 'idle'; say(P().chat.chips[0]) } }, 2200); return }
+  if (d.step) { S.step = d.step; render(); if (d.step === 'running') setTimeout(() => { if (S.step === 'running') { S.step = 'done'; render() } }, 1600); return }
+  if (d.err) { S.errorStep = d.err; render(); if (d.err === 'wait') setTimeout(() => { if (S.errorStep === 'wait') { S.errorStep = 'ok'; render() } }, 2200); return }
+  if (d.task !== undefined) { S.tasks[+d.task][1] = !S.tasks[+d.task][1]; render(); return }
+  if (d.del) { const [g, i] = d.del.split('|'); S.memory.find(([x]) => x === g)[1].splice(+i, 1); render(); return }
+  if (d.edit) { S.editing = d.edit.replace('|', ''); render(); const inp = $('edit'); inp.focus(); inp.select(); return }
+  if (d.forget) { if (d.forget === 'yes') { S.memory = S.memory.map(([g]) => [g, []]); S.forget = null } else S.forget = d.forget === 'ask' ? 'confirm' : null; render(); return }
+  if (d.sample !== undefined) return receive('devis-martin.pdf');
+  if (d.file) { const name = S.file;
+    PROFILES[S.profile].ask = d.file === 'store'
+      ? { ...P().ask, head: `Je voudrais ranger ${name} dans Documents.`, icon: 'file', t1: `Documents › Devis › ${name}`, t2: 'Déplacer le fichier', why: 'Tu pourras le remettre où il était.', cmd: null, always: false, done: `C'est rangé dans Documents › Devis.`, doneSub: 'Je le retrouve quand tu veux.' }
+      : d.file === 'send' ? { ...P().ask, head: `Je voudrais envoyer ${name} à Mme Martin.`, icon: 'file', t1: '« Voici le devis pour samedi. »', t2: 'Mail · à mme.martin@exemple.fr', why: 'Je te montre le message avant de l\'envoyer. Rien ne part sans toi.', cmd: null, always: false, done: 'Envoyé à Mme Martin.', doneSub: 'Il est dans Messages envoyés.' }
+      : null;
+    if (d.file === 'resume') { S.chat = [{ me: true, text: `Résume ${name}` }]; S.chatState = 'idle'; S.chat.push({ text: 'Devis de 3 tartes aux pommes et un fraisier pour samedi, 68 € TTC, à régler sur place. Livraison avant 10 h demandée.' }); return go('parler') }
+    return go('valider') }
+  if (d.view) return go(d.view);
+  if (d.profile) { S.profile = d.profile; S.memory = null; S.tasks = null; S.module = null; if (S.view === 'module') S.view = 'accueil'; S.chat = []; S.chatState = 'idle'; PROFILES.boulangere.ask = BASE_ASK.boulangere; PROFILES.dev.ask = BASE_ASK.dev; PROFILES.etudiant.ask = BASE_ASK.etudiant; render(); return }
+  if (d.sim) return sim(d.sim);
+  if (d.test === 'long') { S.long = !S.long; render(); return }
+  if (d.test === 'fold') { S.folded = !S.folded; render(); return }
+});
+// The island follows its content whatever changes it: a detail unfolded, a reply being
+// written, the font settling at load.
+new ResizeObserver(() => { if (!S.folded) fit() }).observe($('main'));
+const BASE_ASK = Object.fromEntries(Object.entries(PROFILES).map(([k, p]) => [k, p.ask]));
+document.addEventListener('submit', (e) => { if (e.target.id === 'ask') { e.preventDefault(); const q = $('q'); say(q.value); } });
+document.addEventListener('keydown', (e) => {
+  if (e.target.id === 'edit' && (e.key === 'Enter' || e.key === 'Escape')) { const inp = e.target; if (e.key === 'Enter' && inp.value.trim()) S.memory.find(([g]) => g === inp.dataset.g)[1][+inp.dataset.i] = inp.value.trim(); S.editing = null; render() }
+  else if (e.key === 'Escape' && !S.folded) { S.folded = true; render() }
+  else if ((e.key === ' ' || e.key === 'Enter') && e.target.dataset && e.target.dataset.task !== undefined) { e.preventDefault(); e.target.click() }
+});
+function receive(name) { S.file = name; S.view = 'deposer'; S.folded = false; render(); playPose(Y, 'etirer') }
+/* A real file dropped from the Finder: only its name is read, nothing is sent */
+const island = $('island');
+['dragenter', 'dragover'].forEach(ev => island.addEventListener(ev, (e) => { e.preventDefault(); if (S.view !== 'deposer' || S.file) { S.view = 'deposer'; S.file = null; S.folded = false; render() } $('drop')?.classList.add('over'); document.querySelector('[data-go="deposer"]').classList.add('target') }));
+island.addEventListener('dragleave', (e) => { if (!island.contains(e.relatedTarget)) { $('drop')?.classList.remove('over'); document.querySelector('[data-go="deposer"]').classList.remove('target') } });
+island.addEventListener('drop', (e) => { e.preventDefault(); document.querySelector('[data-go="deposer"]').classList.remove('target'); const f = e.dataTransfer.files[0]; receive(f ? f.name : 'fichier'); });
+
+/* ---------- Simulations ---------- */
+function sim(name) {
+  if (name === 'ask') return go('valider');
+  if (name === 'refuse') { go('valider'); S.step = 'refused'; return render() }
+  if (name === 'loading') { go('valider'); S.step = 'running'; return render() }
+  if (name === 'success') { go('valider'); S.step = 'done'; return render() }
+  if (name === 'error') return go('erreur');
+  if (name === 'wait') { go('erreur'); S.errorStep = 'wait'; return render() }
+}
+
+/* ---------- Panel ---------- */
+const VIEW_LABELS = [['accueil', '1 · Accueil'], ['parler', '2 · Conversation'], ['valider', '3 · Validation'], ['travail', '4 · Travail'], ['memoire', '5 · Mémoire'], ['erreur', '6 · Erreur'], ['deposer', 'Déposer'], ['modules', 'Tous les modules'], ['historique', 'Historique']];
+function panel() {
+  $('pViews').innerHTML = VIEW_LABELS.map(([v, l]) => `<button data-view="${v}" aria-pressed="${S.view === v && !S.folded}">${l}</button>`).join('');
+  $('pProfiles').innerHTML = Object.entries(PROFILES).map(([k, p]) => `<button data-profile="${k}" aria-pressed="${S.profile === k}">${p.label}</button>`).join('');
+  $('pSim').innerHTML = [['ask', 'Autorisation'], ['refuse', 'Refus'], ['loading', 'Chargement'], ['success', 'Réussite'], ['wait', 'Attente'], ['error', 'Erreur']].map(([k, l]) => `<button data-sim="${k}">${l}</button>`).join('');
+  $('pTest').innerHTML = `<button data-test="fold" aria-pressed="${S.folded}">Repliée</button><button data-test="long" aria-pressed="${S.long}">Textes longs</button>`;
+}
+const HINTS = {
+  accueil: "<b>Accueil.</b> En haut, ce qui compte maintenant (la première ligne porte son action). En bas, tous tes modules avec leur chiffre clé, à un clic : GitHub, Mail, Musique… et « Tout voir » pour le reste.",
+  parler: "<b>Conversation.</b> Pas de bulles pour Yumi : il parle à côté de lui. Le micro simule l'écoute, puis la réflexion et la réponse qui s'écrit.",
+  valider: "<b>Validation.</b> Ce que Yumi veut faire, ce que ça change, et si ça se défait. Rien ne se passe sans « Autoriser ». Essaie aussi Refuser.",
+  travail: '<b>Travail.</b> Une seule information principale. Le contenu dépend du profil : sessions d\'agents pour un développeur, tâches pour les autres. Coche une tâche.',
+  memoire: "<b>Mémoire.</b> Ce que Yumi sait, rangé simplement. Survole une ligne pour la corriger ou l'oublier.",
+  erreur: "<b>Erreur.</b> Une phrase humaine et une proposition. Le détail technique reste replié. Réessaie pour voir l'attente puis la réussite.",
+  module: "<b>Un module.</b> Chaque module garde sa vue complète. Le fil en haut dit où tu es ; « ‹ Accueil » ramène à l'accueil.",
+  modules: "<b>Tous les modules.</b> Rien n'a disparu : tes modules d'abord, dans l'ordre de ton profil, puis ceux que tu peux ajouter.",
+  historique: "<b>Historique.</b> Tes conversations passées avec Yumi ; clique pour en reprendre une.",
+  deposer: "<b>Déposer.</b> Glisse un vrai fichier depuis le Finder sur l'île (seul son nom est lu) ou prends un exemple.",
+};
+function hint() { $('hint').innerHTML = S.folded ? "<b>Repliée.</b> Yumi d'un côté de la notch, la chose la plus importante de l'autre. Clique pour ouvrir ; Échap ou un clic à côté pour replier." : HINTS[S.view] }
+
+/* Embedded (comparison page): ?vue=accueil&profil=dev&embed=1 */
+const q = new URLSearchParams(location.search);
+if (q.get('embed')) document.body.classList.add('embed');
+if (q.get('profil') && PROFILES[q.get('profil')]) S.profile = q.get('profil');
+if (q.get('vue') && VIEWS[q.get('vue')]) S.view = q.get('vue');
+if (q.get('repliee')) S.folded = true;
+render();
+</script>
+</body>
+</html>

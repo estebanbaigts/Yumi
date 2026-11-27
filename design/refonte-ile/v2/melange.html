@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yumi · Dock et centre</title>
+<link rel="stylesheet" href="../yumi.css">
+<style>
+:root { --bg: #1C1F2C; --card: #2A2E3E; --raise: #363C51; --hover: #414861; --fg: #F4F5F8; --fg2: #BCC1D3; --fg3: #A2A8BD; --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif }
+* { box-sizing: border-box }
+html, body { height: 100% }
+body { margin: 0; color: var(--fg); font: 15px/1.45 var(--font); -webkit-font-smoothing: antialiased; overflow: hidden;
+  background: radial-gradient(900px 600px at 50% 60%, #33295E, #171926 70%) }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0 }
+input { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid #5B8CFF; outline-offset: 3px }
+
+/* L'île avec son dock */
+.isl { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 10; width: 470px; max-width: calc(100% - 24px); background: #000; border-radius: 0 0 26px 26px;
+  padding: 30px 18px 14px; box-shadow: 0 16px 50px rgba(0,0,0,.55); transition: width .4s cubic-bezier(.3,1.3,.5,1), padding .4s }
+.isl.folded { width: 300px; padding: 4px 14px; cursor: pointer }
+.isl.folded .top, .isl.folded .dock { display: none }
+.isl .fold { display: none; align-items: center; gap: 8px; height: 26px; font-size: 13px; color: var(--fg2) }
+.isl.folded .fold { display: flex }
+.isl .fold .yumi { width: 30px; height: 25px }
+.top { display: flex; gap: 12px; align-items: center }
+.top .yb { flex: 0 0 auto; border-radius: 14px } .top .yb:hover { background: #15171F }
+.top b { display: block; font-size: 17px; line-height: 1.3 } .top small { display: block; color: var(--fg2); font-size: 14px }
+.dock { display: flex; gap: 10px; justify-content: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #1F2231 }
+.dk { position: relative; width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font-size: 17px; font-weight: 700; color: #fff; transition: transform .15s }
+.dk:hover { transform: translateY(-3px) scale(1.06) }
+.dk .bd { position: absolute; top: -5px; right: -6px; background: #FF5D6C; border-radius: 10px; font-size: 11px; padding: 1px 6px; font-weight: 700 }
+.dk[aria-current="true"]::after { content: ''; position: absolute; bottom: -8px; left: 50%; width: 5px; height: 5px; border-radius: 50%; background: #fff; transform: translateX(-50%) }
+.tip { position: absolute; top: 54px; left: 50%; transform: translateX(-50%); font-size: 12px; background: #2A2E3E; padding: 3px 8px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s }
+.dk:hover .tip { opacity: 1 }
+
+/* Le centre */
+.stage { position: fixed; inset: 0; display: grid; place-items: center }
+.orbit { position: relative; width: min(600px, 92vw); height: min(600px, 92vw); margin-top: 120px; transition: opacity .3s, transform .3s }
+.orbit.away { opacity: 0; transform: scale(.92); pointer-events: none }
+.core { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; width: 300px }
+.core h1 { font-size: 22px; margin: 10px 0 2px; letter-spacing: -.01em } .core p { margin: 0; color: var(--fg2) }
+.ask { display: flex; gap: 8px; margin-top: 14px }
+.ask input { flex: 1; min-width: 0; height: 42px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: rgba(42,46,62,.85); padding: 0 14px; outline: none }
+.ask input:focus { border-color: #8B6CFF }
+.ask button, .btn { height: 42px; padding: 0 16px; border-radius: 12px; background: var(--fg); color: #0B0C12; font-weight: 600 }
+.reply { margin-top: 12px; min-height: 22px; color: var(--fg) }
+.sat { position: absolute; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: 110px; transition: transform .2s }
+.sat:hover { transform: translate(-50%,-50%) scale(1.07) }
+.sat .ic { position: relative; width: 60px; height: 60px; border-radius: 17px; display: grid; place-items: center; font-size: 20px; font-weight: 700; color: #fff; box-shadow: 0 10px 26px rgba(0,0,0,.35) }
+.sat .ic .bd { position: absolute; top: -6px; right: -8px; background: #FF5D6C; border-radius: 10px; font-size: 12px; padding: 1px 7px }
+.sat b { font-size: 14px } .sat span { font-size: 12px; color: var(--fg3); text-align: center; line-height: 1.3 }
+.ring { position: absolute; inset: 15%; border-radius: 50%; border: 1px dashed rgba(255,255,255,.1) }
+
+/* Panneau d'une application */
+.panel { position: fixed; left: 50%; top: 200px; bottom: 24px; width: min(860px, calc(100% - 32px)); transform: translateX(-50%) translateY(20px); opacity: 0; pointer-events: none;
+  background: var(--bg); border: 1px solid rgba(255,255,255,.08); border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.5); display: flex; flex-direction: column; transition: .3s }
+.panel.on { opacity: 1; transform: translateX(-50%); pointer-events: auto }
+.ph { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.08) }
+.ph .back { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 10px; color: var(--fg2) } .ph .back:hover { background: var(--card); color: var(--fg) }
+.ph .back .yumi { width: 30px; height: 25px }
+.ph h2 { margin: 0; font-size: 18px; flex: 1 }
+.ph .x { width: 34px; height: 34px; border-radius: 9px; font-size: 18px; color: var(--fg2) } .ph .x:hover { background: var(--card) }
+.pb { padding: 20px 22px; overflow-y: auto; flex: 1 }
+.li { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; width: 100%; text-align: left; background: var(--card); margin-bottom: 8px }
+.li:hover { background: var(--raise) }
+.li .t { flex: 1; min-width: 0 } .li .t b { display: block; font-weight: 500 } .li .t span { display: block; font-size: 13px; color: var(--fg3) }
+.pill { font-size: 13px; padding: 4px 10px; border-radius: 8px; background: var(--raise); color: var(--fg2); white-space: nowrap }
+.pill.a { background: rgba(255,181,71,.16); color: #FFCB7D } .pill.v { background: rgba(139,108,255,.2); color: #C3B3FF }
+.g1 { background: linear-gradient(140deg,#3F7BFF,#7FD0FF) } .g2 { background: linear-gradient(140deg,#2B3045,#4A5170) } .g3 { background: linear-gradient(140deg,#5B8CFF,#8B6CFF) }
+.g4 { background: linear-gradient(140deg,#F58AD9,#B07BFF) } .g5 { background: linear-gradient(140deg,#FF5D6C,#FF9A3D) } .g6 { background: linear-gradient(140deg,#FFB547,#E8A020) }
+.g7 { background: linear-gradient(140deg,#8B6CFF,#F58AD9) } .g8 { background: linear-gradient(140deg,#7B5CFF,#C9A8FF) } .g0 { background: #2F3447 }
+.mi { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-weight: 700; flex: 0 0 auto }
+.demo { position: fixed; left: 16px; bottom: 16px; z-index: 20; font-size: 13px; display: flex; gap: 6px; background: rgba(42,46,62,.92); border-radius: 12px; padding: 6px 8px }
+.demo b { color: #FFB547; padding: 0 6px; align-self: center } .demo button { padding: 5px 10px; border-radius: 8px; color: var(--fg2) } .demo button:hover { background: var(--raise); color: var(--fg) }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+</head>
+<body>
+<div class="isl" id="isl" role="region" aria-label="Île de Yumi">
+  <div class="fold"><span id="foldY"></span><span id="foldT">Tout va bien</span></div>
+  <div class="top"><button class="yb" data-home aria-label="Ouvrir Yumi en grand" title="Ouvrir Yumi en grand"><span id="islY"></span></button><div><b id="lead">Tu as deux PR à relire.</b><small id="sub">Et Claude Code t’attend sur yumi.</small></div></div>
+  <div class="dock" id="dock"></div>
+</div>
+
+<div class="stage"><div class="orbit" id="orbit"><div class="ring"></div>
+  <div class="core"><span id="bigY"></span><h1>Qu’est-ce qu’on fait ?</h1><p>Parle-moi, ou touche une application.</p>
+    <form class="ask" id="ask"><input id="q" placeholder="Écris à Yumi…" aria-label="Message à Yumi"><button>Envoyer</button></form><div class="reply" id="reply" role="status"></div></div>
+  <div id="sats"></div></div></div>
+
+<section class="panel" id="panel" aria-live="polite"><div class="ph"><button class="back" data-home><span id="backY"></span>Yumi</button><h2 id="ptitle"></h2><button class="x" data-home aria-label="Fermer">✕</button></div><div class="pb" id="pbody"></div></section>
+
+<div class="demo"><b>Démo</b><button data-demo="fold">Replier l’île</button><button data-demo="notif">Demande de Claude Code</button></div>
+
+<script src="../yumi.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const APPS = [
+  ['claude', 'Claude Code', '›_', 'g1', '1 session t’attend', 1],
+  ['github', 'GitHub', '⑂', 'g2', '2 PR à relire', 2],
+  ['mail', 'Mail', '✉', 'g3', '3 nouveaux', 3],
+  ['music', 'Musique', '♪', 'g4', 'Lumière douce', 0],
+  ['agenda', 'Agenda', '31', 'g5', 'Cours à 14 h', 0],
+  ['tasks', 'Tâches', '✓', 'g6', '4 à faire', 0],
+  ['chat', 'Conversations', '…', 'g7', '4 discussions', 0],
+  ['memory', 'Mémoire', '◎', 'g8', '6 souvenirs', 0],
+];
+const DOCK = ['claude', 'github', 'mail', 'music', 'agenda'];
+const PANELS = {
+  claude: () => [['g1', '›_', 'Lancer les tests de l’app', 'yumi · attend ton accord', '<span class="pill a">À valider</span>'], ['g1', '›_', 'Mettre la page en anglais', 'yumi-site · Codex · 35 %', ''], ['g1', '›_', 'Les profils du premier lancement', 'Terminée · 12 tests ajoutés', '']],
+  github: () => [['g2', '⑂', 'PR 31 · Le Workspace de Yumi', 'Léa te demande une relecture', '<span class="pill v">Relecture</span>'], ['g2', '✕', 'PR 30 · Les tests échouent', '2 tests en échec', ''], ['g2', '↑', '3 commits sur yumi/premier-lancement', '09:15', ''], ['g2', '!', 'Issue 33 · L’île ne se replie pas', 'Sam Petit · bug', '']],
+  mail: () => [['g3', '✉', 'Cabinet Dr Martin · Rendez-vous confirmé', '9 h 12', ''], ['g3', '✉', 'Banque Lumen · Relevé de novembre', '9 h 40', ''], ['g3', '✉', 'Léa Moreau · Photos du week-end', '8 h 03', '']],
+  music: () => [['g4', '♪', 'Lumière douce', 'Nuit Calme · en cours', '<span class="pill">❚❚</span>'], ['g4', '♪', 'Marée basse', 'Les Phares · à suivre', ''], ['g4', '♪', 'Midi pile', 'Orange Sanguine', '']],
+  agenda: () => [['g5', '31', 'Point d’équipe', '10:30 · Visio', ''], ['g5', '31', 'Droit des contrats', '14:00 · Amphi B', ''], ['g5', '31', 'Dentiste', 'Jeudi 15:00', '']],
+  tasks: () => [['g6', '✓', 'Relire la PR 31', 'Aujourd’hui · haute', ''], ['g6', '✓', 'Rendre le TD 4', 'Vendredi', ''], ['g6', '✓', 'Acheter le dessert', 'Samedi', '']],
+  chat: () => [['g7', '…', 'Préparer le dîner de samedi', 'Depuis l’île · aujourd’hui', ''], ['g7', '…', 'Résumé de la PR 31', 'Aujourd’hui', ''], ['g7', '…', 'Plan de révision du partiel', 'Hier', '']],
+  memory: () => [['g8', '◎', 'Tu codes, surtout en Swift.', 'Premier lancement', ''], ['g8', '◎', 'Tu préfères des réponses courtes.', 'Conversation du 12 novembre', ''], ['g8', '◎', 'Ton dîner chez Léa est samedi à 20 h.', 'Agenda', '']],
+};
+const S = { open: null, folded: false };
+const all = [];
+function put(id, size, rimW) { $(id).innerHTML = yumi({ size, rimW }); const el = $(id).firstElementChild; new Blob(el); all.push(el); return el }
+put('islY', 52); put('foldY', 30, 3.2); const BIG = put('bigY', 140); put('backY', 30, 3.2);
+const mood = (m, r) => all.forEach(el => setMood(el, m, r));
+
+function render() {
+  $('isl').classList.toggle('folded', S.folded);
+  $('dock').innerHTML = DOCK.map(k => { const a = APPS.find(x => x[0] === k); return `<button class="dk ${a[3]}" data-app="${k}" aria-current="${S.open === k}" aria-label="${a[1]}">${a[2]}${a[5] ? `<span class="bd">${a[5]}</span>` : ''}<span class="tip">${a[1]}</span></button>` }).join('')
+    + `<button class="dk g0" data-home aria-label="Toutes les applications">▦<span class="tip">Tout</span></button>`;
+  $('sats').innerHTML = APPS.map((a, i) => { const ang = i / APPS.length * Math.PI * 2 - Math.PI / 2, x = 50 + Math.cos(ang) * 43, y = 50 + Math.sin(ang) * 43;
+    return `<button class="sat" data-app="${a[0]}" style="left:${x}%;top:${y}%"><span class="ic ${a[3]}">${a[2]}${a[5] ? `<span class="bd">${a[5]}</span>` : ''}</span><b>${a[1]}</b><span>${a[4]}</span></button>` }).join('');
+  $('orbit').classList.toggle('away', !!S.open);
+  $('panel').classList.toggle('on', !!S.open);
+  if (S.open) { const a = APPS.find(x => x[0] === S.open); $('ptitle').textContent = a[1];
+    $('pbody').innerHTML = PANELS[S.open]().map(([g, s, t, d, r]) => `<button class="li"><span class="mi ${g}">${s}</span><span class="t"><b>${t}</b><span>${d}</span></span>${r}</button>`).join('')
+      + (S.open === 'claude' ? `<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" data-ok>Autoriser les tests</button><button class="btn" style="background:var(--raise);color:var(--fg)" data-no>Refuser</button></div>` : '') }
+}
+document.addEventListener('click', e => {
+  if (S.folded && e.target.closest('#isl')) { S.folded = false; return render() }
+  const t = e.target.closest('[data-app],[data-home],[data-demo],[data-ok],[data-no]'); if (!t) return;
+  if (t.dataset.app) { S.open = t.dataset.app; mood('curieux', 'calm'); setTimeout(() => mood('neutre', 'calm'), 700); return render() }
+  if ('home' in t.dataset) { S.open = null; mood('heureux', 'joy'); setTimeout(() => mood('neutre', 'calm'), 900); return render() }
+  if ('ok' in t.dataset) { APPS[0][5] = 0; APPS[0][4] = 'Les tests tournent'; $('lead').textContent = 'Je m’en occupe.'; $('sub').textContent = 'Les tests tournent sur yumi.'; mood('concentre', 'work'); render();
+    setTimeout(() => { APPS[0][4] = 'Tests réussis'; $('lead').textContent = 'Les tests passent.'; $('sub').textContent = '48 sur 48.'; mood('heureux', 'done'); render() }, 2000); return }
+  if ('no' in t.dataset) { APPS[0][5] = 0; APPS[0][4] = 'Refusé'; $('lead').textContent = 'Refusé.'; $('sub').textContent = 'L’agent continue sans lancer les tests.'; return render() }
+  if (t.dataset.demo === 'fold') { S.folded = true; return render() }
+  if (t.dataset.demo === 'notif') { S.folded = false; APPS[0][5] = 1; APPS[0][4] = '1 session t’attend'; $('lead').textContent = 'Claude Code veut lancer les tests.'; $('sub').textContent = 'Sans risque : rien n’est modifié.'; mood('curieux', 'warn'); return render() }
+});
+$('ask').addEventListener('submit', e => { e.preventDefault(); const v = $('q').value.trim(); if (!v) return; $('q').value = ''; $('reply').innerHTML = '…'; mood('reflechi', 'think');
+  setTimeout(() => { const hit = APPS.find(a => v.toLowerCase().includes(a[1].toLowerCase().slice(0, 4))); mood('heureux', 'calm');
+    if (hit) { $('reply').textContent = 'J’ouvre ' + hit[1] + '.'; setTimeout(() => { S.open = hit[0]; render() }, 600) } else $('reply').textContent = 'Noté. Tu retrouveras ça dans Conversations.' }, 800) });
+render();
+</script>
+</body>
+</html>

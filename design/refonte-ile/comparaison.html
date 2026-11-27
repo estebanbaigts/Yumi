@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yumi · Avant et après</title>
+<style>
+:root { --fg: #F4F5F8; --muted: #8D92A8; --blue: #5B8CFF; --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif }
+* { box-sizing: border-box }
+body { margin: 0; background: #0B0C12; color: var(--fg); font-family: var(--font); -webkit-font-smoothing: antialiased }
+header { max-width: 1440px; margin: 0 auto; padding: 40px 32px 8px }
+h1 { font-size: 28px; letter-spacing: -.02em; margin: 0 0 6px }
+header p { color: var(--muted); font-size: 15px; line-height: 22px; max-width: 760px; margin: 0 }
+header a { color: var(--blue); text-decoration: none }
+.controls { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap }
+.controls button { font: inherit; font-size: 13px; color: var(--fg); background: rgba(255,255,255,.07); border: 0; border-radius: 9px; padding: 7px 12px; cursor: pointer }
+.controls button[aria-pressed="true"] { background: var(--fg); color: #06070C }
+section { max-width: 1440px; margin: 0 auto; padding: 28px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start }
+section + section { border-top: 1px solid rgba(255,255,255,.06) }
+h2 { grid-column: 1 / -1; font-size: 19px; margin: 0; letter-spacing: -.01em }
+.col h3 { font-size: 13px; color: var(--muted); font-weight: 500; margin: 0 0 10px }
+.col img { display: block; max-width: 100%; border-radius: 0 0 24px 24px }
+.col iframe { display: block; width: 660px; max-width: 100%; height: 400px; border: 0; background: #0B0C12 }
+ul { grid-column: 1 / -1; margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 21px; columns: 2; column-gap: 40px }
+ul b { color: var(--fg); font-weight: 600 }
+@media (max-width: 1100px) { section { grid-template-columns: 1fr } ul { columns: 1 } }
+</style>
+</head>
+<body>
+<header>
+  <h1>L'île de Yumi, avant et après</h1>
+  <p>À gauche, l'île actuelle (capture du mode tournage, données de démonstration). À droite, la nouvelle direction, vivante : tu peux cliquer dedans. Les deux à la même échelle. <a href="index.html">Ouvrir le prototype complet →</a></p>
+  <div class="controls" id="profiles"></div>
+</header>
+<main id="pairs"></main>
+<script>
+const PAIRS = [
+  ['accueil', 'Accueil', [
+    "<b>Plus d'onglets Travail, Journée, Détente</b> : une seule vue, triée par ce qui compte maintenant.",
+    "<b>Ce qui compte maintenant en haut</b> : une phrase, puis 4 lignes ; la première porte son action.",
+    "<b>Tous les modules restent à un clic</b> : la rangée du bas montre chacun avec son chiffre clé (GitHub · 2 PR, Mail · 3, Musique…), et « Tout voir » donne le reste.",
+    "<b>Plus de jargon</b> : « Claude Code · au repos » et « ⌥ Espace » disparaissent pour qui ne code pas.",
+    "<b>Le contenu suit le profil</b> : change de profil en haut pour voir la boulangère, le développeur et l'étudiant."]],
+  ['parler', 'Conversation', [
+    "<b>Une invitation au lieu d'un champ vide</b>, avec deux suggestions tirées du profil.",
+    "<b>Yumi parle à côté de lui</b>, sans bulle : seule ta phrase est dans une bulle.",
+    "<b>Trois états visibles</b> : il écoute (micro), il réfléchit, il répond.",
+    "<b>L'historique reste là</b> : « Historique » en haut à droite pour reprendre une conversation.",
+    "<b>Le texte passe de 12 à 14 points.</b>"]],
+  ['valider', 'Action et validation', [
+    "<b>Ce que Yumi veut faire, ce que ça change, et si ça se défait</b>, au lieu d'une commande brute.",
+    "<b>Autoriser est le bouton principal, Refuser juste à côté</b> ; « Toujours autoriser » seulement pour ce qui est sans risque.",
+    "<b>La commande technique reste repliée</b> pour qui veut la voir.",
+    "<b>Après</b> : « Je m'en occupe… », puis une confirmation claire avec Annuler."]],
+  ['travail', 'Travail et modules', [
+    "<b>Une seule information principale</b> au lieu de trois répétitions (« Claude Code », « Rien en cours », « au repos »).",
+    "<b>Pour un développeur</b> : la session qui t'attend, sa question, les autres sessions en dessous.",
+    "<b>Pour les autres</b> : les tâches du jour, qu'on coche directement, et le prochain rappel.",
+    "<b>Plus de commande xcodebuild</b> affichée à quelqu'un qui ne code pas."]],
+  ['memoire', 'Mémoire', [
+    "<b>Plus de grand vide</b> : ce que Yumi sait, rangé en trois groupes simples.",
+    "<b>Corriger ou oublier</b> une ligne au survol, tout oublier avec une confirmation.",
+    "<b>Le rappel que tout reste sur le Mac</b>, en une phrase.",
+    "<b>Yumi reste à gauche</b>, à la même taille que partout."]],
+  ['erreur', 'Erreur et état système', [
+    "<b>Une phrase humaine et une proposition</b> : « Tu veux que je réessaie ? »",
+    "<b>Le détail technique est replié</b>, au lieu d'être la seule chose affichée.",
+    "<b>Trois états</b> : attente (il sifflote), échec (petit nuage), réussite.",
+    "<b>Les mêmes boutons</b> que partout ailleurs."]],
+];
+let profile = 'boulangere';
+function render() {
+  document.getElementById('profiles').innerHTML = [['boulangere', 'Boulangère'], ['dev', 'Développeur'], ['etudiant', 'Étudiant']]
+    .map(([k, l]) => `<button data-p="${k}" aria-pressed="${k === profile}">${l}</button>`).join('');
+  document.getElementById('pairs').innerHTML = PAIRS.map(([v, title, points]) => `<section>
+    <h2>${title}</h2>
+    <div class="col"><h3>Aujourd'hui</h3><img src="avant/${v}.png" alt="L'île actuelle : ${title}" loading="lazy"></div>
+    <div class="col"><h3>Nouvelle direction</h3><iframe src="index.html?vue=${v}&profil=${profile}&embed=1" title="Nouvelle île : ${title}" loading="lazy"></iframe></div>
+    <ul>${points.map(p => `<li>${p}</li>`).join('')}</ul></section>`).join('');
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { profile = b.dataset.p; render() } });
+render();
+</script>
+</body>
+</html>
