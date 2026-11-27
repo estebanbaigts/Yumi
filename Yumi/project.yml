@@ -143,6 +143,8 @@ targets:
         CFBundleDisplayName: Yumi
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "2"
+        # Only the system encryption (HTTPS, CloudKit): TestFlight no longer asks at each build
+        ITSAppUsesNonExemptEncryption: false
         # The colour of the opening (PhoneSplash): the system shows it before the app draws
         UILaunchScreen:
           UIColorName: LaunchBackground
