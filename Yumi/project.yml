@@ -142,7 +142,7 @@ targets:
         CFBundleName: Yumi
         CFBundleDisplayName: Yumi
         CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        CFBundleVersion: "2"
         # The colour of the opening (PhoneSplash): the system shows it before the app draws
         UILaunchScreen:
           UIColorName: LaunchBackground
@@ -247,7 +247,7 @@ targets:
       properties:
         CFBundleDisplayName: Yumi
         CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        CFBundleVersion: "2"
         YumiCloudKitContainer: iCloud.app.yumi
         NSExtension:
           NSExtensionPointIdentifier: com.apple.usernotifications.content-extension
@@ -295,7 +295,7 @@ targets:
       properties:
         CFBundleDisplayName: Yumi
         CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        CFBundleVersion: "2"
         YumiCloudKitContainer: iCloud.app.yumi
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
