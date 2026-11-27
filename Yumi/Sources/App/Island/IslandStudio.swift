@@ -342,7 +342,7 @@ enum IslandStudio {
         if let folder = ProcessInfo.processInfo.environment["YUMI_ISLAND_V2_SHOTS"] { shootIsland(into: folder) }
         if ProcessInfo.processInfo.environment["YUMI_STUDIO_BACKDROP"] == "1" { coverTheDesk() }
         // `YUMI_STUDIO_HELLO="l'iPhone d'Esteban"`: the island's celebration of a new iPhone,
-        // after the opening, nothing being linked for real (design/video-beta.md)
+        // after the opening, nothing being linked for real
         if let phone = ProcessInfo.processInfo.environment["YUMI_STUDIO_HELLO"] {
             after(10) { MacLink.hello(from: phone) }
         }

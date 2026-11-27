@@ -91,7 +91,7 @@ final class PhoneLink: NSObject {
         }
     }
 
-    /// For filming the video (design/video-beta.md): in 5 s, the same notification as a real request
+    /// For filming: in 5 s, the same notification as a real request
     /// of the Mac, and its Live Activity. Nothing is sent anywhere.
     func demoNotification() async {
         _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
