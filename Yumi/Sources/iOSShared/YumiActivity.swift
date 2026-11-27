@@ -92,27 +92,33 @@ struct YumiBadge: View {
     }
 }
 
-/// Yumi living in the Dynamic Island: his face and the next thing of the day. Started by the app
-/// when the person keeps it on (Réglages), updated each time the day changes while the app runs.
-/// Without a server of ours, it cannot change on its own: its texts count down by themselves.
+/// Yumi living in the Dynamic Island: his face and the one thing that matters now (a request of
+/// the Mac, an agent at work, a meeting soon, a mail, the weather…). Started by the app when the
+/// person keeps it on (Réglages), updated each time the day changes while the app runs.
+/// Without a server of ours, it cannot change on its own: its counters stop by themselves.
 struct YumiDayActivity: ActivityAttributes {
     struct ContentState: Codable, Hashable {
         /// His picture (`happy`, `asking`, `asleep`…), drawn by the app.
         var face: String
-        /// « Point avec Camille », « Acheter du pain », « Rien d'autre aujourd'hui »
+        /// « Point avec Camille », « Re: devis du site », « Grand soleil »
         var title: String
         /// « 14:00 · Salle B », « Rappel en retard »
         var detail: String
         /// When it starts: the island counts down to it.
         var at: Date?
-        /// A reminder past due, or a request of the Mac: shown in Yumi's warm colour.
+        /// A reminder past due, or a request of the Mac.
         var urgent: Bool
         /// The SF Symbol of the kind: calendar, checklist, hand.raised.
         var symbol: String
-        /// An agent of the Mac at work since then: the compact island shows Yumi working and
-        /// counts the time up.
+        /// An agent of the Mac at work since then: the island counts the time up (bounded).
         var working: Date? = nil
-        /// « 5° »: shown in the compact island when there is nothing else to say.
+        /// « 5° »: the weather, shown when there is nothing else to say.
         var degrees: String? = nil
+        /// The colour of the moment, one of Yumi's rims: calm, work, warn, joy, done, think.
+        var accent: String = "calm"
+        /// The small coloured line above the title: « Nouveau mail · Camille », « Terminé en 18 min ».
+        var kicker: String? = nil
+        /// A short value for the compact island and the expanded right side: « 12° », « ✓ 18 min ».
+        var value: String? = nil
     }
 }

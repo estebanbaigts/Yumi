@@ -123,6 +123,7 @@ targets:
       - path: Sources/App/Localization/Localizable.xcstrings
     dependencies:
       - target: YumiPhoneWidgets
+      - target: YumiPhoneNotify
     # Generated from here (XcodeGen rewrites the file): the link with the Mac goes through the
     # person's private CloudKit database, and CloudKit wakes the app with silent pushes.
     entitlements:
@@ -182,6 +183,98 @@ targets:
 
   # The Live Activity of a Mac request (Lock Screen, Dynamic Island). Its buttons run
   # LinkAnswerIntent in the app's process.
+  # Yumi's notifications held down: the real, animated Yumi (a notification's expanded view
+  # runs like an app). The same shared code as the iPhone app, without its screens.
+  YumiPhoneNotify:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Sources/iOSNotify
+      # The same parts the tests compile without the app, minus what only a Mac can do
+      - path: Sources/App/Contracts
+      - path: Sources/App/Character
+        excludes:
+          - BotCanvasView.swift
+          - YumiGallery.swift
+      - path: Sources/App/Core
+        excludes:
+          - HookLauncher.swift
+          - Chat/ClaudeCLI.swift
+      - path: Sources/App/Memory
+      - path: Sources/App/Initiative
+        excludes:
+          - InitiativeDriver.swift
+      - path: Sources/App/Permissions
+      - path: Sources/App/AgentRuntime
+        excludes:
+          - Providers/ClaudeCodeLLMProvider.swift
+          - Providers/ClaudeCodeLive.swift
+      # The modules' data and stores; their Mac side (NSWorkspace, AppleScript, IOKit) stays out
+      - path: Sources/App/Modules
+        excludes:
+          - Mail/MailApp.swift
+          - Mail/GmailModule.swift
+          - ClaudeCode/ClaudeCodeModule.swift
+          - ClaudeCode/TerminalTab.swift
+          - ScreenTime/ScreenTimeModule.swift
+          - Notion/NotionModule.swift
+          - Notes/NotesModule.swift
+          - Music/MusicModule.swift
+          - GitHub/GitHubModule.swift
+          - Agenda/AgendaModule.swift
+          - Weather/WeatherModule.swift
+          - Music/AudioActivity.swift
+          - AgentBridges.swift
+          - Notion/NotionAgentStore.swift
+      - path: Sources/App/Context
+        excludes:
+          - Providers/WorkspaceContextProvider.swift
+          - Providers/WindowContextProvider.swift
+      - path: Sources/App/Island/IslandTypes.swift
+      - path: Sources/App/Island/WeatherAmbiance.swift
+      - path: Sources/App/Island/SpokenAnswer.swift
+      - path: Sources/App/App/AppIdentity.swift
+      - path: Sources/App/App/SoundEngine.swift
+      - path: Sources/App/Link
+      - path: Sources/iOSShared
+      - path: Sources/App/Localization/Localizable.xcstrings
+    entitlements:
+      path: Resources/YumiPhoneNotify.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.yumi]
+    info:
+      path: Resources/InfoPhoneNotify.plist
+      properties:
+        CFBundleDisplayName: Yumi
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        YumiCloudKitContainer: iCloud.app.yumi
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.content-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationViewController
+          NSExtensionAttributes:
+            UNNotificationExtensionCategory: [yumi.approval, yumi.weather]
+            UNNotificationExtensionInitialContentSizeRatio: 0.6
+            UNNotificationExtensionDefaultContentHidden: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.yumi.iphone.notify
+        PRODUCT_NAME: YumiPhoneNotify
+        INFOPLIST_FILE: Resources/InfoPhoneNotify.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/YumiPhoneNotify.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+        ENABLE_HARDENED_RUNTIME: NO
+        DEVELOPMENT_TEAM: J5U6R6ZV6K
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
+        OTHER_CODE_SIGN_FLAGS: ""
+        SKIP_INSTALL: YES
+      configs:
+        Debug:
+          CODE_SIGNING_ALLOWED: YES
+          CODE_SIGNING_REQUIRED: YES
+
   YumiPhoneWidgets:
     type: app-extension
     platform: iOS
@@ -189,6 +282,7 @@ targets:
       - path: Sources/iOSWidgets
       - path: Sources/iOSShared
       - path: Sources/App/Contracts/YumiLink.swift
+      - path: Sources/App/Contracts/IslandClock.swift
       - path: Sources/App/Link
       - path: Sources/App/Core/StudioMode.swift
       - path: Sources/App/Localization/Localizable.xcstrings
@@ -235,6 +329,7 @@ targets:
           - iOS/**
           - iOSShared/**
           - iOSWidgets/**
+          - iOSNotify/**
       - path: Assets.xcassets
         buildPhase: resources
       - path: Resources/sounds
@@ -301,6 +396,7 @@ targets:
           - iOS/**
           - iOSShared/**
           - iOSWidgets/**
+          - iOSNotify/**
       - path: Assets.xcassets
         buildPhase: resources
       - path: Resources/sounds
@@ -379,6 +475,7 @@ targets:
       - path: Sources/App/Character/YumiFaceTurn.swift
       - path: Sources/App/Contracts/AgentLook.swift
       - path: Sources/App/Contracts/YumiLink.swift
+      - path: Sources/App/Contracts/IslandClock.swift
       - path: Sources/App/Contracts/EventAnimations.swift
       - path: Sources/App/App/AppIdentity.swift
       # The tests read the translations too, in French and in English

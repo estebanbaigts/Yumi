@@ -16,6 +16,10 @@ enum PhoneWidgets {
         ("right", nil, .idle, true, CGPoint(x: 1, y: 0.2)),
         ("surprised", .surprised, .idle, true, nil),
         ("working", .focused, .working, true, nil),
+        ("done", .happy, .finished, true, nil),
+        ("thinking", nil, .thinking, true, nil),
+        // Asleep but lit: in the Dynamic Island, on black, the unlit one cannot be seen
+        ("dozing", .asleep, .sleeping, true, nil),
     ]
 
     private static var drawn = false
@@ -24,6 +28,11 @@ enum PhoneWidgets {
     static func drawFaces() {
         guard !drawn else { return }
         drawn = true
+        // His look for the animated notifications, which run apart from the app
+        if let shared = UserDefaults(suiteName: NotifyCategories.group) {
+            IslandAccent.current().save(in: shared)
+            YumiCostume.current().save(in: shared)
+        }
         for face in faces {
             guard let url = YumiWidgetData.imageURL(face.name) else { continue }
             let renderer = ImageRenderer(content: StillYumi(mood: face.mood, state: face.state, lit: face.lit, gaze: face.gaze)
@@ -60,6 +69,17 @@ enum PhoneWidgets {
             if let png = renderer.uiImage?.pngData() { try? png.write(to: url, options: .atomic) }
         }
         let costume = YumiCostume.current()
+        // His gesture in the weather, a few real moments of it, shown in turn with the ground
+        for frame in 0..<YumiWidgetData.weatherFrames {
+            guard let url = YumiWidgetData.imageURL("weather-yumi-\(frame)") else { continue }
+            let renderer = ImageRenderer(content: StillYumi(mood: ambiance.mood ?? .happy, state: .idle, lit: true,
+                                                            habit: ambiance.habit,
+                                                            costume: ambiance.wearsBeanie && costume == .none ? .beanie : costume,
+                                                            moment: 1 + Double(frame) * 0.6)
+                .frame(width: 180, height: 180))
+            renderer.scale = 3
+            if let png = renderer.uiImage?.pngData() { try? png.write(to: url, options: .atomic) }
+        }
         if let url = YumiWidgetData.imageURL("weather-yumi") {
             let renderer = ImageRenderer(content: StillYumi(mood: ambiance.mood ?? .happy, state: .idle, lit: true,
                                                             habit: ambiance.habit,
@@ -141,6 +161,8 @@ struct StillYumi: View {
     var gaze: CGPoint? = nil
     var habit: YumiHabit? = nil
     var costume: YumiCostume? = nil
+    /// How far into his gesture the picture is taken, in seconds.
+    var moment: Double = 3
 
     var body: some View {
         Canvas { context, size in
@@ -155,7 +177,7 @@ struct StillYumi: View {
             let frame = CGRect(origin: .zero, size: size).insetBy(dx: size.width * 0.07, dy: size.height * 0.1)
                 .offsetBy(dx: 0, dy: size.height * 0.04)
             let start = Date()
-            for step in 0...90 { engine.advance(to: start.addingTimeInterval(Double(step) / 30)) }
+            for step in 0...Int(moment * 30) { engine.advance(to: start.addingTimeInterval(Double(step) / 30)) }
             engine.draw(context: context, frame: frame)
         }
     }

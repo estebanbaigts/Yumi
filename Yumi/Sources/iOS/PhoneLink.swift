@@ -186,7 +186,8 @@ final class PhoneLink: NSObject {
         let allow = UNNotificationAction(identifier: allowID, title: loc("Autoriser"), options: [.authenticationRequired])
         let deny = UNNotificationAction(identifier: denyID, title: loc("Refuser"), options: [.destructive])
         let category = UNNotificationCategory(identifier: categoryID, actions: [allow, deny], intentIdentifiers: [])
-        UNUserNotificationCenter.current().setNotificationCategories([category])
+        let weather = UNNotificationCategory(identifier: NotifyCategories.weather, actions: [], intentIdentifiers: [])
+        UNUserNotificationCenter.current().setNotificationCategories([category, weather])
     }
 }
 

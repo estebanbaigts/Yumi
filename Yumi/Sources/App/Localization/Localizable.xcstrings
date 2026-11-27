@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "Pluie vers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rain around"
+          }
+        }
+      }
+    },
+    "Prends un parapluie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take an umbrella."
+          }
+        }
+      }
+    },
+    "Au travail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At work"
+          }
+        }
+      }
+    },
+    "Nouveau mail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New mail"
+          }
+        }
+      }
+    },
+    "Terminé en": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done in"
+          }
+        }
+      }
+    },
+    "pluie vers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rain around"
+          }
+        }
+      }
+    },
     "C'est bon, on est connectés !": {
       "localizations": {
         "en": {

@@ -161,7 +161,7 @@ final class Phone {
         Task { await PhoneLink.shared.watch() }
         memory?.start()
         // All at once: the Mac's agents do not wait for the calendar, nor the mails
-        Task { await mail.refresh() }
+        Task { await mail.refresh(); updateRemarks() }
         Task { await github.refresh() }
         let link = linkOn ? Task { await PhoneLink.shared.refresh() } : nil
         await today.refresh()
@@ -187,8 +187,8 @@ final class Phone {
         let link = linkOn ? Task { await PhoneLink.shared.refresh() } : nil
         await today.refresh()
         await link?.value
-        Task { await mail.refresh() }
         updateRemarks()
+        Task { await mail.refresh(); updateRemarks() }
     }
 
     /// What Yumi has to say, from the day as it is now.
@@ -199,8 +199,9 @@ final class Phone {
         character.update(from: today, name: memoryBook.name ?? (studio ? "Esteban" : nil), mac: linkOn ? mac : nil)
         PhoneWidgets.publish(remark: character.remark, today: today, mac: linkOn ? mac : nil, force: !widgetsFreshened)
         widgetsFreshened = true
-        let today = today, mac = linkOn ? mac : nil
-        Task { await PhoneDayActivity.update(today: today, mac: mac) }
+        let today = today, mac = linkOn ? mac : nil, mails = mail.mails
+        Task { await PhoneDayActivity.update(today: today, mac: mac, mails: mails) }
+        Task { await PhoneMorningRain.plan(weather: today.weather, place: today.placeName) }
     }
 
     /// The first launch: Yumi asks the person's first name, once (never while filming).

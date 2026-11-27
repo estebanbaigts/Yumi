@@ -65,11 +65,11 @@ struct YumiTodayWidget: Widget {
                     entries.append(Entry(date: now.addingTimeInterval(Double(i) * 0.9), data: data.at(now), beat: 0, reaction: face))
                 }
             }
-            // Then a moment every 20 s for the hour: his face changes each minute, the weather's
+            // Then a moment every 5 s for the hour: his face changes each minute, the weather's
             // ground moves each moment (a widget cannot run an animation; iOS cross-fades them)
-            let step = (now.timeIntervalSince1970 / 20).rounded(.down) * 20 + 20
-            entries += (0..<180).map {
-                let date = Date(timeIntervalSince1970: step + Double($0) * 20)
+            let step = (now.timeIntervalSince1970 / 5).rounded(.down) * 5 + 5
+            entries += (0..<720).map {
+                let date = Date(timeIntervalSince1970: step + Double($0) * 5)
                 return Entry(date: date, data: data.at(date), beat: $0)
             }
             if entries.first.map({ $0.date > now }) ?? true { entries.insert(Entry(date: now, data: data.at(now), beat: 0), at: 0) }
@@ -87,7 +87,7 @@ enum WidgetFace {
         if entry.data.macWaiting != nil { return "asking" }
         let hour = Calendar.current.component(.hour, from: entry.date)
         if hour >= 23 || hour < 6 { return "asleep" }
-        return ["happy", "left", "calm", "right", "wink", "happy", "surprised", "calm"][(entry.beat / 3) % 8]
+        return ["happy", "left", "calm", "right", "wink", "happy", "surprised", "calm"][(entry.beat / 12) % 8]
     }
 
     static func agent(_ mood: String) -> String {
@@ -296,15 +296,15 @@ private struct YumiWeatherView: View {
     private var yumi: some View {
         Button(intent: YumiWidgetPoke()) {
             Group {
-                if let url = YumiWidgetData.imageURL("weather-yumi"), let image = UIImage(contentsOfFile: url.path) {
+                if let image = weatherYumiPicture(beat: entry.beat) {
                     Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFit()
+                        .id(entry.beat % YumiWidgetData.weatherFrames)
+                        .transition(.opacity)
                 } else {
                     YumiPicture(name: WidgetFace.of(entry), size: 60)
                 }
             }
-            // He breathes: a little up, a little down, from one moment to the next
-            .offset(y: entry.beat % 2 == 0 ? 0 : -3)
-            .animation(.easeInOut(duration: 1.2), value: entry.beat)
+            .animation(.easeInOut(duration: 0.8), value: entry.beat)
         }
         .buttonStyle(.plain)
     }
@@ -389,4 +389,12 @@ private struct YumiWeatherView: View {
         default: String(localized: "Doux")
         }
     }
+}
+
+/// A moment of his gesture in the weather; the single still of older versions otherwise.
+func weatherYumiPicture(beat: Int) -> UIImage? {
+    for name in ["weather-yumi-\(beat % YumiWidgetData.weatherFrames)", "weather-yumi"] {
+        if let url = YumiWidgetData.imageURL(name), let image = UIImage(contentsOfFile: url.path) { return image }
+    }
+    return nil
 }
